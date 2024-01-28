@@ -5,42 +5,38 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.skidonion.obfuscator.annotations.Native;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
+import tech.skidonion.obfuscator.checksum.AntiTamperWriter;
 import tech.skidonion.obfuscator.config.Config;
-import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
-import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.*;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class PhantomShield {
     public static final String VERSION = "0.0.1";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
-
-    private final Map<String, ClassTree> hierarchy = new HashMap<>();
     public final Map<String, ClassWrapper> classes = new HashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
+    private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private final Config config;
 
     public PhantomShield(File file) throws IOException {
@@ -49,6 +45,18 @@ public class PhantomShield {
 
     public PhantomShield(Config config) {
         this.config = config;
+    }
+
+    public static void INFO(String message, Object... arguments) {
+        LOGGER.info(message, arguments);
+    }
+
+    public static void INFO(String message, Object argument) {
+        LOGGER.info(message, argument);
+    }
+
+    public static void INFO(String message) {
+        LOGGER.info(message);
     }
 
     public void process() {
@@ -80,36 +88,28 @@ public class PhantomShield {
             long timestamp = creationDate != null ? formatter.parse(creationDate.getAsString()).getTime() : -1;
 
             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(output));
-
+            AntiTamperWriter atw = new AntiTamperWriter(zos);
             classes.values().forEach(classWrapper -> {
                 try {
                     ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
                     entry.setTime(timestamp);
-
-                    zos.putNextEntry(entry);
-                    zos.write(classWrapper.toByteArray(this));
-                    zos.closeEntry();
-                } catch (Throwable t) {
+                    atw.write(entry, classWrapper.toByteArray(this));
+                } catch (IOException ioe) {
                     LOGGER.error(String.format("Error writing class %s. Skipping.", classWrapper.getName() + ".class"));
-                    t.printStackTrace();
+                    ioe.printStackTrace();
                 }
             });
 
             resources.forEach((name, bytes) -> {
                 try {
                     ZipEntry entry = new ZipEntry(name);
-
-                    zos.putNextEntry(entry);
-                    zos.write(bytes);
-                    zos.closeEntry();
+                    atw.write(entry, bytes);
                 } catch (IOException ioe) {
                     LOGGER.error(String.format("Error writing resource %s. Skipping.", name));
                     ioe.printStackTrace();
                 }
             });
-
-            zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
-            zos.close();
+            atw.close(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException();
@@ -217,23 +217,9 @@ public class PhantomShield {
         }
     }
 
-
     public Config getConfig() {
         return config;
     }
-
-    public static void INFO(String message, Object... arguments) {
-        LOGGER.info(message, arguments);
-    }
-
-    public static void INFO(String message, Object argument) {
-        LOGGER.info(message, argument);
-    }
-
-    public static void INFO(String message) {
-        LOGGER.info(message);
-    }
-
 
     /**
      * Equivalent to the following:
