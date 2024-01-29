@@ -115,5 +115,6 @@ hs_err_pid*
 .nb-gradle/
 
 /logs/
-/output/
 /phantomshield-obfuscator/libs/
+/test/output/
+/output/
