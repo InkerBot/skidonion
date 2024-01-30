@@ -20,7 +20,7 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
     public void accept(MethodContext context, T node) {
         props = new HashMap<>();
         List<TryCatchBlockNode> tryCatchBlockNodeList = new ArrayList<>();
-        for (TryCatchBlockNode tryCatchBlock : context.method.tryCatchBlocks) {
+        for (TryCatchBlockNode tryCatchBlock : context.method.getMethodNode().tryCatchBlocks) {
             if (!context.tryCatches.contains(tryCatchBlock)) {
                 continue;
             }

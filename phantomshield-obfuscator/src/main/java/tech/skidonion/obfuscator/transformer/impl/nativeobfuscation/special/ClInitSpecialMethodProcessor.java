@@ -1,9 +1,9 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 
 import java.util.ArrayList;
 
@@ -14,7 +14,7 @@ public class ClInitSpecialMethodProcessor implements SpecialMethodProcessor {
         String name = String.format("special_clinit_%d_%d", context.classIndex, context.methodIndex);
 
         context.proxyMethod = context.obfuscator.getHiddenMethodsPool().getMethod(name, "(Ljava/lang/Class;)V", methodNode -> {
-            methodNode.signature = context.method.signature;
+            methodNode.signature = context.method.getMethodNode().signature;
             methodNode.access = Opcodes.ACC_NATIVE | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE;
             methodNode.visibleAnnotations = new ArrayList<>();
             methodNode.visibleAnnotations.add(new AnnotationNode("Ljava/lang/invoke/LambdaForm$Hidden;"));
@@ -25,13 +25,13 @@ public class ClInitSpecialMethodProcessor implements SpecialMethodProcessor {
 
     @Override
     public void postProcess(MethodContext context) {
-        InsnList instructions = context.method.instructions;
+        InsnList instructions = context.method.getMethodNode().instructions;
         instructions.clear();
         instructions.add(new LdcInsnNode(context.classIndex));
-        instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.name)));
+        instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.getClassNode().name)));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, context.obfuscator.getNativeDir() + "/Loader",
                 "registerNativesForClass", "(ILjava/lang/Class;)V", false));
-        instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.name)));
+        instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.getClassNode().name)));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
                 context.proxyMethod.getClassNode().name,
                 context.proxyMethod.getMethodNode().name,

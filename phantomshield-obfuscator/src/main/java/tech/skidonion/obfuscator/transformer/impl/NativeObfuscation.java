@@ -93,7 +93,7 @@ public class NativeObfuscation extends Transformer {
         MainSourceBuilder mainSourceBuilder = new MainSourceBuilder();
 
 
-        nativeDir = "fl0wowp4rty/" + RandomUtils.getRandomLetters(8);
+        nativeDir = "skidonion/" + RandomUtils.getRandomLetters(8);
         hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/hidden");
 
         Integer[] classIndexReference = new Integer[]{0};
@@ -141,7 +141,7 @@ public class NativeObfuscation extends Transformer {
                             continue;
                         }
 
-                        MethodContext context = new MethodContext(this, method.getMethodNode(), i, computedClassNode, currentClassId);
+                        MethodContext context = new MethodContext(this, method, i, cw, currentClassId);
                         methodProcessor.processMethod(context);
                         instructions.append(context.output.toString().replace("\n", "\n    "));
 

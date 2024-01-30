@@ -109,7 +109,7 @@ public class MethodProcessor {
     }
 
     public void processMethod(MethodContext context) {
-        MethodNode method = context.method;
+        MethodNode method = context.method.getMethodNode();
         StringBuilder output = context.output;
 
         SpecialMethodProcessor specialMethodProcessor = getSpecialMethodProcessor(method.name);
@@ -139,7 +139,7 @@ public class MethodProcessor {
             context.nativeMethod.access |= Opcodes.ACC_NATIVE;
         } else {
             context.nativeMethods.append(String.format("            { %s, %s, (void *)&%s },\n",
-                    obfuscator.getStringPool().get(context.method.name),
+                    obfuscator.getStringPool().get(context.method.getMethodNode().name),
                     obfuscator.getStringPool().get(method.desc), methodName));
         }
 
@@ -177,7 +177,7 @@ public class MethodProcessor {
         if (!isStatic) {
             output.append("    env->DeleteLocalRef(clazz);\n");
             output.append("    clazz = utils::find_class_wo_static(env, classloader, ")
-                    .append(context.getCachedStrings().getPointer(context.clazz.name.replace('/', '.')))
+                    .append(context.getCachedStrings().getPointer(context.clazz.getClassNode().name.replace('/', '.')))
                     .append(");\n");
             output.append("    if (env->ExceptionCheck()) { ").append(String.format("return (%s) 0;",
                     CPP_TYPES[context.ret.getSort()])).append(" }\n");

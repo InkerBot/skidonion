@@ -15,15 +15,15 @@ public class DefaultSpecialMethodProcessor implements SpecialMethodProcessor {
 
     @Override
     public String preProcess(MethodContext context) {
-        if (ASMUtils.getFlag(context.clazz.access, Opcodes.ACC_INTERFACE)) {
-            List<Type> arguments = (Arrays.stream(Type.getArgumentTypes(context.method.desc)).collect(Collectors.toList()));
+        if (ASMUtils.getFlag(context.clazz.getClassNode().access, Opcodes.ACC_INTERFACE)) {
+            List<Type> arguments = (Arrays.stream(Type.getArgumentTypes(context.method.getMethodNode().desc)).collect(Collectors.toList()));
             arguments.add(0, Type.getType(Object.class));
-            String resultDesc = Type.getMethodDescriptor(Type.getReturnType(context.method.desc), arguments.toArray(new Type[0]));
+            String resultDesc = Type.getMethodDescriptor(Type.getReturnType(context.method.getMethodNode().desc), arguments.toArray(new Type[0]));
 
             String methodName = String.format("interfacestatic_%d_%d", context.classIndex, context.methodIndex);
             context.proxyMethod = context.obfuscator.getHiddenMethodsPool()
                     .getMethod(methodName, resultDesc, methodNode -> {
-                        methodNode.signature = context.method.signature;
+                        methodNode.signature = context.method.getMethodNode().signature;
                         methodNode.access = Opcodes.ACC_NATIVE | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE;
                         methodNode.visibleAnnotations = new ArrayList<>();
                         methodNode.visibleAnnotations.add(new AnnotationNode("Ljava/lang/invoke/LambdaForm$Hidden;"));
@@ -31,18 +31,18 @@ public class DefaultSpecialMethodProcessor implements SpecialMethodProcessor {
                     });
             return methodName;
         }
-        context.method.access |= Opcodes.ACC_NATIVE;
-        return "native_" + context.method.name + context.methodIndex;
+        context.method.getMethodNode().access |= Opcodes.ACC_NATIVE;
+        return "native_" + context.method.getMethodNode().name + context.methodIndex;
     }
 
     @Override
     public void postProcess(MethodContext context) {
-        context.method.instructions.clear();
-        if (ASMUtils.getFlag(context.clazz.access, Opcodes.ACC_INTERFACE)) {
+        context.method.getMethodNode().instructions.clear();
+        if (ASMUtils.getFlag(context.clazz.getClassNode().access, Opcodes.ACC_INTERFACE)) {
             InsnList list = new InsnList();
 
-            if (ASMUtils.getFlag(context.method.access, Opcodes.ACC_STATIC)) {
-                list.add(new LdcInsnNode(Type.getObjectType(context.clazz.name)));
+            if (ASMUtils.getFlag(context.method.getMethodNode().access, Opcodes.ACC_STATIC)) {
+                list.add(new LdcInsnNode(Type.getObjectType(context.clazz.getClassNode().name)));
             }
 
             int localVarsPosition = 0;
@@ -57,8 +57,8 @@ public class DefaultSpecialMethodProcessor implements SpecialMethodProcessor {
                     context.proxyMethod.getClassNode().name,
                     context.proxyMethod.getMethodNode().name,
                     context.proxyMethod.getMethodNode().desc, false));
-            list.add(new InsnNode(Type.getReturnType(context.method.desc).getOpcode(Opcodes.IRETURN)));
-            context.method.instructions = list;
+            list.add(new InsnNode(Type.getReturnType(context.method.getMethodNode().desc).getOpcode(Opcodes.IRETURN)));
+            context.method.getMethodNode().instructions = list;
         }
     }
 }

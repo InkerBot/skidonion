@@ -7,9 +7,9 @@ public class LabelHandler extends GenericInstructionHandler<LabelNode> {
 
     @Override
     public void accept(MethodContext context, LabelNode node) {
-        context.method.tryCatchBlocks.stream().filter(x -> x.start.equals(node))
+        context.method.getMethodNode().tryCatchBlocks.stream().filter(x -> x.start.equals(node))
                 .forEachOrdered(context.tryCatches::add);
-        context.method.tryCatchBlocks.stream().filter(x -> x.end.equals(node))
+        context.method.getMethodNode().tryCatchBlocks.stream().filter(x -> x.end.equals(node))
                 .forEachOrdered(context.tryCatches::remove);
     	try {
     		super.accept(context, node);

@@ -1,15 +1,16 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
 
 import java.util.*;
 
@@ -17,8 +18,8 @@ public class MethodContext {
 
     public NativeObfuscation obfuscator;
 
-    public final MethodNode method;
-    public final ClassNode clazz;
+    public final MethodWrapper method;
+    public final ClassWrapper clazz;
     public final int methodIndex;
     public final int classIndex;
 
@@ -43,7 +44,7 @@ public class MethodContext {
 
     public String cppNativeMethodName;
 
-    public MethodContext(NativeObfuscation obfuscator, MethodNode method, int methodIndex, ClassNode clazz,
+    public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
                          int classIndex) {
         this.obfuscator = obfuscator;
         this.method = method;

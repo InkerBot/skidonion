@@ -132,6 +132,10 @@ public class ClassWrapper {
     }
 
     public void setClassNode(ClassNode classNode) {
+        methods.clear();
+        fields.clear();
+        classNode.methods.forEach(methodNode -> methods.add(new MethodWrapper(methodNode, this)));
+        classNode.fields.forEach(fieldNode -> fields.add(new FieldWrapper(fieldNode, this)));
         this.classNode = classNode;
     }
 
