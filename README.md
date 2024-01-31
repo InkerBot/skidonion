@@ -2,7 +2,7 @@
 <h4 align="center">Heavy duty to protect my jar</h4>
 
 ## 构建
-将 phantomshield-loader 项目构建后的 jar 包重命名为 `loader.bin` 放入 `phantomshield-obfuscator/src/resources/binaries/` 目录下，然后执行 `Build All` 即可。
+将 phantomshield-loader 项目构建后的 jar 包重命名为 `phantomshield-loader.bin` 放入 `phantomshield-obfuscator/src/resources/binaries/` 目录下，然后执行 `Build All` 即可。
 
 # 测试
 运行 `TestRun` 运行参数

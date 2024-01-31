@@ -93,7 +93,7 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
                             .skip(1)).toArray(Type[]::new)).getDescriptor());
 
             HiddenMethodsPool.HiddenMethod hiddenMethod = context.obfuscator.getHiddenMethodsPool()
-                    .getMethod("invokereverse", methodDesc, method -> {
+                    .getMethod("__", methodDesc, method -> {
                         method.visibleAnnotations = new ArrayList<>();
                         method.visibleAnnotations.add(new AnnotationNode("Ljava/lang/invoke/LambdaForm$Hidden;"));
                         method.visibleAnnotations.add(new AnnotationNode("Ljdk/internal/vm/annotation/Hidden;"));
@@ -132,7 +132,7 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             String mhDesc = simplifyDesc(node.desc);
 
             HiddenMethodsPool.HiddenMethod hiddenMethod = context.obfuscator.getHiddenMethodsPool()
-                    .getMethod("mhinvoke", methodDesc, method -> {
+                    .getMethod("_", methodDesc, method -> {
                         method.visibleAnnotations = new ArrayList<>();
                         method.visibleAnnotations.add(new AnnotationNode("Ljava/lang/invoke/LambdaForm$Hidden;"));
                         method.visibleAnnotations.add(new AnnotationNode("Ljdk/internal/vm/annotation/Hidden;"));

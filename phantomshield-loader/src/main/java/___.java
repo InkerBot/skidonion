@@ -3,7 +3,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class Loader {
+public class ___ {
     public static native void ___(int index, Class<?> clazz);
 
     static {
@@ -41,7 +41,7 @@ public class Loader {
             osTypeName = "raw" + osName;
         }
 
-        String libFileName = String.format("/%s/%s-%s", Loader.class.getName().split("\\.")[0], platformTypeName, osTypeName);
+        String libFileName = String.format("/%s/%s-%s", ___.class.getName().split("\\.")[0], platformTypeName, osTypeName);
 
         File libFile;
         try {
@@ -55,7 +55,7 @@ public class Loader {
         }
         byte[] arrayOfByte = new byte[2048];
         try {
-            InputStream inputStream = Loader.class.getResourceAsStream(libFileName);
+            InputStream inputStream = ___.class.getResourceAsStream(libFileName);
             if (inputStream == null) {
                 throw new UnsatisfiedLinkError(String.format("Failed to open lib file: %s", libFileName));
             }

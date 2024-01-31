@@ -78,4 +78,15 @@ public class FileUtils {
         }
     }
 
+    public static void clearDirectory(Path path) {
+        File file = path.toFile();
+        File[] list = file.listFiles();
+        if (list != null) {
+            for (File temp : list) {
+                clearDirectory(temp.toPath());
+            }
+        }
+        file.delete();
+    }
+
 }

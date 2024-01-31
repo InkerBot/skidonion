@@ -55,7 +55,11 @@ public class HiddenMethodsPool {
             classNode = new ClassNode(Opcodes.ASM9);
             classNode.access = Opcodes.ACC_PUBLIC;
             classNode.version = 52;
-            classNode.name = baseName + "/Hidden" + classes.size();
+            StringBuilder sb = new StringBuilder("____");
+            for (int i = 0; i < classes.size(); i++) {
+                sb.append("_");
+            }
+            classNode.name = baseName + "/" + sb;
             classes.add(classNode);
         }
         classNode.methods.add(newMethod);

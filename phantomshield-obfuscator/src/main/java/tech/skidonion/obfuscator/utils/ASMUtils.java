@@ -283,10 +283,8 @@ public class ASMUtils {
 
 
     public static List<ClassNode> readClassesWithInputStream(String path) {
-        try {
-            InputStream stream = ASMUtils.class.getClassLoader().getResourceAsStream(path);
+        try (InputStream stream = ASMUtils.class.getResourceAsStream(path); ZipInputStream zip = new ZipInputStream(Objects.requireNonNull(stream));) {
             List<ClassNode> list = new ArrayList<>();
-            ZipInputStream zip = new ZipInputStream(Objects.requireNonNull(stream));
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (!entry.isDirectory() && entry.getName().endsWith(".class")) {

@@ -20,7 +20,7 @@ public class DefaultSpecialMethodProcessor implements SpecialMethodProcessor {
             arguments.add(0, Type.getType(Object.class));
             String resultDesc = Type.getMethodDescriptor(Type.getReturnType(context.method.getMethodNode().desc), arguments.toArray(new Type[0]));
 
-            String methodName = String.format("interfacestatic_%d_%d", context.classIndex, context.methodIndex);
+            String methodName = String.format("____%d_%d", context.classIndex, context.methodIndex);
             context.proxyMethod = context.obfuscator.getHiddenMethodsPool()
                     .getMethod(methodName, resultDesc, methodNode -> {
                         methodNode.signature = context.method.getMethodNode().signature;

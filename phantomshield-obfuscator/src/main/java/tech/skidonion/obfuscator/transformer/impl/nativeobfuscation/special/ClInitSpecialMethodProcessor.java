@@ -11,7 +11,7 @@ public class ClInitSpecialMethodProcessor implements SpecialMethodProcessor {
 
     @Override
     public String preProcess(MethodContext context) {
-        String name = String.format("special_clinit_%d_%d", context.classIndex, context.methodIndex);
+        String name = String.format("___%d_%d", context.classIndex, context.methodIndex);
 
         context.proxyMethod = context.obfuscator.getHiddenMethodsPool().getMethod(name, "(Ljava/lang/Class;)V", methodNode -> {
             methodNode.signature = context.method.getMethodNode().signature;
@@ -29,7 +29,7 @@ public class ClInitSpecialMethodProcessor implements SpecialMethodProcessor {
         instructions.clear();
         instructions.add(new LdcInsnNode(context.classIndex));
         instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.getClassNode().name)));
-        instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, context.obfuscator.getNativeDir() + "/Loader",
+        instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, context.obfuscator.getNativeDir() + "/___",
                 "___", "(ILjava/lang/Class;)V", false));
         instructions.add(new LdcInsnNode(Type.getObjectType(context.clazz.getClassNode().name)));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,

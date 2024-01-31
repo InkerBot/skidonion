@@ -3,6 +3,8 @@ package tech.skidonion.obfuscator.transformer.impl;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import tech.skidonion.obfuscator.PhantomShield;
@@ -21,6 +23,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Sni
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.MainSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
+import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -34,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,13 +71,12 @@ public class NativeObfuscation extends Transformer {
         cachedMethods = new NodeCache<>("(cmethods[%d])");
         cachedFields = new NodeCache<>("(cfields[%d])");
         methodProcessor = new MethodProcessor(this);
+        nativeDir = "skidonion/" + RandomUtils.getRandomLetters(8);
     }
 
 
     @Override
     public void transform() throws Exception {
-        this.init();
-
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getAsJsonPrimitive("output").getAsString()).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
@@ -93,9 +96,7 @@ public class NativeObfuscation extends Transformer {
 
         MainSourceBuilder mainSourceBuilder = new MainSourceBuilder();
 
-
-        nativeDir = "skidonion/" + RandomUtils.getRandomLetters(8);
-        hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/hidden");
+        hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/___");
 
         Integer[] classIndexReference = new Integer[]{0};
 
@@ -217,59 +218,41 @@ public class NativeObfuscation extends Transformer {
             }
         }
 
-        // TODO: inject loader
-
-//        String loaderClassName = nativeDir + "/Loader";
-//
-//        ClassNode loaderClass;
-//
-//        if (plainLibName == null) {
-//            ClassReader loaderClassReader = new ClassReader(Objects.requireNonNull(NativeObfuscator.class
-//                    .getResourceAsStream("compiletime/LoaderUnpack.class")));
-//            loaderClass = new ClassNode(Opcodes.ASM9);
-//            loaderClassReader.accept(loaderClass, 0);
-//            loaderClass.sourceFile = "synthetic";
-//            System.out.println("/" + nativeDir + "/");
-//        } else {
-//            ClassReader loaderClassReader = new ClassReader(Objects.requireNonNull(NativeObfuscator.class
-//                    .getResourceAsStream("compiletime/LoaderPlain.class")));
-//            loaderClass = new ClassNode(Opcodes.ASM9);
-//            loaderClassReader.accept(loaderClass, 0);
-//            loaderClass.sourceFile = "synthetic";
-//            loaderClass.methods.forEach(method -> {
-//                for (int i = 0; i < method.instructions.size(); i++) {
-//                    AbstractInsnNode insnNode = method.instructions.get(i);
-//                    if (insnNode instanceof LdcInsnNode && ((LdcInsnNode) insnNode).cst instanceof String &&
-//                            ((LdcInsnNode) insnNode).cst.equals("%LIB_NAME%")) {
-//                        ((LdcInsnNode) insnNode).cst = plainLibName;
-//                    }
-//                }
-//            });
-//        }
-//
-//        ClassNode resultLoaderClass = new ClassNode(Opcodes.ASM9);
-//        String originalLoaderClassName = loaderClass.name;
-//        loaderClass.accept(new ClassRemapper(resultLoaderClass, new Remapper() {
-//            @Override
-//            public String map(String internalName) {
-//                return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
-//            }
-//        }));
-//
-//        ClassWriter classWriter = new SafeClassWriter(metadataReader, Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-//        resultLoaderClass.accept(classWriter);
-//        Util.writeEntry(out, loaderClassName + ".class", classWriter.toByteArray());
 
         Files.write(cppDir.resolve("string_pool.cpp"), stringPool.build().getBytes(StandardCharsets.UTF_8));
 
         Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId)
                 .getBytes(StandardCharsets.UTF_8));
 
+
+        if (!print_instructions.isEnable()) {
+            FileUtils.clearDirectory(cppDir);
+        }
     }
 
     @Override
     public void preprocess() throws Exception {
+        this.init();
 
+        String loaderClassName = nativeDir + "/___";
+
+        ClassNode loaderClass;
+
+        List<ClassNode> classNodes = ASMUtils.readClassesWithInputStream("/binaries/phantomshield-loader.bin");
+        if (classNodes.size() != 1) throw new RuntimeException("impossible loader class member size");
+
+        loaderClass = classNodes.get(0);
+        loaderClass.sourceFile = "synthetic";
+
+        ClassNode resultLoaderClass = new ClassNode(Opcodes.ASM9);
+        String originalLoaderClassName = loaderClass.name;
+        loaderClass.accept(new ClassRemapper(resultLoaderClass, new Remapper() {
+            @Override
+            public String map(String internalName) {
+                return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
+            }
+        }));
+        injectClassAsResource(Collections.singletonList(resultLoaderClass));
     }
 
     public Snippets getSnippets() {
