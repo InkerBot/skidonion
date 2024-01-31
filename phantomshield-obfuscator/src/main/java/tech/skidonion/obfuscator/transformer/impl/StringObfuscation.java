@@ -24,7 +24,7 @@ public class StringObfuscation extends Transformer {
 
 
     public StringObfuscation(String name) {
-        super(name,true); //TODO: 改成false，现在是测试我几把看不懂你写的什么飞机怎么添加还是什么牛子变形金刚，适配配置
+        super(name, false);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class StringObfuscation extends Transformer {
 
         getFilteredClasses().forEach(cw -> {
             ClassNode classNode = cw.getClassNode();
-            if(isInterfaceClass(classNode)) return;
+            if (isInterfaceClass(classNode)) return;
             String[] strings = new String[65535];
             int numStrings = 0;
             String decryptorMethodName = generate(index++);
@@ -69,7 +69,7 @@ public class StringObfuscation extends Transformer {
 
                 //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field
                 int randomDummy = new Random().nextInt(10);
-                for(int i = 0;i < randomDummy;i++){
+                for (int i = 0; i < randomDummy; i++) {
                     classNode.fields.add(new FieldNode(ACC_STATIC, generate(index++), "Ljava/lang/Object;", "", null));
                 }
                 MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
@@ -88,6 +88,7 @@ public class StringObfuscation extends Transformer {
             }
         });
     }
+
     private boolean isInterfaceClass(ClassNode node) {
         return (node.access & 0x200) != 0;
     }

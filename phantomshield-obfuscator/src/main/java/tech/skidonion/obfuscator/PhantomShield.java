@@ -11,16 +11,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
-import tech.skidonion.obfuscator.checksum.AntiTamperWriter;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -87,13 +86,14 @@ public class PhantomShield {
             JsonPrimitive creationDate = config.getAsJsonPrimitive("creation_date");
             long timestamp = creationDate != null ? formatter.parse(creationDate.getAsString()).getTime() : -1;
 
-            ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(output));
-            AntiTamperWriter atw = new AntiTamperWriter(zos);
+            ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
             classes.values().forEach(classWrapper -> {
                 try {
                     ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
                     entry.setTime(timestamp);
-                    atw.write(entry, classWrapper.toByteArray(this));
+                    zos.putNextEntry(entry);
+                    zos.write(classWrapper.toByteArray(this));
+                    zos.closeEntry();
                 } catch (IOException ioe) {
                     LOGGER.error(String.format("Error writing class %s. Skipping.", classWrapper.getName() + ".class"));
                     ioe.printStackTrace();
@@ -103,13 +103,16 @@ public class PhantomShield {
             resources.forEach((name, bytes) -> {
                 try {
                     ZipEntry entry = new ZipEntry(name);
-                    atw.write(entry, bytes);
+                    zos.putNextEntry(entry);
+                    zos.write(bytes);
+                    zos.closeEntry();
                 } catch (IOException ioe) {
                     LOGGER.error(String.format("Error writing resource %s. Skipping.", name));
                     ioe.printStackTrace();
                 }
             });
-            atw.close(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
+            zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
+            zos.close();
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException();

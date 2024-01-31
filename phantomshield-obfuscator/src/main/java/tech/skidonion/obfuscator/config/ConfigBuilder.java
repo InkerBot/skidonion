@@ -7,21 +7,32 @@ import java.io.File;
 import java.util.*;
 
 public class ConfigBuilder {
+
+    // attributions
     private File inputJar;
     private File outputJar;
     private String creationDate;
     private final List<String> libraries = new ArrayList<>();
     private final List<String> filters = new ArrayList<>();
+
+    // sub filters
     private final Map<String, List<String>> sub_filters = new HashMap<>();
+
+    // ======= transformers settings =======
+
+    // string obfuscation
+    private boolean stringObfuscation = false;
+
+    // native obfuscation
+    private boolean nativeObfuscation = false;
+    private boolean printInstructions = false;
+
     private String modeInvokeDynamicNativeConverter = "compatibility";
 
     public Config build() {
-        if (inputJar == null || outputJar == null) {
-            throw new IllegalStateException("Input jar and output directory must be set");
-        }
         Config config = new Config();
-        config.add("input", inputJar.getAbsoluteFile().toString());
-        config.add("output", outputJar.getAbsoluteFile().toString());
+        config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
+        config.add("output", Objects.requireNonNull(outputJar, "output is null").getAbsoluteFile().toString());
 
         if (creationDate != null) {
             config.add("creation_date", creationDate);
@@ -39,19 +50,41 @@ public class ConfigBuilder {
             config.add("filters", array);
         }
 
+        // 处理变压器的方法
         native_obfuscation:
         {
+            // 如果不开启则直接跳过代码块
+            if (!nativeObfuscation) break native_obfuscation;
+            // 生成一个子json对象
             JsonObject native_obfuscation = new JsonObject();
 
+            // 添加 settings
             native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
+            native_obfuscation.addProperty("print_instructions", printInstructions);
 
+            // 添加 过滤器
             sub_filters.computeIfPresent("native_obfuscation", (k, v) -> {
                 JsonArray array = new JsonArray();
                 v.forEach(array::add);
                 native_obfuscation.add("filters", array);
                 return v;
             });
+            // 加入父对象
             config.add("native_obfuscation", native_obfuscation);
+        }
+
+        string_obfuscation:
+        {
+            if (!stringObfuscation) break string_obfuscation;
+            JsonObject string_obfuscation = new JsonObject();
+
+            sub_filters.computeIfPresent("string_obfuscation", (k, v) -> {
+                JsonArray array = new JsonArray();
+                v.forEach(array::add);
+                string_obfuscation.add("filters", array);
+                return v;
+            });
+            config.add("string_obfuscation", string_obfuscation);
         }
 
         return config;
@@ -69,6 +102,21 @@ public class ConfigBuilder {
 
     public ConfigBuilder setModeInvokeDynamicNativeConverter(String modeInvokeDynamicNativeConverter) {
         this.modeInvokeDynamicNativeConverter = modeInvokeDynamicNativeConverter;
+        return this;
+    }
+
+    public ConfigBuilder setPrintInstructions(boolean printInstructions) {
+        this.printInstructions = printInstructions;
+        return this;
+    }
+
+    public ConfigBuilder setNativeObfuscation(boolean nativeObfuscation) {
+        this.nativeObfuscation = nativeObfuscation;
+        return this;
+    }
+
+    public ConfigBuilder setStringObfuscation(boolean stringObfuscation) {
+        this.stringObfuscation = stringObfuscation;
         return this;
     }
 

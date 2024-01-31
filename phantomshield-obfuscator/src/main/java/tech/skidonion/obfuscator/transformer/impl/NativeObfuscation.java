@@ -24,6 +24,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.Strin
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
+import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.io.BufferedWriter;
@@ -37,11 +38,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NativeObfuscation extends Transformer {
+
+    private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ModeValue invokedynamic_mode = new ModeValue("invokedynamic_mode", "compatibility", "compatibility", "enhancement");
 
     public NativeObfuscation(String name) {
-        super(name, true);
-        addSettings(invokedynamic_mode);
+        super(name, false);
+        addSettings(print_instructions, invokedynamic_mode);
     }
 
     private Snippets snippets;
@@ -71,9 +74,7 @@ public class NativeObfuscation extends Transformer {
     public void transform() throws Exception {
         this.init();
 
-
-//        Path cppDir = Files.createTempDirectory(null);
-        Path cppDir = new File("output").toPath();
+        Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getAsJsonPrimitive("output").getAsString()).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
 
