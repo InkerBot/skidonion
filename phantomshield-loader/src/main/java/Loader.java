@@ -1,12 +1,10 @@
-package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.compiletime;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class LoaderUnpack {
-    public static native void registerNativesForClass(int index, Class<?> clazz);
+public class Loader {
+    public static native void ___(int index, Class<?> clazz);
 
     static {
         String osName = System.getProperty("os.name").toLowerCase();
@@ -43,7 +41,7 @@ public class LoaderUnpack {
             osTypeName = "raw" + osName;
         }
 
-        String libFileName = String.format("/%s/%s-%s", LoaderUnpack.class.getName().split("\\.")[0], platformTypeName, osTypeName);
+        String libFileName = String.format("/%s/%s-%s", Loader.class.getName().split("\\.")[0], platformTypeName, osTypeName);
 
         File libFile;
         try {
@@ -57,7 +55,7 @@ public class LoaderUnpack {
         }
         byte[] arrayOfByte = new byte[2048];
         try {
-            InputStream inputStream = LoaderUnpack.class.getResourceAsStream(libFileName);
+            InputStream inputStream = Loader.class.getResourceAsStream(libFileName);
             if (inputStream == null) {
                 throw new UnsatisfiedLinkError(String.format("Failed to open lib file: %s", libFileName));
             }

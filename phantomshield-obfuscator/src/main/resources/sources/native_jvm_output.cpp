@@ -26,7 +26,7 @@ $register_code
         if (env->ExceptionCheck())
             return;
 
-        char method_name[] = "registerNativesForClass";
+        char method_name[] = "___";
         char method_desc[] = "(ILjava/lang/Class;)V";
         JNINativeMethod loader_methods[] = {
             { (char *) method_name, (char *) method_desc, (void *)&register_for_class }

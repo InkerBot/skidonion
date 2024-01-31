@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
@@ -10,10 +11,7 @@ import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.filter.Filter;
 import tech.skidonion.obfuscator.value.Value;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public abstract class Transformer implements Opcodes {
@@ -22,7 +20,7 @@ public abstract class Transformer implements Opcodes {
     private final String name;
     private boolean enabled;
     private Filter filter;
-    private List<Value<?>> settings = new ArrayList<>();
+    private final List<Value<?>> settings = new ArrayList<>();
 
     public Transformer(String name) {
         this(name, false);
@@ -67,7 +65,7 @@ public abstract class Transformer implements Opcodes {
         }
     }
 
-    public Value[] getSettings() {
+    public Value<?>[] getSettings() {
         return settings.toArray(new Value[0]);
     }
 
@@ -109,6 +107,32 @@ public abstract class Transformer implements Opcodes {
 
     protected final Stream<ClassWrapper> getFilteredClasses() {
         return getClassWrappers().stream().filter(this::match);
+    }
+
+    public final void include(String expression) {
+        if (filter == null) return;
+        if (Objects.requireNonNull(expression).startsWith("-"))
+            throw new RuntimeException("Expression Must be a Include Type");
+        else if (!expression.startsWith("+")) expression += "+";
+        filter.accept(expression);
+    }
+
+    public final void include(ClassWrapper cw) {
+        if (filter == null) return;
+        StringBuilder sb = new StringBuilder("+");
+
+        if (cw.getOriginalAnnotations() != null)
+            for (AnnotationNode s : cw.getOriginalAnnotations())
+                sb.append('@').append(s.desc, 1, s.desc.length() - 1).append(' ');
+        if (cw.getOriginalName() != null) sb.append(cw.getOriginalName());
+        if (cw.getOriginalSuperName() != null) sb.append(" extends ").append(cw.getOriginalSuperName());
+        if (cw.getOriginalInterfaces() != null)
+            for (String s : cw.getOriginalInterfaces()) sb.append(" implements ").append(s);
+        filter.accept(sb.toString());
+        sb.append(" * *");
+        filter.accept(sb.toString());
+        sb.append("(*)");
+        filter.accept(sb.toString());
     }
 
     protected final Map<String, ClassWrapper> getClasses() {

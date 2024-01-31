@@ -1,12 +1,16 @@
 package tech.skidonion.obfuscator.utils;
 
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Bytecode utilities for bytecode instructions.
@@ -274,6 +278,32 @@ public class ASMUtils {
                 return new InsnNode(Opcodes.ACONST_NULL);
             default:
                 throw new AssertionError();
+        }
+    }
+
+
+    public static List<ClassNode> readClassesWithInputStream(String path) {
+        try {
+            InputStream stream = ASMUtils.class.getClassLoader().getResourceAsStream(path);
+            List<ClassNode> list = new ArrayList<>();
+            ZipInputStream zip = new ZipInputStream(Objects.requireNonNull(stream));
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    int n;
+                    byte[] bytes = new byte[4096];
+                    while ((n = zip.read(bytes)) != -1) {
+                        baos.write(bytes, 0, n);
+                    }
+                    ClassNode cn = new ClassNode();
+                    new ClassReader(baos.toByteArray()).accept(cn, 0);
+                    list.add(cn);
+                }
+            }
+            return list;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -26,6 +26,10 @@ public class TransformerRegister {
         this.instances.put(instance.getName(), instance);
     }
 
+    public Transformer get(String name) {
+        return instances.get(name);
+    }
+
     public void parseConfig(Config config) {
         Filter filter = null;
         JsonArray filters = config.getAsJsonArray("filters");
