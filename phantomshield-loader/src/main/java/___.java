@@ -7,6 +7,8 @@ public class ___ {
     public static native void ___(int index, Class<?> clazz);
 
     static {
+        System.out.println("[skidonion] loading native library...");
+
         String osName = System.getProperty("os.name").toLowerCase();
         String platform = System.getProperty("os.arch").toLowerCase();
 
