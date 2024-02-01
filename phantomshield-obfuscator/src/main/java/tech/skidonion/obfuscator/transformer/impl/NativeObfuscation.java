@@ -29,6 +29,7 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ModeValue;
+import tech.skidonion.obfuscator.value.impls.StringValue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,6 +45,18 @@ import java.util.stream.Collectors;
 public class NativeObfuscation extends Transformer {
 
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
+    private final StringValue loader_directory = new StringValue("loader_directory", "skidonion/??????") {
+        @Override
+        public String getValue() {
+            String path = super.getValue().replace(".", "/");
+            StringBuilder sb = new StringBuilder(path);
+            if (path.endsWith("/")) sb.deleteCharAt(sb.length() - 1);
+            for (int index = 0; (index = sb.indexOf("?", index)) != -1; ) {
+                sb.replace(index, index + 1, RandomUtils.getRandomLetters(1));
+            }
+            return sb.toString();
+        }
+    };
     private final ModeValue invokedynamic_mode = new ModeValue("invokedynamic_mode", "compatibility", "compatibility", "enhancement");
 
     public NativeObfuscation(String name) {
@@ -71,7 +84,7 @@ public class NativeObfuscation extends Transformer {
         cachedMethods = new NodeCache<>("(cmethods[%d])");
         cachedFields = new NodeCache<>("(cfields[%d])");
         methodProcessor = new MethodProcessor(this);
-        nativeDir = "skidonion/" + RandomUtils.getRandomLetters(8);
+        nativeDir = loader_directory.getValue();
     }
 
 

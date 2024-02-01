@@ -25,6 +25,7 @@ public class ConfigBuilder {
 
     // native obfuscation
     private boolean nativeObfuscation = false;
+    private String loaderDirectory = "skidonion/??????";
     private boolean printInstructions = false;
 
     private String modeInvokeDynamicNativeConverter = "compatibility";
@@ -60,6 +61,7 @@ public class ConfigBuilder {
 
             // 添加 settings
             native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
+            native_obfuscation.addProperty("loader_directory", loaderDirectory);
             native_obfuscation.addProperty("print_instructions", printInstructions);
 
             // 添加 过滤器
@@ -98,6 +100,10 @@ public class ConfigBuilder {
     public ConfigBuilder setOutputJar(File outputJar) {
         this.outputJar = outputJar;
         return this;
+    }
+
+    public void setLoaderDirectory(String loaderDirectory) {
+        this.loaderDirectory = loaderDirectory;
     }
 
     public ConfigBuilder setModeInvokeDynamicNativeConverter(String modeInvokeDynamicNativeConverter) {

@@ -59,7 +59,7 @@ class DummyTransformer extends Transformer {
   "dummy_transformer": {
     "dummy_setting": true,
     "filter": [
-      "+top/fl0wowp4rty/phantomshield/**"
+      "+top.fl0wowp4rty.phantomshield.**"
     ]
   }
 }

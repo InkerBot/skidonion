@@ -118,3 +118,4 @@ hs_err_pid*
 /phantomshield-obfuscator/libs/
 /test/output/
 /output/
+/phantomshield-obfuscator/src/main/resources/binaries/
