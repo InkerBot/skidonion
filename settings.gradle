@@ -1,4 +1,3 @@
 include 'phantomshield-obfuscator'
 include 'phantomshield-annotations'
 include 'phantomshield-loader'
-

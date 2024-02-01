@@ -39,6 +39,8 @@ jar {
     ])
 }
 
+processResources.dependsOn(':phantomshield-loader:copyToObfuscator')
+
 task copyDenpendecies(type: Copy) {
     from configurations.runtimeClasspath
     into 'libs'
