@@ -252,7 +252,7 @@ public class NativeObfuscation extends Transformer {
                 return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
             }
         }));
-        injectClassAsResource(Collections.singletonList(resultLoaderClass));
+        injectClassesAsResource(Collections.singletonList(resultLoaderClass));
     }
 
     public Snippets getSnippets() {

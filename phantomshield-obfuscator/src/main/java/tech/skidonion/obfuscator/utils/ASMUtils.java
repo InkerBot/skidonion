@@ -5,7 +5,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -288,14 +287,8 @@ public class ASMUtils {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    int n;
-                    byte[] bytes = new byte[4096];
-                    while ((n = zip.read(bytes)) != -1) {
-                        baos.write(bytes, 0, n);
-                    }
                     ClassNode cn = new ClassNode();
-                    new ClassReader(baos.toByteArray()).accept(cn, 0);
+                    new ClassReader(IOUtils.toByteArray(zip)).accept(cn, 0);
                     list.add(cn);
                 }
             }

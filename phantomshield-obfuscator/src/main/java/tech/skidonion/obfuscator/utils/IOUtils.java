@@ -2,11 +2,13 @@ package tech.skidonion.obfuscator.utils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * IO utilities.
@@ -62,18 +64,19 @@ public class IOUtils {
         }
     }
 
-
-    public static void writeEntry(JarFile f, ZipOutputStream out, JarEntry e) throws IOException {
-        out.putNextEntry(new JarEntry(e.getName()));
-        try (InputStream in = f.getInputStream(e)) {
-            transfer(in, out);
+    public static Map<String, byte[]> readJarResources(String path) {
+        try (InputStream stream = ASMUtils.class.getResourceAsStream(path); ZipInputStream zip = new ZipInputStream(Objects.requireNonNull(stream));) {
+            Map<String, byte[]> map = new HashMap<>();
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (!entry.isDirectory() && !entry.getName().endsWith(".class")) {
+                    map.put(entry.getName(), IOUtils.toByteArray(zip));
+                }
+            }
+            return map;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        out.closeEntry();
     }
 
-    public static void writeEntry(ZipOutputStream out, String entryName, byte[] data) throws IOException {
-        out.putNextEntry(new JarEntry(entryName));
-        out.write(data, 0, data.length);
-        out.closeEntry();
-    }
 }

@@ -40,19 +40,23 @@ public abstract class Transformer implements Opcodes {
 
     public abstract void preprocess() throws Exception;
 
-    protected void injectClass(Collection<ClassNode> classNodes) {
+    protected final void injectClasses(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
         }
     }
 
-    protected void injectClassAsResource(Collection<ClassNode> classNodes) {
+    protected final void injectClassesAsResource(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWriter cw = new ClassWriter(0);
             classNode.accept(cw);
             obfuscator.resources.put(classNode.name + ".class", cw.toByteArray());
         }
+    }
+
+    protected final void injectResources(Map<String, byte[]> resources) {
+        obfuscator.resources.putAll(resources);
     }
 
     protected void addSetting(Value<?> setting) {
