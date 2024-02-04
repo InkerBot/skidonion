@@ -43,7 +43,7 @@ public class ___ {
             osTypeName = "raw" + osName;
         }
 
-        String libFileName = String.format("/%s/%s-%s", ___.class.getName().split("\\.")[0], platformTypeName, osTypeName);
+        String libFileName = String.format("/%s/%s-%s", ___.class.getPackage().getName().replace(".", "/"), platformTypeName, osTypeName);
 
         File libFile;
         try {

@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.config.Config;
+import tech.skidonion.obfuscator.cpp.CompilerUpdater;
+import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
@@ -24,6 +26,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -32,11 +36,14 @@ import java.util.zip.ZipOutputStream;
 public class PhantomShield {
     public static final String VERSION = "0.0.1";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
+    public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new HashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private final Config config;
+
+    private CppCompiler compiler;
 
     public PhantomShield(File file) throws IOException {
         this(Config.readConfig(file));
@@ -46,21 +53,25 @@ public class PhantomShield {
         this.config = config;
     }
 
-    public static void INFO(String message, Object... arguments) {
-        LOGGER.info(message, arguments);
-    }
-
-    public static void INFO(String message, Object argument) {
-        LOGGER.info(message, argument);
-    }
-
-    public static void INFO(String message) {
-        LOGGER.info(message);
-    }
 
     public void process() {
         LOGGER.info("Java Home: {}", System.getProperty("java.home"));
         LOGGER.info("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
+
+        if (config.has("cpp_compiler")) {
+            compiler = new CppCompiler(config.getAsJsonPrimitive("cpp_compiler").getAsString());
+        } else {
+            compiler = new CppCompiler(CompilerUpdater.DEFAULT_COMPILER);
+        }
+        compiler.init(this);
+        if (config.has("cpp_compiler_arguments"))
+            compiler.setExtraCommandLine(config.getAsJsonPrimitive("cpp_compiler_arguments").getAsString());
+        if (config.has("cpp_compiler_output"))
+            compiler.setDefaultOutput(config.getAsJsonPrimitive("cpp_compiler_output").getAsString());
+        if (config.has("targets")) {
+            JsonArray targets = config.getAsJsonArray("targets");
+            targets.forEach(jsonElement -> compiler.addTarget(jsonElement.getAsString()));
+        }
 
         loadClassPath();
         loadInput();
@@ -224,6 +235,10 @@ public class PhantomShield {
         return config;
     }
 
+    public CppCompiler getCompiler() {
+        return compiler;
+    }
+
     /**
      * Equivalent to the following:
      * Class clazz1 = something;
@@ -306,5 +321,50 @@ public class PhantomShield {
 
         if (sub != null)
             hierarchy.get(wrapper.getName()).getSubClasses().add(sub.getName());
+    }
+
+
+    public static void INFO(String message, Object... arguments) {
+        LOGGER.info(message, arguments);
+    }
+
+    public static void INFO(String message, Object argument) {
+        LOGGER.info(message, argument);
+    }
+
+    public static void INFO(String message) {
+        LOGGER.info(message);
+    }
+
+    public static void WARN(String s) {
+        LOGGER.warn(s);
+    }
+
+    public static void WARN(String s, Object o) {
+        LOGGER.warn(s, o);
+    }
+
+    public static void WARN(String s, Object... objects) {
+        LOGGER.warn(s, objects);
+    }
+
+    public static void WARN(String s, Throwable throwable) {
+        LOGGER.warn(s, throwable);
+    }
+
+    public static void ERROR(String s) {
+        LOGGER.error(s);
+    }
+
+    public static void ERROR(String s, Object o) {
+        LOGGER.error(s, o);
+    }
+
+    public static void ERROR(String s, Object... objects) {
+        LOGGER.error(s, objects);
+    }
+
+    public static void ERROR(String s, Throwable throwable) {
+        LOGGER.error(s, throwable);
     }
 }

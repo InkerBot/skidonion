@@ -12,6 +12,10 @@ public class ConfigBuilder {
     private File inputJar;
     private File outputJar;
     private String creationDate;
+    private String cppCompiler;
+    private String cppCompilerArguments;
+    private String cppCompilerOutput;
+    private final List<String> targets = new ArrayList<>();
     private final List<String> libraries = new ArrayList<>();
     private final List<String> filters = new ArrayList<>();
 
@@ -27,7 +31,6 @@ public class ConfigBuilder {
     private boolean nativeObfuscation = false;
     private String loaderDirectory = "skidonion/??????";
     private boolean printInstructions = false;
-
     private String modeInvokeDynamicNativeConverter = "compatibility";
 
     public Config build() {
@@ -37,6 +40,24 @@ public class ConfigBuilder {
 
         if (creationDate != null) {
             config.add("creation_date", creationDate);
+        }
+
+        if (cppCompiler != null) {
+            config.add("cpp_compiler", cppCompiler);
+        }
+
+        if (cppCompilerArguments != null) {
+            config.add("cpp_compiler_arguments", cppCompilerArguments);
+        }
+
+        if (cppCompilerOutput != null) {
+            config.add("cpp_compiler_output", cppCompilerOutput);
+        }
+
+        if (!targets.isEmpty()) {
+            JsonArray array = new JsonArray();
+            targets.forEach(array::add);
+            config.add("targets", array);
         }
 
         if (!libraries.isEmpty()) {
@@ -173,4 +194,28 @@ public class ConfigBuilder {
         return this;
     }
 
+    public ConfigBuilder addTarget(String target) {
+        this.targets.add(target);
+        return this;
+    }
+
+    public ConfigBuilder addTargets(String... targets) {
+        this.targets.addAll(Arrays.asList(targets));
+        return this;
+    }
+
+    public ConfigBuilder setCppCompiler(String cppCompiler) {
+        this.cppCompiler = cppCompiler;
+        return this;
+    }
+
+    public ConfigBuilder setCppCompilerArguments(String cppCompilerArguments) {
+        this.cppCompilerArguments = cppCompilerArguments;
+        return this;
+    }
+
+    public ConfigBuilder setCppCompilerOutput(String cppCompilerOutput) {
+        this.cppCompilerOutput = cppCompilerOutput;
+        return this;
+    }
 }

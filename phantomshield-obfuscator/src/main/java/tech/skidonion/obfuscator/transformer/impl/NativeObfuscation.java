@@ -42,6 +42,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+
 public class NativeObfuscation extends Transformer {
 
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
@@ -93,11 +95,17 @@ public class NativeObfuscation extends Transformer {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getAsJsonPrimitive("output").getAsString()).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
+        obfuscator.getCompiler().setOutputDir(cppDir.toFile());
 
+        FileUtils.copyResource("sources/jni.h", cppDir);
+        FileUtils.copyResource("sources/jni_md.h", cppDir);
         FileUtils.copyResource("sources/native_jvm.cpp", cppDir);
         FileUtils.copyResource("sources/native_jvm.hpp", cppDir);
         FileUtils.copyResource("sources/native_jvm_output.hpp", cppDir);
         FileUtils.copyResource("sources/string_pool.hpp", cppDir);
+        obfuscator.getCompiler().addCppFile(cppDir.resolve("native_jvm.cpp").toAbsolutePath().toString());
+        obfuscator.getCompiler().addCppFile(cppDir.resolve("string_pool.cpp").toAbsolutePath().toString());
+        obfuscator.getCompiler().addCppFile(cppDir.resolve("native_jvm_output.cpp").toAbsolutePath().toString());
 
 //        CMakeFilesBuilder cMakeBuilder = new CMakeFilesBuilder(projectName);
 //        cMakeBuilder.addMainFile("native_jvm.hpp");
@@ -131,13 +139,14 @@ public class NativeObfuscation extends Transformer {
                 ClassReader computedReader = new ClassReader(computedWriter.toByteArray());
                 ClassNode computedClassNode = new ClassNode(Opcodes.ASM9);
                 computedReader.accept(computedClassNode, 0);
-                cw.setClassNode(computedClassNode);
-
 
                 if (computedClassNode.methods.stream().noneMatch(x -> x.name.equals("<clinit>"))) {
                     computedClassNode.methods.add(new MethodNode(Opcodes.ASM9, Opcodes.ACC_STATIC,
                             "<clinit>", "()V", null, new String[0]));
                 }
+
+                cw.setClassNode(computedClassNode);
+
 
                 cachedStrings.clear();
                 cachedClasses.clear();
@@ -146,6 +155,7 @@ public class NativeObfuscation extends Transformer {
 
                 try (ClassSourceBuilder cppBuilder =
                              new ClassSourceBuilder(cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
+                    obfuscator.getCompiler().addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
                     StringBuilder instructions = new StringBuilder();
 
 
@@ -185,7 +195,7 @@ public class NativeObfuscation extends Transformer {
 
                 currentClassId++;
             } catch (IOException ex) {
-                PhantomShield.LOGGER.error("Error while processing {}", cw.getOriginalName(), ex);
+                ERROR("Error while processing {}", cw.getOriginalName(), ex);
             }
 
         });
@@ -218,7 +228,9 @@ public class NativeObfuscation extends Transformer {
                 hppWriter.append("#endif\n");
             }
 
-            try (BufferedWriter cppWriter = Files.newBufferedWriter(cppOutput.resolve(hiddenClassFileName + ".cpp"))) {
+            Path cppPath = cppOutput.resolve(hiddenClassFileName + ".cpp");
+            try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
+                obfuscator.getCompiler().addCppFile(cppPath.toAbsolutePath().toString());
                 cppWriter.append("#include \"").append(hiddenClassFileName).append(".hpp\"\n\n");
                 cppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
                 cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
@@ -237,6 +249,8 @@ public class NativeObfuscation extends Transformer {
         Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId)
                 .getBytes(StandardCharsets.UTF_8));
 
+
+        obfuscator.getCompiler().compile(StringUtils.createMap("loader_path", nativeDir));
 
         if (!print_instructions.isEnable()) {
             FileUtils.clearDirectory(cppDir);

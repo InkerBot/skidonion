@@ -23,14 +23,7 @@ public class IOUtils {
     public static byte[] toByteArray(InputStream in) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            while (in.available() > 0) {
-                int data = in.read(buffer);
-                out.write(buffer, 0, data);
-            }
-
-            in.close();
-            out.close();
+            transfer(in, out);
             return out.toByteArray();
         } catch (IOException ioe) {
             ioe.printStackTrace();

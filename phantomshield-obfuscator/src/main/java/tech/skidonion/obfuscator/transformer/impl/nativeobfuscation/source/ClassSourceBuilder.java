@@ -152,6 +152,10 @@ public class ClassSourceBuilder implements AutoCloseable {
         return cppFile.getFileName().toString();
     }
 
+    public Path getCppFile() {
+        return cppFile;
+    }
+
     @Override
     public void close() throws IOException {
         try {
