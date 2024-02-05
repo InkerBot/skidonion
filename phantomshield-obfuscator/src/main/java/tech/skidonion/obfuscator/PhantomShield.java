@@ -55,8 +55,8 @@ public class PhantomShield {
 
 
     public void process() {
-        LOGGER.info("Java Home: {}", System.getProperty("java.home"));
-        LOGGER.info("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
+        INFO("Java Home: {}", System.getProperty("java.home"));
+        INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
 
         if (config.has("cpp_compiler")) {
             compiler = new CppCompiler(config.getAsJsonPrimitive("cpp_compiler").getAsString());
