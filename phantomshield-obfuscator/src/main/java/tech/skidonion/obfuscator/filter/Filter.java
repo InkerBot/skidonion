@@ -36,9 +36,9 @@ public class Filter {
         boolean flag = !patterns.getFirst().isInclude();
         for (Pattern pattern : patterns) {
             if (flag == pattern.isInclude()) continue;
-            if (pattern.match(expression, flag)) {
+            Pattern.MatchResult result = pattern.match(expression, flag);
+            if (result.isTypeMatch() && result.isMatch())
                 flag = pattern.isInclude();
-            }
         }
         return (parent == null || parent.match(expression)) && flag;
     }
@@ -47,9 +47,9 @@ public class Filter {
         boolean flag = !patterns.getFirst().isInclude();
         for (Pattern pattern : patterns) {
             if (flag == pattern.isInclude()) continue;
-            if (pattern.match(method, flag)) {
+            Pattern.MatchResult result = pattern.match(method, flag);
+            if (result.isTypeMatch() && result.isMatch())
                 flag = pattern.isInclude();
-            }
         }
         return (parent == null || parent.match(method)) && flag;
     }
@@ -58,9 +58,9 @@ public class Filter {
         boolean flag = !patterns.getFirst().isInclude();
         for (Pattern pattern : patterns) {
             if (flag == pattern.isInclude()) continue;
-            if (pattern.match(field, flag)) {
+            Pattern.MatchResult result = pattern.match(field, flag);
+            if (result.isTypeMatch() && result.isMatch())
                 flag = pattern.isInclude();
-            }
         }
         return (parent == null || parent.match(field)) && flag;
     }
@@ -69,9 +69,9 @@ public class Filter {
         boolean flag = !patterns.getFirst().isInclude();
         for (Pattern pattern : patterns) {
             if (flag == pattern.isInclude()) continue;
-            if (pattern.match(clazz, flag)) {
+            Pattern.MatchResult result = pattern.match(clazz, flag);
+            if (result.isTypeMatch() && result.isMatch())
                 flag = pattern.isInclude();
-            }
         }
         return (parent == null || parent.match(clazz)) && flag;
     }
