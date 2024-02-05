@@ -64,9 +64,9 @@ public class CppCompiler {
             }
             List<Future<Integer>> futures = new ArrayList<>();
             for (final String target : targets) {
-                final File logfile = new File("compile_" + target + "_" + RandomUtils.getRandomLetters(8) + ".log");
+                final File logfile = new File("logs", "compile_" + target + "_" + RandomUtils.getRandomLetters(8) + ".log");
                 INFO("compiling with target: " + target + "...\nlog file: " + logfile);
-                futures.add(PhantomShield.EXECUTOR.submit(() -> startProcess(makeCompileCommandLine(target), logfile)));
+                futures.add(PhantomShield.EXECUTOR.submit(() -> startProcess(makeCompileCommandLine(target), logfile.getAbsoluteFile())));
             }
             futures.forEach(f -> {
                 try {
@@ -76,7 +76,8 @@ public class CppCompiler {
                 }
             });
         } else {
-            final File logfile = new File("compile_" + RandomUtils.getRandomLetters(8) + ".log");
+            final File logfile = new File("logs/compile_" + RandomUtils.getRandomLetters(8) + ".log");
+            if (!logfile.getParentFile().exists()) logfile.getParentFile().mkdirs();
             INFO("compiling with default target...\nlog file: " + logfile);
             try {
                 PhantomShield.EXECUTOR.submit(() -> startProcess(makeCompileCommandLine(null), logfile)).get();
