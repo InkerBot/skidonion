@@ -21,7 +21,7 @@ public class Main {
         boolean showVersion = false;
         @CommandLine.Option(names = {"-u", "--update-compiler"}, description = "update jni library compiler")
         boolean update = false;
-        @CommandLine.Option(names = {"-c", "--config"}, description = "input config file")
+        @CommandLine.Option(paramLabel = "<config file>", names = {"-c", "--config"}, description = "input config file")
         File config;
 
         @Override
