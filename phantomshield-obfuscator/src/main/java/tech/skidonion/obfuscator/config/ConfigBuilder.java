@@ -123,8 +123,9 @@ public class ConfigBuilder {
         return this;
     }
 
-    public void setLoaderDirectory(String loaderDirectory) {
+    public ConfigBuilder setLoaderDirectory(String loaderDirectory) {
         this.loaderDirectory = loaderDirectory;
+        return this;
     }
 
     public ConfigBuilder setModeInvokeDynamicNativeConverter(String modeInvokeDynamicNativeConverter) {
