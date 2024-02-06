@@ -430,4 +430,8 @@ public class StringObfuscation extends Transformer {
     public void preprocess() throws Exception {
 
     }
+    @Override
+    public String annotation() {
+        return null;
+    }
 }

@@ -9,6 +9,7 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.filter.Filter;
+import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
@@ -39,6 +40,11 @@ public abstract class Transformer implements Opcodes {
     public abstract void transform() throws Exception;
 
     public abstract void preprocess() throws Exception;
+
+    /*
+     * nullable
+     * */
+    public abstract String annotation();
 
     protected final void injectClasses(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
@@ -95,16 +101,19 @@ public abstract class Transformer implements Opcodes {
     }
 
     protected boolean match(MethodWrapper method) {
+        if (hasAnnotation(method)) return matchAnnotation(method);
         if (filter == null) return true;
         return filter.match(method);
     }
 
     protected boolean match(FieldWrapper field) {
+        if (hasAnnotation(field)) return matchAnnotation(field);
         if (filter == null) return true;
         return filter.match(field);
     }
 
     protected boolean match(ClassWrapper clazz) {
+        if (hasAnnotation(clazz)) return matchAnnotation(clazz);
         if (filter == null) return true;
         return filter.match(clazz);
     }
@@ -155,4 +164,54 @@ public abstract class Transformer implements Opcodes {
         return this.obfuscator.resources;
     }
 
+    protected final boolean hasAnnotation(ClassWrapper classWrapper) {
+        if (annotation() == null)
+            return false;
+        return ASMUtils.hasAnnotation(classWrapper, annotation());
+    }
+
+    protected final boolean hasAnnotation(MethodWrapper methodWrapper) {
+        if (annotation() == null)
+            return false;
+        return ASMUtils.hasAnnotation(methodWrapper, annotation());
+    }
+
+    protected final boolean hasAnnotation(FieldWrapper fieldWrapper) {
+        if (annotation() == null)
+            return false;
+        return ASMUtils.hasAnnotation(fieldWrapper, annotation());
+    }
+
+    protected final Map<String, String> getAnnotationValues(ClassWrapper classWrapper) {
+        if (annotation() == null)
+            return null;
+        return ASMUtils.getAnnotationValues(classWrapper, annotation());
+    }
+
+    protected final Map<String, String> getAnnotationValues(MethodWrapper methodWrapper) {
+        if (annotation() == null)
+            return null;
+        return ASMUtils.getAnnotationValues(methodWrapper, annotation());
+    }
+
+    protected final Map<String, String> getAnnotationValues(FieldWrapper fieldWrapper) {
+        if (annotation() == null)
+            return null;
+        return ASMUtils.getAnnotationValues(fieldWrapper, annotation());
+    }
+
+    protected final boolean matchAnnotation(ClassWrapper classWrapper) {
+        Map<String, String> map = getAnnotationValues(classWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+    }
+
+    protected final boolean matchAnnotation(MethodWrapper methodWrapper) {
+        Map<String, String> map = getAnnotationValues(methodWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+    }
+
+    protected final boolean matchAnnotation(FieldWrapper fieldWrapper) {
+        Map<String, String> map = getAnnotationValues(fieldWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+    }
 }

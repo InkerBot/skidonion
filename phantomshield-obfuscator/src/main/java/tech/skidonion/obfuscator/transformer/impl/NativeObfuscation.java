@@ -3,6 +3,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
@@ -280,6 +281,11 @@ public class NativeObfuscation extends Transformer {
             }
         }));
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
+    }
+
+    @Override
+    public String annotation() {
+        return Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.class);
     }
 
     public Snippets getSnippets() {

@@ -4,6 +4,9 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
+import tech.skidonion.obfuscator.asm.FieldWrapper;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -296,6 +299,143 @@ public class ASMUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean hasAnnotation(ClassWrapper clazz, String desc) {
+        if (clazz.getClassNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : clazz.getClassNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        if (clazz.getClassNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : clazz.getClassNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasAnnotation(MethodWrapper method, String desc) {
+        if (method.getMethodNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : method.getMethodNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        if (method.getMethodNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : method.getMethodNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasAnnotation(FieldWrapper field, String desc) {
+        if (field.getFieldNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : field.getFieldNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        if (field.getFieldNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : field.getFieldNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    public static Map<String, String> getAnnotationValues(ClassWrapper clazz, String desc) {
+        Map<String, String> map = new HashMap<>();
+        if (clazz.getClassNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : clazz.getClassNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        if (clazz.getClassNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : clazz.getClassNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Map<String, String> getAnnotationValues(MethodWrapper method, String desc) {
+        Map<String, String> map = new HashMap<>();
+        if (method.getMethodNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : method.getMethodNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        if (method.getMethodNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : method.getMethodNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    public static Map<String, String> getAnnotationValues(FieldWrapper field, String desc) {
+        Map<String, String> map = new HashMap<>();
+        if (field.getFieldNode().invisibleAnnotations != null) {
+            for (AnnotationNode annotation : field.getFieldNode().invisibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        if (field.getFieldNode().visibleAnnotations != null) {
+            for (AnnotationNode annotation : field.getFieldNode().visibleAnnotations) {
+                if (annotation.desc.equals(desc)) {
+                    if (annotation.values == null) {
+                        return Collections.emptyMap();
+                    } else {
+                        return StringUtils.createMap(annotation.values.toArray(new Object[0]));
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 
