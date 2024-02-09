@@ -10,11 +10,19 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
+                // TODO
+                .setRenamer(true)
+                .addAdaptResources("META-INF/MANIFEST.MF")
+                .setRepackage(false)
+                .setRepackageName("skidonion")
+                // TODO
+                .setStringObfuscation(true)
+                // TODO
+                .setNativeObfuscation(false)
                 .setModeInvokeDynamicNativeConverter("enhancement")
                 .addTarget("x86_64-windows")
                 .addSubFilter("native_obfuscation", "-** void main(java.lang.String[])")
-                .setStringObfuscation(true)
-                .setNativeObfuscation(true)
+
                 .build());
         obfuscator.process();
     }

@@ -15,6 +15,8 @@ public class ConfigBuilder {
     private String cppCompiler;
     private String cppCompilerArguments;
     private String cppCompilerOutput;
+    private int minimumLength = 3;
+    private String dictionary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final List<String> targets = new ArrayList<>();
     private final List<String> libraries = new ArrayList<>();
     private final List<String> filters = new ArrayList<>();
@@ -29,14 +31,24 @@ public class ConfigBuilder {
 
     // native obfuscation
     private boolean nativeObfuscation = false;
-    private String loaderDirectory = "skidonion/??????";
+    private String loaderPackage = "skidonion/??????";
     private boolean printInstructions = false;
     private String modeInvokeDynamicNativeConverter = "compatibility";
+
+    // renamer
+    private boolean renamer = false;
+
+    private boolean repackage = false;
+    private String repackageName = "skidonion/??????";
+    private boolean printMappings = false;
+    private List<String> adaptResources = new ArrayList<>();
 
     public Config build() {
         Config config = new Config();
         config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJar, "output is null").getAbsoluteFile().toString());
+        config.add("dictionary", dictionary);
+        config.add("minimum_generated_name_length", minimumLength);
 
         if (creationDate != null) {
             config.add("creation_date", creationDate);
@@ -81,9 +93,9 @@ public class ConfigBuilder {
             JsonObject native_obfuscation = new JsonObject();
 
             // 添加 settings
-            native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
-            native_obfuscation.addProperty("loader_directory", loaderDirectory);
+            native_obfuscation.addProperty("loader_package", loaderPackage);
             native_obfuscation.addProperty("print_instructions", printInstructions);
+            native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
 
             // 添加 过滤器
             sub_filters.computeIfPresent("native_obfuscation", (k, v) -> {
@@ -110,6 +122,25 @@ public class ConfigBuilder {
             config.add("string_obfuscation", string_obfuscation);
         }
 
+        renamer:
+        {
+            if (!renamer) break renamer;
+            JsonObject renamer = new JsonObject();
+
+            renamer.addProperty("print_mappings", printMappings);
+            renamer.addProperty("repackage", repackage);
+            renamer.addProperty("repackage_name", repackageName);
+            renamer.add("adapt_resources", adaptResources.stream().collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
+
+            sub_filters.computeIfPresent("renamer", (k, v) -> {
+                JsonArray array = new JsonArray();
+                v.forEach(array::add);
+                renamer.add("filters", array);
+                return v;
+            });
+            config.add("renamer", renamer);
+        }
+
         return config;
     }
 
@@ -123,8 +154,8 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setLoaderDirectory(String loaderDirectory) {
-        this.loaderDirectory = loaderDirectory;
+    public ConfigBuilder setLoaderPackage(String loaderPackage) {
+        this.loaderPackage = loaderPackage;
         return this;
     }
 
@@ -217,6 +248,46 @@ public class ConfigBuilder {
 
     public ConfigBuilder setCppCompilerOutput(String cppCompilerOutput) {
         this.cppCompilerOutput = cppCompilerOutput;
+        return this;
+    }
+
+    public ConfigBuilder setRenamer(boolean renamer) {
+        this.renamer = renamer;
+        return this;
+    }
+
+    public ConfigBuilder setDictionary(String dictionary) {
+        this.dictionary = Objects.requireNonNull(dictionary);
+        return this;
+    }
+
+    public ConfigBuilder setMinimumLength(int minimumLength) {
+        this.minimumLength = Math.max(1, minimumLength);
+        return this;
+    }
+
+    public ConfigBuilder setRepackage(boolean repackage) {
+        this.repackage = repackage;
+        return this;
+    }
+
+    public ConfigBuilder setRepackageName(String repackageName) {
+        this.repackageName = repackageName;
+        return this;
+    }
+
+    public ConfigBuilder setPrintMappings(boolean printMappings) {
+        this.printMappings = printMappings;
+        return this;
+    }
+
+    public ConfigBuilder addAdaptResources(String adaptResources) {
+        this.adaptResources.add(adaptResources);
+        return this;
+    }
+
+    public ConfigBuilder addAdaptResources(String... adaptResources) {
+        this.adaptResources.addAll(Arrays.asList(adaptResources));
         return this;
     }
 }

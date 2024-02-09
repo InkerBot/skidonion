@@ -16,7 +16,7 @@ public class TestConfigBuilder {
                 .addSubFilter("native_obfuscation", "+org.example.**")
                 .addSubFilter("native_obfuscation", "-org.example.** void main(java.lang.String[])")
                 .setPrintInstructions(false)
-                .setLoaderDirectory("skidonion/?????")
+                .setLoaderPackage("skidonion/?????")
                 .addTarget("x86_64-windows")
                 .setStringObfuscation(true)
                 .setNativeObfuscation(true)

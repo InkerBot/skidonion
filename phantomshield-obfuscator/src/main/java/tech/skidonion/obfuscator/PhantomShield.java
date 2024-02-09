@@ -14,6 +14,8 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.dictionary.Dictionary;
+import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
@@ -43,6 +45,8 @@ public class PhantomShield {
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private final Config config;
 
+    private Dictionary dictionary;
+
     private CppCompiler compiler;
 
     public PhantomShield(File file) throws IOException {
@@ -57,6 +61,12 @@ public class PhantomShield {
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
+
+        if (config.has("dictionary")) {
+            dictionary = DictionaryFactory.get(config.getAsJsonPrimitive("dictionary").getAsString());
+        } else {
+            dictionary = DictionaryFactory.get("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        }
 
         if (config.has("cpp_compiler")) {
             compiler = new CppCompiler(config.getAsJsonPrimitive("cpp_compiler").getAsString());
@@ -323,6 +333,13 @@ public class PhantomShield {
             hierarchy.get(wrapper.getName()).getSubClasses().add(sub.getName());
     }
 
+    public void buildInheritance() {
+        classes.values().forEach(classWrapper -> buildHierarchy(classWrapper, null));
+    }
+
+    public Dictionary getDictionary() {
+        return dictionary;
+    }
 
     public static void INFO(String message, Object... arguments) {
         LOGGER.info(message, arguments);

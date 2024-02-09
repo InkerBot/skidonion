@@ -10,6 +10,7 @@ import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.filter.Filter;
 import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
@@ -162,6 +163,32 @@ public abstract class Transformer implements Opcodes {
 
     protected final Map<String, byte[]> getResources() {
         return this.obfuscator.resources;
+    }
+
+    protected String randomString() {
+        return obfuscator.getDictionary().randomString(4);
+    }
+
+    protected String lastGeneratedString() {
+        return obfuscator.getDictionary().lastUniqueString();
+    }
+
+    protected String nextUniqueString() {
+        return obfuscator.getDictionary().nextUniqueString();
+    }
+
+    protected String uniqueRandomString() {
+        return obfuscator.getDictionary().uniqueRandomString(4);
+    }
+
+    protected String randomClassName() {
+        Collection<String> classNames = getClasses().keySet();
+        ArrayList<String> list = new ArrayList<>(classNames);
+
+        String first = list.get(RandomUtils.getRandomInt(classNames.size()));
+        String second = list.get(RandomUtils.getRandomInt(classNames.size()));
+
+        return first + '$' + second.substring(second.lastIndexOf("/") + 1);
     }
 
     protected final boolean hasAnnotation(ClassWrapper classWrapper) {
