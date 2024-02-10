@@ -1,12 +1,12 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.commons.ClassRemapper;
-import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
-import tech.skidonion.obfuscator.asm.MemberRemapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
+import tech.skidonion.obfuscator.asm.remapper.ClassRemapper;
+import tech.skidonion.obfuscator.asm.remapper.MemberRemapper;
+import tech.skidonion.obfuscator.asm.remapper.Remapper;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.FileUtils;

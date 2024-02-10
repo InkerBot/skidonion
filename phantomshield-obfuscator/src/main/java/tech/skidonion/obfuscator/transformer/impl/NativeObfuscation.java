@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 
@@ -133,6 +134,11 @@ public class NativeObfuscation extends Transformer {
                     computedClassNode.methods.add(new MethodNode(Opcodes.ASM9, Opcodes.ACC_STATIC,
                             "<clinit>", "()V", null, new String[0]));
                 }
+
+                IntStream.range(0, computedClassNode.methods.size())
+                        .forEach(i -> cw.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
+                IntStream.range(0, computedClassNode.fields.size())
+                        .forEach(i -> cw.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
 
                 cw.setClassNode(computedClassNode);
 

@@ -1,6 +1,4 @@
-package tech.skidonion.obfuscator.asm;
-
-import org.objectweb.asm.commons.SimpleRemapper;
+package tech.skidonion.obfuscator.asm.remapper;
 
 import java.util.Map;
 
@@ -17,4 +15,11 @@ public class MemberRemapper extends SimpleRemapper {
         String remappedName = map(owner + '.' + name + '.' + desc);
         return (remappedName != null) ? remappedName : name;
     }
+
+    @Override
+    public String mapAnnotationAttributeName(final String descriptor, final String desc, final String name) {
+        String remappedName = map(descriptor.substring(1, descriptor.length() - 1) + '.' + name + "()" + desc);
+        return (remappedName != null) ? remappedName : name;
+    }
+
 }

@@ -410,6 +410,30 @@ public class ASMUtils {
         return null;
     }
 
+    public static String toBasicType(Class<?> clz){
+        if (clz == Integer.class) {
+            return "I";
+        } else if (clz == Long.class) {
+            return "J";
+        } else if (clz == Float.class) {
+            return "F";
+        } else if (clz == Double.class) {
+            return "D";
+        } else if (clz == Short.class) {
+            return "S";
+        } else if (clz == Byte.class) {
+            return "B";
+        } else if (clz == Character.class) {
+            return "C";
+        } else if (clz == Boolean.class) {
+            return "Z";
+        } else if (clz == Void.class) {
+            return "V";
+        } else {
+            return "L" + clz.getName().replace(".", "/") + ";";
+        }
+    }
+
 
     public static Map<String, String> getAnnotationValues(FieldWrapper field, String desc) {
         Map<String, String> map = new HashMap<>();
