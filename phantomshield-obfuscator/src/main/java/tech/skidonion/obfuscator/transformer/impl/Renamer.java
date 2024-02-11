@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
@@ -182,7 +183,7 @@ public class Renamer extends Transformer {
 
     @Override
     public String annotation() {
-        return null;
+        return Type.getDescriptor(tech.skidonion.obfuscator.annotations.Renamer.class);
     }
 
     private void genMethodMappings(MethodWrapper methodWrapper, String owner, String newName, Access access) {
@@ -196,7 +197,7 @@ public class Renamer extends Transformer {
 
         mappings.put(key, newName);
         if (access.isAnnotation()) {
-            mappings.put(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), newName );
+            mappings.put(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), newName);
         }
 
         if (!methodWrapper.getAccess().isStatic()) { // Static methods can't be overridden
