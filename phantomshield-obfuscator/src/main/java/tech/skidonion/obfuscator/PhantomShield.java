@@ -36,7 +36,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class PhantomShield {
-    public static final String VERSION = "0.0.1";
+    public static final String VERSION = "v0.0.2";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new HashMap<>();

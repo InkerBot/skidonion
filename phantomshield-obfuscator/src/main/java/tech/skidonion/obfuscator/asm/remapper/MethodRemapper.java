@@ -145,7 +145,7 @@ public class MethodRemapper extends MethodVisitor {
             final Handle bootstrapMethodHandle,
             final Object... bootstrapMethodArguments) {
         int flag = -1;
-        String methodName;
+        String methodName = name;
 
         if (bootstrapMethodHandle.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
             flag = 1; // LambdaMetafactory
