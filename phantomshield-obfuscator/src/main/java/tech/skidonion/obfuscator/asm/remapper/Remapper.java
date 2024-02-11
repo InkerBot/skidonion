@@ -226,10 +226,6 @@ public abstract class Remapper {
         return name;
     }
 
-    public String mapAnnotationAttributeName(final String descriptor, final String desc, final String name) {
-        return name;
-    }
-
     /**
      * Maps an inner class name to its new name. The default implementation of this method provides a
      * strategy that will work for inner classes produced by Java, but not necessarily other
@@ -294,6 +290,10 @@ public abstract class Remapper {
      * @return the new name of the method.
      */
     public String mapInvokeDynamicMethodName(final String name, final String descriptor) {
+        return name;
+    }
+
+    public String mapLambdaMeta(final String owner, final String name, final String descriptor) {
         return name;
     }
 

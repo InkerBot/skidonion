@@ -1,10 +1,8 @@
 package tech.skidonion.obfuscator.asm.remapper;
 
+
 import java.util.Map;
 
-/**
- * Custom implementation of ASM's SimpleRemapper taking in account for field descriptions.
- */
 public class MemberRemapper extends SimpleRemapper {
     public MemberRemapper(final Map<String, String> mappings) {
         super(mappings);
@@ -17,9 +15,9 @@ public class MemberRemapper extends SimpleRemapper {
     }
 
     @Override
-    public String mapAnnotationAttributeName(final String descriptor, final String desc, final String name) {
-        String remappedName = map(descriptor.substring(1, descriptor.length() - 1) + '.' + name + "()" + desc);
-        return (remappedName != null) ? remappedName : name;
+    public String mapLambdaMeta(final String owner, final String name, final String descriptor) {
+        String remappedName = map(owner + '.' + name + descriptor);
+        return remappedName == null ? name : remappedName;
     }
 
 }

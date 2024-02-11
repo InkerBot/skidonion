@@ -4,12 +4,14 @@ import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
+import tech.skidonion.obfuscator.asm.accesses.Access;
 import tech.skidonion.obfuscator.asm.remapper.ClassRemapper;
 import tech.skidonion.obfuscator.asm.remapper.MemberRemapper;
 import tech.skidonion.obfuscator.asm.remapper.Remapper;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.FileUtils;
+import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringArrayValue;
@@ -62,7 +64,7 @@ public class Renamer extends Transformer {
                 HashSet<String> visited = new HashSet<>();
 
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited))
-                    genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), methodDictionary.nextUniqueString());
+                    genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), methodDictionary.nextUniqueString(), classWrapper.getAccess());
             });
 
             classWrapper.getFields().forEach(fieldWrapper -> {
@@ -183,7 +185,7 @@ public class Renamer extends Transformer {
         return null;
     }
 
-    private void genMethodMappings(MethodWrapper methodWrapper, String owner, String newName) {
+    private void genMethodMappings(MethodWrapper methodWrapper, String owner, String newName, Access access) {
         String key = owner + '.' + methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription();
 
         // This (supposedly) will always stop the recursion because the tree was already renamed
@@ -193,10 +195,13 @@ public class Renamer extends Transformer {
         ClassTree tree = obfuscator.getTree(owner);
 
         mappings.put(key, newName);
+        if (access.isAnnotation()) {
+            mappings.put(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), newName );
+        }
 
         if (!methodWrapper.getAccess().isStatic()) { // Static methods can't be overridden
-            tree.getParentClasses().forEach(parentClass -> genMethodMappings(methodWrapper, parentClass, newName));
-            tree.getSubClasses().forEach(subClass -> genMethodMappings(methodWrapper, subClass, newName));
+            tree.getParentClasses().forEach(parentClass -> genMethodMappings(methodWrapper, parentClass, newName, access));
+            tree.getSubClasses().forEach(subClass -> genMethodMappings(methodWrapper, subClass, newName, access));
         }
     }
 

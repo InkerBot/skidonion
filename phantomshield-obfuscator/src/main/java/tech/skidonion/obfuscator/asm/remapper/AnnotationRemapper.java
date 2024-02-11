@@ -2,8 +2,6 @@ package tech.skidonion.obfuscator.asm.remapper;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import tech.skidonion.obfuscator.utils.ASMUtils;
 
 /**
  * An {@link AnnotationVisitor} that remaps types with a {@link Remapper}.
@@ -86,23 +84,18 @@ public class AnnotationRemapper extends AnnotationVisitor {
 
     @Override
     public void visit(final String name, final Object value) {
-        if (value instanceof Type) {
-            super.visit(mapAnnotationAttributeName(name, ((Type) value).getDescriptor()), remapper.mapValue(value));
-        } else {
-            super.visit(mapAnnotationAttributeName(name, ASMUtils.toBasicType(value.getClass())), remapper.mapValue(value));
-        }
-
+        super.visit(mapAnnotationAttributeName(name), remapper.mapValue(value));
     }
 
     @Override
     public void visitEnum(final String name, final String descriptor, final String value) {
-        super.visitEnum(mapAnnotationAttributeName(name, descriptor), remapper.mapDesc(descriptor), value);
+        super.visitEnum(mapAnnotationAttributeName(name), remapper.mapDesc(descriptor), value);
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(final String name, final String descriptor) {
         AnnotationVisitor annotationVisitor =
-                super.visitAnnotation(mapAnnotationAttributeName(name, descriptor), remapper.mapDesc(descriptor));
+                super.visitAnnotation(mapAnnotationAttributeName(name), remapper.mapDesc(descriptor));
         if (annotationVisitor == null) {
             return null;
         } else {
@@ -189,18 +182,4 @@ public class AnnotationRemapper extends AnnotationVisitor {
         return remapper.mapAnnotationAttributeName(descriptor, name);
     }
 
-    /**
-     * Maps an annotation attribute name with the remapper. Returns the original name unchanged if the
-     * descriptor of the annotation is {@literal null}.
-     *
-     * @param name the name of the annotation attribute.
-     * @param desc the descriptor of the annotation attribute.
-     * @return the new name of the annotation attribute.
-     */
-    private String mapAnnotationAttributeName(final String name, final String desc) {
-        if (descriptor == null) {
-            return name;
-        }
-        return remapper.mapAnnotationAttributeName(descriptor, desc, name);
-    }
 }
