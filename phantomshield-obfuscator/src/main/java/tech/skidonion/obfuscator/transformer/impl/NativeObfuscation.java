@@ -9,7 +9,6 @@ import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import tech.skidonion.obfuscator.PhantomShield;
-import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
@@ -50,10 +49,11 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final ModeValue invokedynamic_mode = new ModeValue("invokedynamic_mode", "compatibility", "compatibility", "enhancement");
+    private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
 
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, invokedynamic_mode);
+        addSettings(print_instructions, loader_package, invokedynamic_mode, hidden_stack_trace);
     }
 
     private Snippets snippets;
@@ -123,7 +123,7 @@ public class NativeObfuscation extends Transformer {
                         .filter(MethodProcessor::shouldProcess)
                         .forEach(methodNode -> PreprocessorRunner.preprocess(cw.getClassNode(), methodNode, invokedynamic_mode));
 
-                ClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
+                ClassWriter computedWriter = new ClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 cw.getClassNode().accept(computedWriter);
 
                 ClassReader computedReader = new ClassReader(computedWriter.toByteArray());
@@ -195,49 +195,53 @@ public class NativeObfuscation extends Transformer {
 
         });
 
-        for (ClassNode hiddenClass : hiddenMethodsPool.getClasses()) {
-            String hiddenClassFileName = "data_" + StringUtils.escapeCppNameString(hiddenClass.name.replace('/', '_'));
+        if (hidden_stack_trace.isEnable()) {
+            for (ClassNode hiddenClass : hiddenMethodsPool.getClasses()) {
+
+                String hiddenClassFileName = "data_" + StringUtils.escapeCppNameString(hiddenClass.name.replace('/', '_'));
 
 //            cMakeBuilder.addClassFile("output/" + hiddenClassFileName + ".hpp");
 //            cMakeBuilder.addClassFile("output/" + hiddenClassFileName + ".cpp");
 
-            mainSourceBuilder.addHeader(hiddenClassFileName + ".hpp");
-            mainSourceBuilder.registerDefine(stringPool.get(hiddenClass.name), hiddenClassFileName);
+                mainSourceBuilder.addHeader(hiddenClassFileName + ".hpp");
+                mainSourceBuilder.registerDefine(stringPool.get(hiddenClass.name), hiddenClassFileName);
 
-            ClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
-            hiddenClass.accept(classWriter);
-            byte[] rawData = classWriter.toByteArray();
-            List<Byte> data = new ArrayList<>(rawData.length);
-            for (byte b : rawData) {
-                data.add(b);
-            }
+                ClassWriter classWriter = new ClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                hiddenClass.accept(classWriter);
+                byte[] rawData = classWriter.toByteArray();
+                List<Byte> data = new ArrayList<>(rawData.length);
+                for (byte b : rawData) {
+                    data.add(b);
+                }
 
-            try (BufferedWriter hppWriter = Files.newBufferedWriter(cppOutput.resolve(hiddenClassFileName + ".hpp"))) {
-                hppWriter.append("#include \"../native_jvm.hpp\"\n\n");
-                hppWriter.append("#ifndef ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                hppWriter.append("#define ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                hppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
-                hppWriter.append("    const jbyte* get_class_data();\n");
-                hppWriter.append("    const jsize get_class_data_length();\n");
-                hppWriter.append("}\n\n");
-                hppWriter.append("#endif\n");
-            }
+                try (BufferedWriter hppWriter = Files.newBufferedWriter(cppOutput.resolve(hiddenClassFileName + ".hpp"))) {
+                    hppWriter.append("#include \"../native_jvm.hpp\"\n\n");
+                    hppWriter.append("#ifndef ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
+                    hppWriter.append("#define ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
+                    hppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
+                    hppWriter.append("    const jbyte* get_class_data();\n");
+                    hppWriter.append("    const jsize get_class_data_length();\n");
+                    hppWriter.append("}\n\n");
+                    hppWriter.append("#endif\n");
+                }
 
-            Path cppPath = cppOutput.resolve(hiddenClassFileName + ".cpp");
-            try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
-                obfuscator.getCompiler().addCppFile(cppPath.toAbsolutePath().toString());
-                cppWriter.append("#include \"").append(hiddenClassFileName).append(".hpp\"\n\n");
-                cppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
-                cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
-                cppWriter.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
-                cppWriter.append("};\n");
-                cppWriter.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
-                cppWriter.append("    const jbyte* get_class_data() { return class_data; }\n");
-                cppWriter.append("    const jsize get_class_data_length() { return class_data_length; }\n");
-                cppWriter.append("}\n");
+                Path cppPath = cppOutput.resolve(hiddenClassFileName + ".cpp");
+                try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
+                    obfuscator.getCompiler().addCppFile(cppPath.toAbsolutePath().toString());
+                    cppWriter.append("#include \"").append(hiddenClassFileName).append(".hpp\"\n\n");
+                    cppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
+                    cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
+                    cppWriter.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+                    cppWriter.append("};\n");
+                    cppWriter.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
+                    cppWriter.append("    const jbyte* get_class_data() { return class_data; }\n");
+                    cppWriter.append("    const jsize get_class_data_length() { return class_data_length; }\n");
+                    cppWriter.append("}\n");
+                }
             }
+        } else {
+            injectClassesAsResource(hiddenMethodsPool.getClasses());
         }
-
 
         Files.write(cppDir.resolve("string_pool.cpp"), stringPool.build().getBytes(StandardCharsets.UTF_8));
 

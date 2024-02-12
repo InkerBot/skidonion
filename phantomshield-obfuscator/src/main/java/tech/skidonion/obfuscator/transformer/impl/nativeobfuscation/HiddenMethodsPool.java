@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -55,6 +56,7 @@ public class HiddenMethodsPool {
             classNode = new ClassNode(Opcodes.ASM9);
             classNode.access = Opcodes.ACC_PUBLIC;
             classNode.version = 52;
+            classNode.superName = Type.getInternalName(Object.class);
             StringBuilder sb = new StringBuilder("____");
             for (int i = 0; i < classes.size(); i++) {
                 sb.append("_");
