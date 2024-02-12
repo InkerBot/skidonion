@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -39,14 +40,12 @@ public class PhantomShield {
     public static final String VERSION = "v0.0.2";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
-    public final Map<String, ClassWrapper> classes = new HashMap<>();
+    public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private final Config config;
-
     private Dictionary dictionary;
-
     private CppCompiler compiler;
 
     public PhantomShield(File file) throws IOException {
@@ -189,7 +188,10 @@ public class PhantomShield {
         File input = new File(config.getAsJsonPrimitive("input").getAsString());
 
         if (input.exists()) {
+            long current = System.currentTimeMillis();
             INFO(String.format("Loading input \"%s\".", input.getAbsolutePath()));
+
+            Map<String, ClassWrapper> classes = new HashMap<>();
 
             try {
                 ZipFile zipFile = new ZipFile(input);
@@ -235,6 +237,23 @@ public class PhantomShield {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
+
+            long seed;
+
+            if (config.has("random_seed")) {
+                seed = config.getAsJsonPrimitive("random_seed").getAsLong();
+                INFO("Setting random seed to \"{}\".", seed);
+            } else {
+                seed = ThreadLocalRandom.current().nextLong();
+                INFO("Setting random seed to \"{}\".", seed);
+            }
+            List<String> keys = new ArrayList<>(classes.keySet());
+            Collections.shuffle(keys, new Random(seed));
+            for (String key : keys) {
+                this.classes.put(key, classes.get(key));
+            }
+            INFO("Loaded {} classes in {}ms.", this.classes.size(), System.currentTimeMillis() - current);
+
         } else {
             LOGGER.error(String.format("Unable to find \"%s\".", input.getAbsolutePath()));
             throw new RuntimeException();
