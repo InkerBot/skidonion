@@ -46,6 +46,9 @@ public class ConfigBuilder {
     private String printMappingsFile = "mappings.txt";
     private List<String> adaptResources = new ArrayList<>();
 
+    // member shuffler
+    private boolean memberShuffler = false;
+
     public final Config build() {
         Config config = new Config();
         config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
@@ -150,6 +153,20 @@ public class ConfigBuilder {
                 return v;
             });
             config.add("renamer", renamer);
+        }
+
+        member_shuffler:
+        {
+            if (!memberShuffler) break member_shuffler;
+            JsonObject member_shuffler = new JsonObject();
+
+            sub_filters.computeIfPresent("member_shuffler", (k, v) -> {
+                JsonArray array = new JsonArray();
+                v.forEach(array::add);
+                member_shuffler.add("filters", array);
+                return v;
+            });
+            config.add("member_shuffler", member_shuffler);
         }
 
         return config;

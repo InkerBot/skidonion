@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.filter.Filter;
+import tech.skidonion.obfuscator.transformer.impl.MemberShuffler;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.Renamer;
 import tech.skidonion.obfuscator.transformer.impl.StringEncryption;
@@ -21,6 +22,7 @@ public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 
     public TransformerRegister() {
+        this.register(new MemberShuffler("member_shuffler"));
         this.register(new Renamer("renamer"));
         this.register(new StringEncryption("string_encryption"));
         this.register(new NativeObfuscation("native_obfuscation"));
