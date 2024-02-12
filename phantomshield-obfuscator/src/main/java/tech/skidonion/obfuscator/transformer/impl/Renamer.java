@@ -36,7 +36,11 @@ public class Renamer extends Transformer {
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
-    private Map<String, String> mappings;
+    private final Map<String, String> methodMappings = new HashMap<>();
+    private final Map<String, String> fieldMappings = new HashMap<>();
+    private final Map<String, String> classMappings = new HashMap<>();
+    private final Map<String, String> packageMappings = new HashMap<>();
+    private final Map<String, String> dummy = new HashMap<>();
 
     public Renamer(String name) {
         super(name);
@@ -51,7 +55,6 @@ public class Renamer extends Transformer {
     @Override
     public void transform() {
         obfuscator.buildInheritance();
-        mappings = new HashMap<>();
 
         if (importExistingMappings.isEnable())
             readInputMappingsFile();
@@ -85,17 +88,17 @@ public class Renamer extends Transformer {
                     newName = repackageName.getValue();
                 } else {
                     String currentPackageName = classWrapper.getPackageName();
-                    newName = mappings.get(currentPackageName);
+                    newName = packageMappings.get(currentPackageName);
                     if (newName == null) {
                         StringBuilder packageName = new StringBuilder(currentPackageName);
                         int index = 0;
                         StringBuilder lastPackageName = new StringBuilder();
                         while ((index = packageName.indexOf("/", index + 1)) != -1) {
                             String subpackage = packageName.substring(0, index + 1);
-                            String mappedPackageName = mappings.get(subpackage);
+                            String mappedPackageName = packageMappings.get(subpackage);
                             if (mappedPackageName == null) {
                                 lastPackageName.append(nextUniqueString());
-                                mappings.putIfAbsent(subpackage, lastPackageName.toString());
+                                packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
                                 lastPackageName.append('/');
                             } else {
                                 lastPackageName = new StringBuilder(mappedPackageName).append('/');
@@ -110,7 +113,7 @@ public class Renamer extends Transformer {
                     newName += '/' + classDictionary.nextUniqueString();
                 }
 
-                mappings.put(classWrapper.getOriginalName(), newName);
+                classMappings.put(classWrapper.getOriginalName(), newName);
             }
         });
 
@@ -118,8 +121,13 @@ public class Renamer extends Transformer {
         INFO("Applying mappings.");
         current = System.currentTimeMillis();
 
+        dummy.putAll(classMappings);
+        dummy.putAll(methodMappings);
+        dummy.putAll(fieldMappings);
+        dummy.putAll(packageMappings);
+
         // Apply mappings
-        Remapper simpleRemapper = new MemberRemapper(mappings);
+        Remapper simpleRemapper = new MemberRemapper(dummy);
         new ArrayList<>(getClassWrappers()).forEach(classWrapper -> {
             ClassNode classNode = classWrapper.getClassNode();
 
@@ -140,7 +148,7 @@ public class Renamer extends Transformer {
             getClassPath().put(classWrapper.getName(), classWrapper);
         });
 
-        INFO(String.format("Mapped %d members. [%dms]", mappings.size(), System.currentTimeMillis() - current));
+        INFO(String.format("Mapped %d members. [%dms]", dummy.size(), System.currentTimeMillis() - current));
         current = System.currentTimeMillis();
 
         // Now we gotta fix those resources because we probably screwed up random files.
@@ -152,7 +160,7 @@ public class Renamer extends Transformer {
             if (pattern.matcher(name).matches()) {
                 String stringVer = new String(byteArray, StandardCharsets.UTF_8);
 
-                for (String mapping : mappings.keySet()) {
+                for (String mapping : classMappings.keySet()) {
                     String original = mapping.replace("/", ".");
                     if (stringVer.contains(original)) {
                         // Regex that ensures that class names that match words in the manifest don't break the
@@ -162,9 +170,9 @@ public class Renamer extends Transformer {
                                 || "plugin.yml".equals(name) // Spigot plugin
                                 || "bungee.yml".equals(name)) // Bungeecord plugin
                             stringVer = stringVer.replaceAll("(?<=[: ])" + original,
-                                    mappings.get(mapping).replace("/", "."));
+                                    classMappings.get(mapping).replace("/", "."));
                         else
-                            stringVer = stringVer.replace(original, mappings.get(mapping).replace("/", "."));
+                            stringVer = stringVer.replace(original, classMappings.get(mapping).replace("/", "."));
                     }
                 }
 
@@ -193,7 +201,18 @@ public class Renamer extends Transformer {
         try (BufferedReader reader = new BufferedReader(new FileReader(inputMappingsFiles.getValue()))) {
             for (String line; (line = reader.readLine()) != null; ) {
                 String[] split = line.split(" -> ");
-                mappings.put(split[0], split[1]);
+                if (split.length != 2) {
+                    throw new IndexOutOfBoundsException();
+                }
+                if (split[0].contains("(")) {
+                    methodMappings.put(split[0], split[1]);
+                } else if (split[0].contains(".")) {
+                    fieldMappings.put(split[0], split[1]);
+                } else if (split[0].endsWith("/")) {
+                    classMappings.put(split[0], split[1]);
+                } else {
+                    packageMappings.put(split[0], split[1]);
+                }
             }
         } catch (FileNotFoundException e) {
             ERROR("Mappings file not found. Skipping import.");
@@ -208,14 +227,14 @@ public class Renamer extends Transformer {
         String key = owner + '.' + methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription();
 
         // This (supposedly) will always stop the recursion because the tree was already renamed
-        if (mappings.containsKey(key))
+        if (methodMappings.containsKey(key))
             return;
 
         ClassTree tree = obfuscator.getTree(owner);
 
-        mappings.put(key, newName);
+        methodMappings.put(key, newName);
         if (access.isAnnotation()) {
-            mappings.put(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), newName);
+            methodMappings.put(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), newName);
         }
 
         if (!methodWrapper.getAccess().isStatic()) { // Static methods can't be overridden
@@ -235,7 +254,7 @@ public class Renamer extends Transformer {
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (!match(wrapper) || mappings.containsKey(check))
+        if (!match(wrapper) || methodMappings.containsKey(check))
             return true;
 
         // Methods which are static don't need to be checked for inheritance
@@ -256,12 +275,12 @@ public class Renamer extends Transformer {
 
     private void genFieldMappings(FieldWrapper fieldWrapper, String owner, String newName) {
         // This (supposedly) will always stop the recursion because the tree was already renamed
-        if (mappings.containsKey(owner + '.' + fieldWrapper.getOriginalName() + '.' + fieldWrapper.getOriginalDescription()))
+        if (fieldMappings.containsKey(owner + '.' + fieldWrapper.getOriginalName() + '.' + fieldWrapper.getOriginalDescription()))
             return;
 
         ClassTree tree = obfuscator.getTree(owner);
 
-        mappings.put(owner + '.' + fieldWrapper.getOriginalName() + '.' + fieldWrapper.getOriginalDescription(), newName);
+        fieldMappings.put(owner + '.' + fieldWrapper.getOriginalName() + '.' + fieldWrapper.getOriginalDescription(), newName);
 
         if (!fieldWrapper.getAccess().isStatic()) { // Static fields can't be inherited
             tree.getParentClasses().forEach(parentClass -> genFieldMappings(fieldWrapper, parentClass, newName));
@@ -280,7 +299,7 @@ public class Renamer extends Transformer {
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (!match(wrapper) || mappings.containsKey(check))
+        if (!match(wrapper) || fieldMappings.containsKey(check))
             return true;
 
         // Fields which are static don't need to be checked for inheritance
@@ -309,7 +328,7 @@ public class Renamer extends Transformer {
             file.createNewFile();
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
-            mappings.forEach((oldName, newName) -> {
+            dummy.forEach((oldName, newName) -> {
                 try {
                     bw.append(oldName).append(" -> ").append(newName).append('\n');
                 } catch (IOException ioe) {

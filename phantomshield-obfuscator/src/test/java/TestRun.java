@@ -15,6 +15,7 @@ public class TestRun {
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setRepackage(false)
                 .setPrintMappings(true)
+                .setPrintMappingsFile("mappings.txt")
                 .setRepackageName("skidonion")
                 // TODO
                 .setStringEncryption(true)
