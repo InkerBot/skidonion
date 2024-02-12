@@ -9,7 +9,7 @@ import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.filter.Filter;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.Renamer;
-import tech.skidonion.obfuscator.transformer.impl.StringObfuscation;
+import tech.skidonion.obfuscator.transformer.impl.StringEncryption;
 import tech.skidonion.obfuscator.value.Value;
 
 import java.util.LinkedHashMap;
@@ -22,7 +22,7 @@ public class TransformerRegister {
 
     public TransformerRegister() {
         this.register(new Renamer("renamer"));
-        this.register(new StringObfuscation("string_obfuscation"));
+        this.register(new StringEncryption("string_encryption"));
         this.register(new NativeObfuscation("native_obfuscation"));
     }
 

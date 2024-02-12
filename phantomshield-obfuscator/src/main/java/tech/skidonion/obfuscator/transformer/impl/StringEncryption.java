@@ -16,14 +16,14 @@ import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class StringObfuscation extends Transformer {
+public class StringEncryption extends Transformer {
 
     private final AtomicInteger count = new AtomicInteger(0);
 
     private int index = 0;
 
 
-    public StringObfuscation(String name) {
+    public StringEncryption(String name) {
         super(name, false);
     }
 
@@ -428,10 +428,10 @@ public class StringObfuscation extends Transformer {
 
     @Override
     public void preprocess() throws Exception {
-
     }
+
     @Override
     public String annotation() {
-        return null;
+        return Type.getDescriptor(tech.skidonion.obfuscator.annotations.StringEncryption.class);
     }
 }
