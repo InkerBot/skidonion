@@ -44,7 +44,7 @@ public class Renamer extends Transformer {
 
     public Renamer(String name) {
         super(name);
-        addSettings(printMappings, printMappingsFile, repackage, repackageName, adaptResources);
+        addSettings(importExistingMappings, inputMappingsFiles, printMappings, printMappingsFile, repackage, repackageName, adaptResources);
     }
 
     private static boolean methodCanBeRenamed(MethodWrapper wrapper) {
