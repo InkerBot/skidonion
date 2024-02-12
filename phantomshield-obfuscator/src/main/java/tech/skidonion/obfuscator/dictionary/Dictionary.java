@@ -22,16 +22,9 @@ public interface Dictionary {
     String nextUniqueString();
 
     /**
-     * @return last generated unique string. If non, null.
-     */
-    String lastUniqueString();
-
-    /**
      * @return name of dictionary.
      */
     String getDictionaryName();
-
-    void reset();
 
     Dictionary copy();
 }

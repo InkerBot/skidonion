@@ -13,8 +13,10 @@ public class TestRun {
                 // TODO
                 .setRenamer(true)
                 .addAdaptResources("META-INF/MANIFEST.MF")
+                .setImportExistingMappings(true)
+                .setInputMappingsFile("mappings.txt")
                 .setRepackage(false)
-                .setPrintMappings(true)
+                .setPrintMappings(false)
                 .setPrintMappingsFile("mappings.txt")
                 .setRepackageName("skidonion")
                 // TODO

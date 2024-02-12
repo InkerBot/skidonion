@@ -13,7 +13,6 @@ public class SpacesDictionary implements Dictionary {
     private static final char[] CHARSET = new char[0xF + 1];
     private final Set<String> cache = new HashSet<>();
     private int index;
-    private String lastGenerated;
 
     static {
         for (int i = 0; i < CHARSET.length; i++)
@@ -70,26 +69,14 @@ public class SpacesDictionary implements Dictionary {
         buf[charPos] = CHARSET[-i];
 
         String s = new String(buf, charPos, (33 - charPos));
-        lastGenerated = s;
         index++;
         return s;
     }
 
-    @Override
-    public String lastUniqueString() {
-        return lastGenerated;
-    }
 
     @Override
     public String getDictionaryName() {
         return "spaces";
-    }
-
-    @Override
-    public void reset() {
-        cache.clear();
-        index = 0;
-        lastGenerated = null;
     }
 
     @Override

@@ -15,7 +15,6 @@ public class CustomDictionary implements Dictionary {
     private final StringSequence CHARSET;
     private final Set<String> cache = new HashSet<>();
     private int index;
-    private String lastGenerated;
 
     public CustomDictionary(String charset) {
         this(new StringSequence(charset.toCharArray()));
@@ -93,20 +92,8 @@ public class CustomDictionary implements Dictionary {
     }
 
     @Override
-    public String lastUniqueString() {
-        return lastGenerated;
-    }
-
-    @Override
     public String getDictionaryName() {
         return CHARSET.toString();
-    }
-
-    @Override
-    public void reset() {
-        cache.clear();
-        index = 0;
-        lastGenerated = null;
     }
 
     @Override

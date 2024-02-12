@@ -165,22 +165,6 @@ public abstract class Transformer implements Opcodes {
         return this.obfuscator.resources;
     }
 
-    protected String randomString() {
-        return obfuscator.getDictionary().randomString(4);
-    }
-
-    protected String lastGeneratedString() {
-        return obfuscator.getDictionary().lastUniqueString();
-    }
-
-    protected String nextUniqueString() {
-        return obfuscator.getDictionary().nextUniqueString();
-    }
-
-    protected String uniqueRandomString() {
-        return obfuscator.getDictionary().uniqueRandomString(4);
-    }
-
     protected String randomClassName() {
         Collection<String> classNames = getClasses().keySet();
         ArrayList<String> list = new ArrayList<>(classNames);

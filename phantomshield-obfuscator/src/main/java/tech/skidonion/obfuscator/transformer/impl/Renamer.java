@@ -30,7 +30,7 @@ import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class Renamer extends Transformer {
     private final BooleanValue importExistingMappings = new BooleanValue("import_existing_mappings", false);
-    private final StringValue inputMappingsFiles = new StringValue("input_mappings_files", "mappings.txt");
+    private final StringValue inputMappingsFiles = new StringValue("input_mappings_file", "mappings.txt");
     private final BooleanValue printMappings = new BooleanValue("print_mappings", false);
     private final StringValue printMappingsFile = new StringValue("print_mappings_file", "mappings.txt");
     private final BooleanValue repackage = new BooleanValue("repackage", false);
@@ -62,6 +62,7 @@ public class Renamer extends Transformer {
         Dictionary classDictionary = obfuscator.getDictionary().copy();
         Dictionary methodDictionary = obfuscator.getDictionary().copy();
         Dictionary fieldDictionary = obfuscator.getDictionary().copy();
+        Dictionary packageDictionary = obfuscator.getDictionary().copy();
 
         INFO("Generating mappings.");
         long current = System.currentTimeMillis();
@@ -97,7 +98,7 @@ public class Renamer extends Transformer {
                             String subpackage = packageName.substring(0, index + 1);
                             String mappedPackageName = packageMappings.get(subpackage);
                             if (mappedPackageName == null) {
-                                lastPackageName.append(nextUniqueString());
+                                lastPackageName.append(packageDictionary.nextUniqueString());
                                 packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
                                 lastPackageName.append('/');
                             } else {
