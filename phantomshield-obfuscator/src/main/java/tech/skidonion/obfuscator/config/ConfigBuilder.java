@@ -26,8 +26,8 @@ public class ConfigBuilder {
 
     // ======= transformers settings =======
 
-    // string obfuscation
-    private boolean stringObfuscation = false;
+    // string encryption
+    private boolean stringEncryption = false;
 
     // native obfuscation
     private boolean nativeObfuscation = false;
@@ -37,13 +37,15 @@ public class ConfigBuilder {
 
     // renamer
     private boolean renamer = false;
-
     private boolean repackage = false;
     private String repackageName = "skidonion/??????";
+    private boolean importExistingMappings = false;
+    private String inputMappingsFile = "mappings.txt";
     private boolean printMappings = false;
+    private String printMappingsFile = "mappings.txt";
     private List<String> adaptResources = new ArrayList<>();
 
-    public Config build() {
+    public final Config build() {
         Config config = new Config();
         config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJar, "output is null").getAbsoluteFile().toString());
@@ -108,18 +110,18 @@ public class ConfigBuilder {
             config.add("native_obfuscation", native_obfuscation);
         }
 
-        string_obfuscation:
+        string_encryption:
         {
-            if (!stringObfuscation) break string_obfuscation;
-            JsonObject string_obfuscation = new JsonObject();
+            if (!stringEncryption) break string_encryption;
+            JsonObject string_encryption = new JsonObject();
 
-            sub_filters.computeIfPresent("string_obfuscation", (k, v) -> {
+            sub_filters.computeIfPresent("string_encryption", (k, v) -> {
                 JsonArray array = new JsonArray();
                 v.forEach(array::add);
-                string_obfuscation.add("filters", array);
+                string_encryption.add("filters", array);
                 return v;
             });
-            config.add("string_obfuscation", string_obfuscation);
+            config.add("string_encryption", string_encryption);
         }
 
         renamer:
@@ -127,7 +129,10 @@ public class ConfigBuilder {
             if (!renamer) break renamer;
             JsonObject renamer = new JsonObject();
 
+            renamer.addProperty("import_existing_mappings", importExistingMappings);
+            renamer.addProperty("input_mappings_file", inputMappingsFile);
             renamer.addProperty("print_mappings", printMappings);
+            renamer.addProperty("print_mappings_file", printMappingsFile);
             renamer.addProperty("repackage", repackage);
             renamer.addProperty("repackage_name", repackageName);
             renamer.add("adapt_resources", adaptResources.stream().collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
@@ -174,8 +179,8 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setStringObfuscation(boolean stringObfuscation) {
-        this.stringObfuscation = stringObfuscation;
+    public ConfigBuilder setStringEncryption(boolean stringEncryption) {
+        this.stringEncryption = stringEncryption;
         return this;
     }
 
@@ -288,6 +293,21 @@ public class ConfigBuilder {
 
     public ConfigBuilder addAdaptResources(String... adaptResources) {
         this.adaptResources.addAll(Arrays.asList(adaptResources));
+        return this;
+    }
+
+    public ConfigBuilder setImportExistingMappings(boolean importExistingMappings) {
+        this.importExistingMappings = importExistingMappings;
+        return this;
+    }
+
+    public ConfigBuilder setInputMappingsFile(String inputMappingsFile) {
+        this.inputMappingsFile = inputMappingsFile;
+        return this;
+    }
+
+    public ConfigBuilder setPrintMappingsFile(String printMappingsFile) {
+        this.printMappingsFile = printMappingsFile;
         return this;
     }
 }

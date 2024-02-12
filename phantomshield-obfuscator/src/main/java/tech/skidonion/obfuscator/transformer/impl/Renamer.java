@@ -16,11 +16,9 @@ import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringArrayValue;
+import tech.skidonion.obfuscator.value.impls.StringValue;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,15 +29,18 @@ import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class Renamer extends Transformer {
-    private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources", Collections.emptyList());
+    private final BooleanValue importExistingMappings = new BooleanValue("import_existing_mappings", false);
+    private final StringValue inputMappingsFiles = new StringValue("input_mappings_files", "mappings.txt");
     private final BooleanValue printMappings = new BooleanValue("print_mappings", false);
+    private final StringValue printMappingsFile = new StringValue("print_mappings_file", "mappings.txt");
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
+    private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
     private Map<String, String> mappings;
 
     public Renamer(String name) {
         super(name);
-        addSettings(printMappings, repackage, repackageName, adaptResources);
+        addSettings(printMappings, printMappingsFile, repackage, repackageName, adaptResources);
     }
 
     private static boolean methodCanBeRenamed(MethodWrapper wrapper) {
@@ -51,7 +52,9 @@ public class Renamer extends Transformer {
     public void transform() {
         obfuscator.buildInheritance();
         mappings = new HashMap<>();
-        Map<String, String> packageMappings = new HashMap<>();
+
+        if (importExistingMappings.isEnable())
+            readInputMappingsFile();
 
         Dictionary classDictionary = obfuscator.getDictionary().copy();
         Dictionary methodDictionary = obfuscator.getDictionary().copy();
@@ -82,17 +85,17 @@ public class Renamer extends Transformer {
                     newName = repackageName.getValue();
                 } else {
                     String currentPackageName = classWrapper.getPackageName();
-                    newName = packageMappings.get(currentPackageName);
+                    newName = mappings.get(currentPackageName);
                     if (newName == null) {
                         StringBuilder packageName = new StringBuilder(currentPackageName);
                         int index = 0;
                         StringBuilder lastPackageName = new StringBuilder();
                         while ((index = packageName.indexOf("/", index + 1)) != -1) {
                             String subpackage = packageName.substring(0, index + 1);
-                            String mappedPackageName = packageMappings.get(subpackage);
+                            String mappedPackageName = mappings.get(subpackage);
                             if (mappedPackageName == null) {
-                                lastPackageName.append(uniqueRandomString());
-                                packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
+                                lastPackageName.append(nextUniqueString());
+                                mappings.putIfAbsent(subpackage, lastPackageName.toString());
                                 lastPackageName.append('/');
                             } else {
                                 lastPackageName = new StringBuilder(mappedPackageName).append('/');
@@ -173,7 +176,7 @@ public class Renamer extends Transformer {
         INFO(String.format("Mapped %d names in resources. [%dms]", fixed.get(), System.currentTimeMillis() - current));
 
         if (printMappings.isEnable())
-            dumpMappings();
+            printMappings();
     }
 
     @Override
@@ -184,6 +187,21 @@ public class Renamer extends Transformer {
     @Override
     public String annotation() {
         return Type.getDescriptor(tech.skidonion.obfuscator.annotations.Renamer.class);
+    }
+
+    private void readInputMappingsFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputMappingsFiles.getValue()))) {
+            for (String line; (line = reader.readLine()) != null; ) {
+                String[] split = line.split(" -> ");
+                mappings.put(split[0], split[1]);
+            }
+        } catch (FileNotFoundException e) {
+            ERROR("Mappings file not found. Skipping import.");
+        } catch (IOException e) {
+            ERROR("Ran into an error trying to read the mappings file.", e);
+        } catch (IndexOutOfBoundsException e) {
+            ERROR("Invalid mappings file format. Skipping import.");
+        }
     }
 
     private void genMethodMappings(MethodWrapper methodWrapper, String owner, String newName, Access access) {
@@ -280,15 +298,15 @@ public class Renamer extends Transformer {
         return false;
     }
 
-    private void dumpMappings() {
+    private void printMappings() {
         long current = System.currentTimeMillis();
-        INFO("Dumping mappings.");
-        File file = new File("mappings.txt");
+        INFO("Printing mappings.");
+        File file = new File(printMappingsFile.getValue());
         if (file.exists())
             FileUtils.renameExistingFile(file);
 
         try {
-            file.createNewFile(); // TODO: handle this properly
+            file.createNewFile();
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
             mappings.forEach((oldName, newName) -> {
@@ -308,4 +326,5 @@ public class Renamer extends Transformer {
             t.printStackTrace();
         }
     }
+
 }
