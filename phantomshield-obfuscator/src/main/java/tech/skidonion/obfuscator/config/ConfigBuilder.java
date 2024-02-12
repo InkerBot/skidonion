@@ -15,7 +15,7 @@ public class ConfigBuilder {
     private String cppCompiler;
     private String cppCompilerArguments;
     private String cppCompilerOutput;
-    private int minimumLength = 3;
+    private long randomSeed;
     private String dictionary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final List<String> targets = new ArrayList<>();
     private final List<String> libraries = new ArrayList<>();
@@ -34,6 +34,7 @@ public class ConfigBuilder {
     private String loaderPackage = "skidonion/??????";
     private boolean printInstructions = false;
     private String modeInvokeDynamicNativeConverter = "compatibility";
+    private boolean hiddenStackTrace = true;
 
     // renamer
     private boolean renamer = false;
@@ -50,10 +51,13 @@ public class ConfigBuilder {
         config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJar, "output is null").getAbsoluteFile().toString());
         config.add("dictionary", dictionary);
-        config.add("minimum_generated_name_length", minimumLength);
 
         if (creationDate != null) {
             config.add("creation_date", creationDate);
+        }
+
+        if (randomSeed != 0) {
+            config.add("random_seed", randomSeed);
         }
 
         if (cppCompiler != null) {
@@ -67,6 +71,7 @@ public class ConfigBuilder {
         if (cppCompilerOutput != null) {
             config.add("cpp_compiler_output", cppCompilerOutput);
         }
+
 
         if (!targets.isEmpty()) {
             JsonArray array = new JsonArray();
@@ -98,6 +103,7 @@ public class ConfigBuilder {
             native_obfuscation.addProperty("loader_package", loaderPackage);
             native_obfuscation.addProperty("print_instructions", printInstructions);
             native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
+            native_obfuscation.addProperty("hidden_stack_trace", hiddenStackTrace);
 
             // 添加 过滤器
             sub_filters.computeIfPresent("native_obfuscation", (k, v) -> {
@@ -266,11 +272,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setMinimumLength(int minimumLength) {
-        this.minimumLength = Math.max(1, minimumLength);
-        return this;
-    }
-
     public ConfigBuilder setRepackage(boolean repackage) {
         this.repackage = repackage;
         return this;
@@ -310,4 +311,15 @@ public class ConfigBuilder {
         this.printMappingsFile = printMappingsFile;
         return this;
     }
+
+    public ConfigBuilder setRandomSeed(long randomSeed) {
+        this.randomSeed = randomSeed;
+        return this;
+    }
+
+    public ConfigBuilder setHiddenStackTrace(boolean hiddenStackTrace) {
+        this.hiddenStackTrace = hiddenStackTrace;
+        return this;
+    }
+
 }
