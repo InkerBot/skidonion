@@ -14,9 +14,10 @@ public class TestRun {
                 .setRenamer(true)
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setRepackage(false)
+                .setPrintMappings(true)
                 .setRepackageName("skidonion")
                 // TODO
-                .setStringObfuscation(true)
+                .setStringEncryption(true)
                 // TODO
                 .setNativeObfuscation(false)
                 .setModeInvokeDynamicNativeConverter("enhancement")

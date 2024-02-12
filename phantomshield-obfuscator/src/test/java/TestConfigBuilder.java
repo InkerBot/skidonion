@@ -19,7 +19,7 @@ public class TestConfigBuilder {
                 .setRepackage(false)
                 .setRepackageName("skidonion/???")
                 .addAdaptResources("META-INF/MANIFEST.MF")
-                .setStringObfuscation(true)
+                .setStringEncryption(true)
                 .setNativeObfuscation(true)
                 .setModeInvokeDynamicNativeConverter("enhancement")
                 .setLoaderPackage("skidonion/?????")
