@@ -1,8 +1,5 @@
 package tech.skidonion.obfuscator;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -51,36 +48,40 @@ public class PhantomShield {
 
     public PhantomShield(File file) throws IOException {
         this(Config.readConfig(file));
+        if (!config.has("input"))
+            throw new RuntimeException("No input file specified.");
+        if (!config.has("output"))
+            throw new RuntimeException("No output file specified.");
     }
 
     public PhantomShield(Config config) {
         this.config = config;
     }
 
-
+    @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
 
         if (config.has("dictionary")) {
-            dictionary = DictionaryFactory.get(config.getAsJsonPrimitive("dictionary").getAsString());
+            dictionary = DictionaryFactory.get(config.getString("dictionary"));
         } else {
             dictionary = DictionaryFactory.get("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         }
 
         if (config.has("cpp_compiler")) {
-            compiler = new CppCompiler(config.getAsJsonPrimitive("cpp_compiler").getAsString());
+            compiler = new CppCompiler(config.getString("cpp_compiler"));
         } else {
             compiler = new CppCompiler(CompilerUpdater.DEFAULT_COMPILER);
         }
         compiler.init(this);
         if (config.has("cpp_compiler_arguments"))
-            compiler.setExtraCommandLine(config.getAsJsonPrimitive("cpp_compiler_arguments").getAsString());
+            compiler.setExtraCommandLine(config.getString("cpp_compiler_arguments"));
         if (config.has("cpp_compiler_output"))
-            compiler.setDefaultOutput(config.getAsJsonPrimitive("cpp_compiler_output").getAsString());
+            compiler.setDefaultOutput(config.getString("cpp_compiler_output"));
         if (config.has("targets")) {
-            JsonArray targets = config.getAsJsonArray("targets");
-            targets.forEach(jsonElement -> compiler.addTarget(jsonElement.getAsString()));
+            List<String> targets = config.getList("targets");
+            targets.forEach(element -> compiler.addTarget(element));
         }
 
         loadClassPath();
@@ -94,7 +95,7 @@ public class PhantomShield {
     }
 
     private void writeOutput() {
-        File output = new File(config.getAsJsonPrimitive("output").getAsString());
+        File output = new File(config.getString("output"));
         INFO("Writing output to \"{}\".", output.getAbsolutePath());
 
 
@@ -104,8 +105,8 @@ public class PhantomShield {
         try {
 
             DateFormat formatter = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-            JsonPrimitive creationDate = config.getAsJsonPrimitive("creation_date");
-            long timestamp = creationDate != null ? formatter.parse(creationDate.getAsString()).getTime() : -1;
+            String creationDate = config.getString("creation_date");
+            long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
 
             ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
             classes.values().forEach(classWrapper -> {
@@ -144,49 +145,43 @@ public class PhantomShield {
     }
 
     private void loadClassPath() {
-        JsonArray libraries = config.getAsJsonArray("libraries");
+        List<String> libraries = config.getList("libraries");
         if (libraries != null) {
-            for (JsonElement library : libraries) {
-                if (library.isJsonPrimitive()) {
-                    JsonPrimitive primitive = library.getAsJsonPrimitive();
-                    if (primitive.isString()) {
-                        File file = new File(primitive.getAsString());
-                        if (file.exists()) {
-                            INFO("Loading library \"{}\".", file.getAbsolutePath());
-                            try {
-                                ZipFile zipFile = new ZipFile(file);
-                                Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            for (String library : libraries) {
+                File file = new File(library);
+                if (file.exists()) {
+                    INFO("Loading library \"{}\".", file.getAbsolutePath());
+                    try (ZipFile zipFile = new ZipFile(file)) {
+                        Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
-                                while (entries.hasMoreElements()) {
-                                    ZipEntry entry = entries.nextElement();
+                        while (entries.hasMoreElements()) {
+                            ZipEntry entry = entries.nextElement();
 
-                                    if (!entry.isDirectory() && entry.getName().endsWith(".class"))
-                                        try {
-                                            ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
-                                            classpath.put(cw.getName(), cw);
-                                        } catch (Throwable t) {
-                                            ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
-                                            t.printStackTrace();
-                                        }
+                            if (!entry.isDirectory() && entry.getName().endsWith(".class"))
+                                try {
+                                    ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
+                                    classpath.put(cw.getName(), cw);
+                                } catch (Throwable t) {
+                                    ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
+                                    t.printStackTrace();
                                 }
-                            } catch (ZipException e) {
-                                ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
-                                e.printStackTrace();
-                            }
-                        } else
-                            ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
-
+                        }
+                    } catch (ZipException e) {
+                        ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
+                        e.printStackTrace();
                     }
-                }
+                } else
+                    ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
+
             }
         }
     }
 
     private void loadInput() {
-        File input = new File(config.getAsJsonPrimitive("input").getAsString());
+        File input = new File(config.getString("input"));
 
         if (input.exists()) {
             long current = System.currentTimeMillis();
@@ -194,8 +189,7 @@ public class PhantomShield {
 
             Map<String, ClassWrapper> classes = new HashMap<>();
 
-            try {
-                ZipFile zipFile = new ZipFile(input);
+            try (ZipFile zipFile = new ZipFile(input)) {
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
                 while (entries.hasMoreElements()) {
@@ -240,7 +234,7 @@ public class PhantomShield {
             }
 
             if (config.has("random_seed")) {
-                seed = config.getAsJsonPrimitive("random_seed").getAsLong();
+                seed = config.getLong("random_seed");
                 INFO("Setting random seed to \"{}\".", seed);
             } else {
                 seed = ThreadLocalRandom.current().nextLong();

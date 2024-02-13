@@ -54,7 +54,7 @@ public class CppCompiler {
 
     public void compile(Map<String, String> properties) {
         if (outputDir == null)
-            outputDir = new File(obfuscator.getConfig().getAsJsonPrimitive("output").getAsString()).getParentFile();
+            outputDir = new File(obfuscator.getConfig().getString("output")).getParentFile();
         File buildDir = new File(outputDir, "build");
         buildDir.mkdirs();
 
@@ -103,7 +103,7 @@ public class CppCompiler {
                     .start();
             return process.waitFor();
         } catch (Exception e) {
-            e.printStackTrace();
+            ERROR("compiling failed:", e);
         }
         return -1;
     }

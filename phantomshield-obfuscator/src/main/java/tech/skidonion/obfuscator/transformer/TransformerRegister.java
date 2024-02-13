@@ -1,9 +1,5 @@
 package tech.skidonion.obfuscator.transformer;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.filter.Filter;
@@ -14,9 +10,12 @@ import tech.skidonion.obfuscator.transformer.impl.StringEncryption;
 import tech.skidonion.obfuscator.value.Value;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+
+import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 
 public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
@@ -36,41 +35,36 @@ public class TransformerRegister {
         return instances.get(name);
     }
 
+    @SuppressWarnings("unchecked")
     public void parseConfig(Config config) {
         Filter filter = null;
-        JsonArray filters = config.getAsJsonArray("filters");
+        List<String> filters = config.getList("filters");
         if (filters != null) {
             filter = new Filter();
-            for (JsonElement element : filters) {
-                JsonPrimitive primitive = element.getAsJsonPrimitive();
-                if (primitive.isString()) {
-                    filter.accept(primitive.getAsString());
-                }
+            for (String element : filters) {
+                filter.accept(element);
             }
         }
 
         for (Entry<String, Transformer> entry : instances.entrySet()) {
             String name = entry.getKey();
             Transformer instance = entry.getValue();
-            JsonObject settings = config.getAsJsonObject(name);
+            Map<String, Object> settings = config.getMap(name);
             if (settings != null) {
                 instance.setEnabled(true);
                 for (Value<?> value : instance.getSettings()) {
-                    JsonElement element = settings.get(value.getName());
+                    Object element = settings.get(value.getName());
                     if (element != null) {
-                        value.setValue(element);
+                        value.parseConfig(element);
                     }
                 }
 
 
-                JsonArray subfilters = settings.getAsJsonArray("filters");
+                List<String> subfilters = (List<String>) settings.get("filters");
                 if (subfilters != null) {
                     Filter subfilter = new Filter(filter);
-                    for (JsonElement element : subfilters) {
-                        JsonPrimitive primitive = element.getAsJsonPrimitive();
-                        if (primitive.isString()) {
-                            subfilter.accept(primitive.getAsString());
-                        }
+                    for (String element : subfilters) {
+                        subfilter.accept(element);
                     }
                     instance.setFilter(subfilter);
                 } else {
@@ -86,7 +80,7 @@ public class TransformerRegister {
             try {
                 instance.preprocess();
             } catch (Exception e) {
-                e.printStackTrace();
+                ERROR("Occurred an error while preprocessing.", e);
             }
         });
 
@@ -97,7 +91,7 @@ public class TransformerRegister {
             try {
                 instance.transform();
             } catch (Exception e) {
-                e.printStackTrace();
+                ERROR("Occurred an error while preprocessing.", e);
             }
             PhantomShield.INFO("Finished running {} transformer. [{}ms]", instance.getName(), (System.currentTimeMillis() - current));
             PhantomShield.INFO("-----------------------");

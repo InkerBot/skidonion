@@ -12,8 +12,8 @@ public class ConfigTest {
                 .setInputJar(new File("input.jar"))
                 .setOutputJar(new File("output"));
         Config config = configBuilder.build();
-        config.save(new File("config.json"));
-        assert config.getAsJsonPrimitive("input").getAsString().equals(new File("input.jar").getAbsoluteFile().toString());
-        assert config.getAsJsonPrimitive("output").getAsString().equals(new File("output").getAbsoluteFile().toString());
+        config.save(new File("config.yaml"));
+        assert config.getString("input").equals(new File("input.jar").getAbsoluteFile().toString());
+        assert config.getString("output").equals(new File("output").getAbsoluteFile().toString());
     }
 }

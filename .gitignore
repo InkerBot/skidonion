@@ -121,3 +121,4 @@ hs_err_pid*
 /output/
 /phantomshield-obfuscator/src/main/resources/binaries/
 /config.json
+/config.yaml

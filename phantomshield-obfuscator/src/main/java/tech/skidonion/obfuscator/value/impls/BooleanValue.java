@@ -1,7 +1,5 @@
 package tech.skidonion.obfuscator.value.impls;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import tech.skidonion.obfuscator.value.Value;
 
 public class BooleanValue extends Value<Boolean> {
@@ -10,10 +8,9 @@ public class BooleanValue extends Value<Boolean> {
     }
 
     @Override
-    public void setValue(JsonElement element) {
-        JsonPrimitive primitive = element.getAsJsonPrimitive();
-        if (primitive.isBoolean()) {
-            this.setValue(primitive.getAsBoolean());
+    public void parseConfig(Object element) {
+        if (element instanceof Boolean) {
+            this.setValue(((Boolean) element));
             return;
         }
         throw new IllegalArgumentException("Invalid Config Type in " + this.getName());

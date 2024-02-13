@@ -1,6 +1,5 @@
 package tech.skidonion.obfuscator.value.impls;
 
-import com.google.gson.JsonElement;
 import tech.skidonion.obfuscator.value.Value;
 
 public class ModeValue extends Value<String> {
@@ -12,13 +11,15 @@ public class ModeValue extends Value<String> {
     }
 
     @Override
-    public void setValue(JsonElement element) {
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString();
+    public void parseConfig(Object element) {
+        if (element instanceof String) {
+            String value = ((String) element);
             if (is(value)) {
                 this.setValue(value);
             }
+            return;
         }
+        throw new IllegalArgumentException("Invalid Config Type in " + this.getName());
     }
 
     public String[] getModes() {

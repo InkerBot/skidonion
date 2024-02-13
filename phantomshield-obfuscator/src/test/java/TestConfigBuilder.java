@@ -29,6 +29,6 @@ public class TestConfigBuilder {
                 .addSubFilter("native_obfuscation", "+org.example.**")
                 .addSubFilter("native_obfuscation", "-org.example.** void main(java.lang.String[])")
                 .build()
-                .save(new File("config.json"));
+                .save(new File("config.yaml"));
     }
 }

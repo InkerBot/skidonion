@@ -1,7 +1,5 @@
 package tech.skidonion.obfuscator.value;
 
-import com.google.gson.JsonElement;
-
 import java.util.Objects;
 
 public abstract class Value<V> {
@@ -27,7 +25,7 @@ public abstract class Value<V> {
         this.value = value;
     }
 
-    public abstract void setValue(JsonElement element);
+    public abstract void parseConfig(Object element);
 
     public V getDefaultValue() {
         return defaultValue;

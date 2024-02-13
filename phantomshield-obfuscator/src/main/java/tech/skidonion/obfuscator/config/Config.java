@@ -1,71 +1,81 @@
 package tech.skidonion.obfuscator.config;
 
-import com.google.gson.*;
-import com.google.gson.stream.JsonWriter;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Config {
-    private JsonObject config;
+    private Map<String, Object> config;
 
     Config() {
-        this.config = new JsonObject();
+        this.config = new LinkedHashMap<>();
     }
 
-    Config(File file) throws IOException {
+    Config(File file) throws FileNotFoundException {
         this.parse(file);
     }
 
     public <V> void add(String key, V value) {
-        if (value instanceof Number) {
-            Number v = ((Number) value);
-            this.config.addProperty(key, v);
-        } else if (value instanceof Boolean) {
-            Boolean v = ((Boolean) value);
-            this.config.addProperty(key, v);
-        } else if (value instanceof String) {
-            String v = ((String) value);
-            this.config.addProperty(key, v);
-        } else if (value instanceof Character) {
-            Character v = ((Character) value);
-            this.config.addProperty(key, v);
-        } else if (value instanceof JsonElement) {
-            JsonElement v = ((JsonElement) value);
-            this.config.add(key, v);
-        } else {
-            throw new RuntimeException("Invalid Config Value");
-        }
+        this.config.put(key, value);
     }
 
-    public JsonPrimitive getAsJsonPrimitive(String memberName) {
-        return config.getAsJsonPrimitive(memberName);
+    public Object get(String key) {
+        return this.config.get(key);
     }
 
-    public JsonArray getAsJsonArray(String memberName) {
-        return config.getAsJsonArray(memberName);
+    public String getString(String key) {
+        return (String) this.config.get(key);
     }
 
-    public JsonObject getAsJsonObject(String memberName) {
-        return config.getAsJsonObject(memberName);
+    public int getInteger(String key) {
+        return (int) this.config.get(key);
     }
 
-    public boolean has(String memberName) {
-        return config.has(memberName);
+    public long getLong(String key) {
+        return (long) this.config.get(key);
     }
 
-    public void save(File configFile) throws IOException {
-        Writer writer = new FileWriter(configFile);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        gson.toJson(this.config, writer);
+    public boolean getBoolean(String key) {
+        return (boolean) this.config.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends List<?>> T getList(String key) {
+        return (T) this.config.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Map<String, Object>> T getMap(String key) {
+        if (this.config.get(key) == null) return null;
+        return (T) this.config.get(key);
+    }
+
+    public boolean has(String key) {
+        return this.config.containsKey(key);
+    }
+
+    public void save(File file) throws IOException {
+        DumperOptions options = new DumperOptions();
+        options.setPrettyFlow(true);
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+        Yaml yaml = new Yaml(options);
+        FileWriter writer = new FileWriter(file);
+
+        yaml.dump(this.config, writer);
         writer.close();
     }
 
-    public void parse(File configFile) throws IOException {
-        Reader reader = new FileReader(configFile);
-        this.config = (JsonObject) JsonParser.parseReader(reader);
+    public void parse(File file) throws FileNotFoundException {
+        Yaml yaml = new Yaml();
+        this.config = yaml.load(new FileReader(file));
     }
 
-    public static Config readConfig(File file) throws IOException {
+    public static Config readConfig(File file) throws FileNotFoundException {
         return new Config(file);
     }
 }

@@ -82,7 +82,7 @@ public class NativeObfuscation extends Transformer {
 
     @Override
     public void transform() throws Exception {
-        Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getAsJsonPrimitive("output").getAsString()).getParentFile().toPath() : Files.createTempDirectory(null);
+        Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
         obfuscator.getCompiler().setOutputDir(cppDir.toFile());

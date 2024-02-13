@@ -1,8 +1,5 @@
 package tech.skidonion.obfuscator.config;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-
 import java.io.File;
 import java.util.*;
 
@@ -77,21 +74,15 @@ public class ConfigBuilder {
 
 
         if (!targets.isEmpty()) {
-            JsonArray array = new JsonArray();
-            targets.forEach(array::add);
-            config.add("targets", array);
+            config.add("targets", targets);
         }
 
         if (!libraries.isEmpty()) {
-            JsonArray array = new JsonArray();
-            libraries.forEach(array::add);
-            config.add("libraries", array);
+            config.add("libraries", libraries);
         }
 
         if (!filters.isEmpty()) {
-            JsonArray array = new JsonArray();
-            filters.forEach(array::add);
-            config.add("filters", array);
+            config.add("filters", filters);
         }
 
         // 处理变压器的方法
@@ -100,19 +91,17 @@ public class ConfigBuilder {
             // 如果不开启则直接跳过代码块
             if (!nativeObfuscation) break native_obfuscation;
             // 生成一个子json对象
-            JsonObject native_obfuscation = new JsonObject();
+            Map<String, Object> native_obfuscation = new LinkedHashMap<>();
 
             // 添加 settings
-            native_obfuscation.addProperty("loader_package", loaderPackage);
-            native_obfuscation.addProperty("print_instructions", printInstructions);
-            native_obfuscation.addProperty("invokedynamic_mode", modeInvokeDynamicNativeConverter);
-            native_obfuscation.addProperty("hidden_stack_trace", hiddenStackTrace);
+            native_obfuscation.put("loader_package", loaderPackage);
+            native_obfuscation.put("print_instructions", printInstructions);
+            native_obfuscation.put("invokedynamic_mode", modeInvokeDynamicNativeConverter);
+            native_obfuscation.put("hidden_stack_trace", hiddenStackTrace);
 
             // 添加 过滤器
             sub_filters.computeIfPresent("native_obfuscation", (k, v) -> {
-                JsonArray array = new JsonArray();
-                v.forEach(array::add);
-                native_obfuscation.add("filters", array);
+                native_obfuscation.put("filters", v);
                 return v;
             });
             // 加入父对象
@@ -122,12 +111,10 @@ public class ConfigBuilder {
         string_encryption:
         {
             if (!stringEncryption) break string_encryption;
-            JsonObject string_encryption = new JsonObject();
+            Map<String, Object> string_encryption = new LinkedHashMap<>();
 
             sub_filters.computeIfPresent("string_encryption", (k, v) -> {
-                JsonArray array = new JsonArray();
-                v.forEach(array::add);
-                string_encryption.add("filters", array);
+                string_encryption.put("filters", v);
                 return v;
             });
             config.add("string_encryption", string_encryption);
@@ -136,20 +123,18 @@ public class ConfigBuilder {
         renamer:
         {
             if (!renamer) break renamer;
-            JsonObject renamer = new JsonObject();
+            Map<String, Object> renamer = new LinkedHashMap<>();
 
-            renamer.addProperty("import_existing_mappings", importExistingMappings);
-            renamer.addProperty("input_mappings_file", inputMappingsFile);
-            renamer.addProperty("print_mappings", printMappings);
-            renamer.addProperty("print_mappings_file", printMappingsFile);
-            renamer.addProperty("repackage", repackage);
-            renamer.addProperty("repackage_name", repackageName);
-            renamer.add("adapt_resources", adaptResources.stream().collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
+            renamer.put("import_existing_mappings", importExistingMappings);
+            renamer.put("input_mappings_file", inputMappingsFile);
+            renamer.put("print_mappings", printMappings);
+            renamer.put("print_mappings_file", printMappingsFile);
+            renamer.put("repackage", repackage);
+            renamer.put("repackage_name", repackageName);
+            renamer.put("adapt_resources", adaptResources);
 
             sub_filters.computeIfPresent("renamer", (k, v) -> {
-                JsonArray array = new JsonArray();
-                v.forEach(array::add);
-                renamer.add("filters", array);
+                renamer.put("filters", v);
                 return v;
             });
             config.add("renamer", renamer);
@@ -158,12 +143,10 @@ public class ConfigBuilder {
         member_shuffler:
         {
             if (!memberShuffler) break member_shuffler;
-            JsonObject member_shuffler = new JsonObject();
+            Map<String, Object> member_shuffler = new LinkedHashMap<>();
 
             sub_filters.computeIfPresent("member_shuffler", (k, v) -> {
-                JsonArray array = new JsonArray();
-                v.forEach(array::add);
-                member_shuffler.add("filters", array);
+                member_shuffler.put("filters", v);
                 return v;
             });
             config.add("member_shuffler", member_shuffler);
@@ -338,6 +321,7 @@ public class ConfigBuilder {
         this.hiddenStackTrace = hiddenStackTrace;
         return this;
     }
+
     public ConfigBuilder setMemberShuffler(boolean memberShuffler) {
         this.memberShuffler = memberShuffler;
         return this;
