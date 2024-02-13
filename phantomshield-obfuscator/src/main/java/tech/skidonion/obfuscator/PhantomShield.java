@@ -95,11 +95,11 @@ public class PhantomShield {
 
     private void writeOutput() {
         File output = new File(config.getAsJsonPrimitive("output").getAsString());
-        INFO(String.format("Writing output to \"%s\".", output.getAbsolutePath()));
+        INFO("Writing output to \"{}\".", output.getAbsolutePath());
 
 
         if (output.exists())
-            INFO(String.format("Output file already exists, renamed to %s.", FileUtils.renameExistingFile(output)));
+            INFO("Output file already exists, renamed to {}.", FileUtils.renameExistingFile(output));
 
         try {
 
@@ -116,7 +116,7 @@ public class PhantomShield {
                     zos.write(classWrapper.toByteArray(this));
                     zos.closeEntry();
                 } catch (IOException ioe) {
-                    LOGGER.error(String.format("Error writing class %s. Skipping.", classWrapper.getName() + ".class"));
+                    ERROR("Error writing class {}. Skipping.", classWrapper.getName() + ".class");
                     ioe.printStackTrace();
                 }
             });
@@ -128,7 +128,7 @@ public class PhantomShield {
                     zos.write(bytes);
                     zos.closeEntry();
                 } catch (IOException ioe) {
-                    LOGGER.error(String.format("Error writing resource %s. Skipping.", name));
+                    ERROR("Error writing resource {}. Skipping.", name);
                     ioe.printStackTrace();
                 }
             });
@@ -152,7 +152,7 @@ public class PhantomShield {
                     if (primitive.isString()) {
                         File file = new File(primitive.getAsString());
                         if (file.exists()) {
-                            INFO(String.format("Loading library \"%s\".", file.getAbsolutePath()));
+                            INFO("Loading library \"{}\".", file.getAbsolutePath());
                             try {
                                 ZipFile zipFile = new ZipFile(file);
                                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -165,19 +165,19 @@ public class PhantomShield {
                                             ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
                                             classpath.put(cw.getName(), cw);
                                         } catch (Throwable t) {
-                                            LOGGER.error(String.format("Error while loading library class \"%s\".", entry.getName().replace(".class", "")));
+                                            ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
                                             t.printStackTrace();
                                         }
                                 }
                             } catch (ZipException e) {
-                                LOGGER.error(String.format("Library \"%s\" could not be opened as a zip file.", file.getAbsolutePath()));
+                                ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
                                 e.printStackTrace();
                             } catch (IOException e) {
-                                LOGGER.error(String.format("IOException happened while trying to load classes from \"%s\".", file.getAbsolutePath()));
+                                ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
                                 e.printStackTrace();
                             }
                         } else
-                            LOGGER.error(String.format("Library \"%s\" could not be found and will be ignored.", file.getAbsolutePath()));
+                            ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
 
                     }
                 }
@@ -190,7 +190,7 @@ public class PhantomShield {
 
         if (input.exists()) {
             long current = System.currentTimeMillis();
-            INFO(String.format("Loading input \"%s\".", input.getAbsolutePath()));
+            INFO("Loading input \"{}\".", input.getAbsolutePath());
 
             Map<String, ClassWrapper> classes = new HashMap<>();
 
@@ -230,11 +230,11 @@ public class PhantomShield {
                             this.resources.put(entry.getName(), IOUtils.toByteArray(in));
                 }
             } catch (ZipException e) {
-                LOGGER.error(String.format("Input file \"%s\" could not be opened as a zip file.", input.getAbsolutePath()));
+                ERROR("Input file \"{}\" could not be opened as a zip file.", input.getAbsolutePath());
                 e.printStackTrace();
                 throw new RuntimeException(e);
             } catch (IOException e) {
-                LOGGER.error(String.format("IOException happened while trying to load classes from \"%s\".", input.getAbsolutePath()));
+                ERROR("IOException happened while trying to load classes from \"{}\".", input.getAbsolutePath());
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
@@ -254,7 +254,7 @@ public class PhantomShield {
             INFO("Loaded {} classes in {}ms.", this.classes.size(), System.currentTimeMillis() - current);
 
         } else {
-            LOGGER.error(String.format("Unable to find \"%s\".", input.getAbsolutePath()));
+            ERROR("Unable to find \"{}\".", input.getAbsolutePath());
             throw new RuntimeException();
         }
     }

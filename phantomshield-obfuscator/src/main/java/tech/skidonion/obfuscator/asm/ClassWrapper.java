@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
+
 /**
  * Wrapper for ClassNodes.
  */
@@ -275,7 +277,7 @@ public class ClassWrapper {
 
             return writer.toByteArray();
         } catch (Throwable t) {
-            PhantomShield.INFO(String.format("Error writing class %s. Skipping frames (might cause runtime errors).", getName() + ".class"));
+            INFO("Error writing class {}. Skipping frames (might cause runtime errors).", getName() + ".class");
             t.printStackTrace();
 
             writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);

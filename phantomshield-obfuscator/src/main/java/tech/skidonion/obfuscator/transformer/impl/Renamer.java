@@ -118,7 +118,7 @@ public class Renamer extends Transformer {
             }
         });
 
-        INFO(String.format("Finished generated mappings. [%dms]", System.currentTimeMillis() - current));
+        INFO("Finished generated mappings. [{}ms]", System.currentTimeMillis() - current);
         INFO("Applying mappings.");
         current = System.currentTimeMillis();
 
@@ -149,7 +149,7 @@ public class Renamer extends Transformer {
             getClassPath().put(classWrapper.getName(), classWrapper);
         });
 
-        INFO(String.format("Mapped %d members. [%dms]", dummy.size(), System.currentTimeMillis() - current));
+        INFO("Mapped {} members. [{}ms]", dummy.size(), System.currentTimeMillis() - current);
         current = System.currentTimeMillis();
 
         // Now we gotta fix those resources because we probably screwed up random files.
@@ -182,7 +182,7 @@ public class Renamer extends Transformer {
             }
         }));
 
-        INFO(String.format("Mapped %d names in resources. [%dms]", fixed.get(), System.currentTimeMillis() - current));
+        INFO("Mapped {} names in resources. [{}ms]", fixed.get(), System.currentTimeMillis() - current);
 
         if (printMappings.isEnable())
             printMappings();
@@ -333,14 +333,14 @@ public class Renamer extends Transformer {
                 try {
                     bw.append(oldName).append(" -> ").append(newName).append('\n');
                 } catch (IOException ioe) {
-                    ERROR(String.format("Ran into an error trying to append \"%s -> %s\"", oldName, newName));
+                    ERROR("Ran into an error trying to append \"{} -> {}\"", oldName, newName);
                     ioe.printStackTrace();
                 }
             });
 
             bw.close();
-            INFO(String.format("Finished dumping mappings at %s. [%dms]", file.getAbsolutePath(),
-                    System.currentTimeMillis() - current));
+            INFO("Finished dumping mappings at {}. [{}ms]", file.getAbsolutePath(),
+                    System.currentTimeMillis() - current);
         } catch (Throwable t) {
             ERROR("Ran into an error trying to create the mappings file.");
             t.printStackTrace();
