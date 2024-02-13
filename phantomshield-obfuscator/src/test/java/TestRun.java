@@ -11,10 +11,12 @@ public class TestRun {
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
                 // TODO
+                .setMemberShuffler(true)
+                // TODO
                 .setRenamer(true)
                 .addAdaptResources("META-INF/MANIFEST.MF")
-                .setImportExistingMappings(true)
-                .setInputMappingsFile("mappings.txt")
+//                .setImportExistingMappings(true)
+//                .setInputMappingsFile("mappings.txt")
                 .setRepackage(false)
                 .setPrintMappings(false)
                 .setPrintMappingsFile("mappings.txt")

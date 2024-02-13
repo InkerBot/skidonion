@@ -338,5 +338,8 @@ public class ConfigBuilder {
         this.hiddenStackTrace = hiddenStackTrace;
         return this;
     }
-
+    public ConfigBuilder setMemberShuffler(boolean memberShuffler) {
+        this.memberShuffler = memberShuffler;
+        return this;
+    }
 }

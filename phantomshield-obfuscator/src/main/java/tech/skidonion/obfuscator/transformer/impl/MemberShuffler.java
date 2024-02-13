@@ -6,6 +6,7 @@ import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
@@ -60,17 +61,19 @@ public class MemberShuffler extends Transformer {
         }
         {
             long currentTime = System.currentTimeMillis();
+            long seed = obfuscator.getSeed();
+
             AtomicInteger counter = new AtomicInteger();
 
             getFilteredClasses().forEach(classWrapper -> {
-                Collections.shuffle(classWrapper.getClassNode().methods);
+                Collections.shuffle(classWrapper.getClassNode().methods, new Random(seed));
                 counter.addAndGet(classWrapper.getClassNode().methods.size());
 
-                Collections.shuffle(classWrapper.getClassNode().fields);
+                Collections.shuffle(classWrapper.getClassNode().fields, new Random(seed));
                 counter.addAndGet(classWrapper.getClassNode().fields.size());
             });
 
-            INFO("Shuffled %d members.[{}ms]", counter.get(), (System.currentTimeMillis() - currentTime));
+            INFO("Shuffled {} members.[{}ms]", counter.get(), (System.currentTimeMillis() - currentTime));
         }
     }
 

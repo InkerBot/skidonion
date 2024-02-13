@@ -44,6 +44,7 @@ public class PhantomShield {
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
+    private long seed;
     private final Config config;
     private Dictionary dictionary;
     private CppCompiler compiler;
@@ -238,8 +239,6 @@ public class PhantomShield {
                 throw new RuntimeException(e);
             }
 
-            long seed;
-
             if (config.has("random_seed")) {
                 seed = config.getAsJsonPrimitive("random_seed").getAsLong();
                 INFO("Setting random seed to \"{}\".", seed);
@@ -358,6 +357,10 @@ public class PhantomShield {
 
     public Dictionary getDictionary() {
         return dictionary;
+    }
+
+    public long getSeed() {
+        return seed;
     }
 
     public static void INFO(String message, Object... arguments) {
