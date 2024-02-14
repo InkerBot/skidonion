@@ -6,101 +6,104 @@ import java.util.*;
 public class ConfigBuilder {
 
     // attributions
-    private File inputJar;
-    private File outputJar;
-    private String creationDate;
-    private String cppCompiler;
-    private String cppCompilerArguments;
-    private String cppCompilerOutput;
-    private long randomSeed;
-    private String dictionary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private final List<String> targets = new ArrayList<>();
-    private final List<String> libraries = new ArrayList<>();
-    private final List<String> filters = new ArrayList<>();
+    private File inputJarSetting;
+    private File outputJarSetting;
+    private String creationDateSetting;
+    private String cppCompilerSetting;
+    private String cppCompilerArgumentsSetting;
+    private String cppCompilerOutputSetting;
+    private long randomSeedSetting;
+    private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private final List<String> targetsSettings = new ArrayList<>();
+    private final List<String> librariesSettings = new ArrayList<>();
+    private final List<String> filtersSettings = new ArrayList<>();
 
     // sub filters
-    private final Map<String, List<String>> sub_filters = new HashMap<>();
+    private final Map<String, List<String>> subFiltersSettings = new HashMap<>();
 
     // ======= transformers settings =======
 
     // string encryption
-    private boolean stringEncryption = false;
+    private boolean stringEncryptionEnable = false;
 
     // native obfuscation
-    private boolean nativeObfuscation = false;
-    private String loaderPackage = "skidonion/??????";
-    private boolean printInstructions = false;
-    private String modeInvokeDynamicNativeConverter = "compatibility";
-    private boolean hiddenStackTrace = true;
+    private boolean nativeObfuscationEnable = false;
+    private String loaderPackageSetting = "skidonion/??????";
+    private boolean printInstructionsSetting = false;
+    private String invokedynamicModeSetting = "compatibility";
+    private boolean hiddenStackTraceSetting = true;
 
     // renamer
-    private boolean renamer = false;
-    private boolean repackage = false;
-    private String repackageName = "skidonion/??????";
-    private boolean importExistingMappings = false;
-    private String inputMappingsFile = "mappings.txt";
-    private boolean printMappings = false;
-    private String printMappingsFile = "mappings.txt";
-    private List<String> adaptResources = new ArrayList<>();
+    private boolean renamerEnable = false;
+    private boolean repackageSetting = false;
+    private String repackageNameSetting = "skidonion/??????";
+    private boolean importExistingMappingsSetting = false;
+    private String inputMappingsFileSetting = "mappings.txt";
+    private boolean printMappingsSetting = false;
+    private String printMappingsFileSetting = "mappings.txt";
+    private final List<String> adaptResourcesSetting = new ArrayList<>();
 
     // member shuffler
-    private boolean memberShuffler = false;
+    private boolean memberShufflerEnable = false;
+
+    // debug_information_remover
+    private boolean debugInformationRemoverEnable = false;
 
     public final Config build() {
         Config config = new Config();
-        config.add("input", Objects.requireNonNull(inputJar, "input is null").getAbsoluteFile().toString());
-        config.add("output", Objects.requireNonNull(outputJar, "output is null").getAbsoluteFile().toString());
-        config.add("dictionary", dictionary);
+        config.add("input", Objects.requireNonNull(inputJarSetting, "input is null").getAbsoluteFile().toString());
+        config.add("output", Objects.requireNonNull(outputJarSetting, "output is null").getAbsoluteFile().toString());
+        config.add("dictionary", dictionarySetting);
 
-        if (creationDate != null) {
-            config.add("creation_date", creationDate);
+        if (creationDateSetting != null) {
+            config.add("creation_date", creationDateSetting);
         }
 
-        if (randomSeed != 0) {
-            config.add("random_seed", randomSeed);
+        if (randomSeedSetting != 0) {
+            config.add("random_seed", randomSeedSetting);
         }
 
-        if (cppCompiler != null) {
-            config.add("cpp_compiler", cppCompiler);
+        if (cppCompilerSetting != null) {
+            config.add("cpp_compiler", cppCompilerSetting);
         }
 
-        if (cppCompilerArguments != null) {
-            config.add("cpp_compiler_arguments", cppCompilerArguments);
+        if (cppCompilerArgumentsSetting != null) {
+            config.add("cpp_compiler_arguments", cppCompilerArgumentsSetting);
         }
 
-        if (cppCompilerOutput != null) {
-            config.add("cpp_compiler_output", cppCompilerOutput);
+        if (cppCompilerOutputSetting != null) {
+            config.add("cpp_compiler_output", cppCompilerOutputSetting);
         }
 
 
-        if (!targets.isEmpty()) {
-            config.add("targets", targets);
+        if (!targetsSettings.isEmpty()) {
+            config.add("targets", targetsSettings);
         }
 
-        if (!libraries.isEmpty()) {
-            config.add("libraries", libraries);
+        if (!librariesSettings.isEmpty()) {
+            config.add("libraries", librariesSettings);
         }
 
-        if (!filters.isEmpty()) {
-            config.add("filters", filters);
+        if (!filtersSettings.isEmpty()) {
+            config.add("filters", filtersSettings);
         }
 
         // 处理变压器的方法
         native_obfuscation:
         {
             // 如果不开启则直接跳过代码块
-            if (!nativeObfuscation) break native_obfuscation;
+            if (!nativeObfuscationEnable) break native_obfuscation;
             // 生成一个子json对象
             Map<String, Object> native_obfuscation = new LinkedHashMap<>();
 
             // 添加 settings
-            native_obfuscation.put("loader_package", loaderPackage);
-            native_obfuscation.put("print_instructions", printInstructions);
-            native_obfuscation.put("invokedynamic_mode", modeInvokeDynamicNativeConverter);
-            native_obfuscation.put("hidden_stack_trace", hiddenStackTrace);
+            native_obfuscation.put("loader_package", loaderPackageSetting);
+            native_obfuscation.put("print_instructions", printInstructionsSetting);
+            native_obfuscation.put("invokedynamic_mode", invokedynamicModeSetting);
+            native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
 
             // 添加 过滤器
-            sub_filters.computeIfPresent("native_obfuscation", (k, v) -> {
+            subFiltersSettings.computeIfPresent("native_obfuscation", (k, v) -> {
                 native_obfuscation.put("filters", v);
                 return v;
             });
@@ -110,10 +113,10 @@ public class ConfigBuilder {
 
         string_encryption:
         {
-            if (!stringEncryption) break string_encryption;
+            if (!stringEncryptionEnable) break string_encryption;
             Map<String, Object> string_encryption = new LinkedHashMap<>();
 
-            sub_filters.computeIfPresent("string_encryption", (k, v) -> {
+            subFiltersSettings.computeIfPresent("string_encryption", (k, v) -> {
                 string_encryption.put("filters", v);
                 return v;
             });
@@ -122,18 +125,18 @@ public class ConfigBuilder {
 
         renamer:
         {
-            if (!renamer) break renamer;
+            if (!renamerEnable) break renamer;
             Map<String, Object> renamer = new LinkedHashMap<>();
 
-            renamer.put("import_existing_mappings", importExistingMappings);
-            renamer.put("input_mappings_file", inputMappingsFile);
-            renamer.put("print_mappings", printMappings);
-            renamer.put("print_mappings_file", printMappingsFile);
-            renamer.put("repackage", repackage);
-            renamer.put("repackage_name", repackageName);
-            renamer.put("adapt_resources", adaptResources);
+            renamer.put("import_existing_mappings", importExistingMappingsSetting);
+            renamer.put("input_mappings_file", inputMappingsFileSetting);
+            renamer.put("print_mappings", printMappingsSetting);
+            renamer.put("print_mappings_file", printMappingsFileSetting);
+            renamer.put("repackage", repackageSetting);
+            renamer.put("repackage_name", repackageNameSetting);
+            renamer.put("adapt_resources", adaptResourcesSetting);
 
-            sub_filters.computeIfPresent("renamer", (k, v) -> {
+            subFiltersSettings.computeIfPresent("renamer", (k, v) -> {
                 renamer.put("filters", v);
                 return v;
             });
@@ -142,10 +145,10 @@ public class ConfigBuilder {
 
         member_shuffler:
         {
-            if (!memberShuffler) break member_shuffler;
+            if (!memberShufflerEnable) break member_shuffler;
             Map<String, Object> member_shuffler = new LinkedHashMap<>();
 
-            sub_filters.computeIfPresent("member_shuffler", (k, v) -> {
+            subFiltersSettings.computeIfPresent("member_shuffler", (k, v) -> {
                 member_shuffler.put("filters", v);
                 return v;
             });
@@ -155,68 +158,70 @@ public class ConfigBuilder {
         return config;
     }
 
-    public ConfigBuilder setInputJar(File inputJar) {
-        this.inputJar = inputJar;
+    /*======================*/
+
+    public ConfigBuilder setInputJarSetting(File inputJarSetting) {
+        this.inputJarSetting = inputJarSetting;
         return this;
     }
 
-    public ConfigBuilder setOutputJar(File outputJar) {
-        this.outputJar = outputJar;
+    public ConfigBuilder setOutputJarSetting(File outputJarSetting) {
+        this.outputJarSetting = outputJarSetting;
         return this;
     }
 
-    public ConfigBuilder setLoaderPackage(String loaderPackage) {
-        this.loaderPackage = loaderPackage;
+    public ConfigBuilder setLoaderPackageSetting(String loaderPackageSetting) {
+        this.loaderPackageSetting = loaderPackageSetting;
         return this;
     }
 
-    public ConfigBuilder setModeInvokeDynamicNativeConverter(String modeInvokeDynamicNativeConverter) {
-        this.modeInvokeDynamicNativeConverter = modeInvokeDynamicNativeConverter;
+    public ConfigBuilder setInvokedynamicModeSetting(String invokedynamicModeSetting) {
+        this.invokedynamicModeSetting = invokedynamicModeSetting;
         return this;
     }
 
-    public ConfigBuilder setPrintInstructions(boolean printInstructions) {
-        this.printInstructions = printInstructions;
+    public ConfigBuilder setPrintInstructionsSetting(boolean printInstructionsSetting) {
+        this.printInstructionsSetting = printInstructionsSetting;
         return this;
     }
 
-    public ConfigBuilder setNativeObfuscation(boolean nativeObfuscation) {
-        this.nativeObfuscation = nativeObfuscation;
+    public ConfigBuilder setNativeObfuscationEnable(boolean nativeObfuscationEnable) {
+        this.nativeObfuscationEnable = nativeObfuscationEnable;
         return this;
     }
 
-    public ConfigBuilder setStringEncryption(boolean stringEncryption) {
-        this.stringEncryption = stringEncryption;
+    public ConfigBuilder setStringEncryptionEnable(boolean stringEncryptionEnable) {
+        this.stringEncryptionEnable = stringEncryptionEnable;
         return this;
     }
 
     public ConfigBuilder addLibrary(String path) {
-        this.libraries.add(path);
+        this.librariesSettings.add(path);
         return this;
     }
 
     public ConfigBuilder addLibraries(String... paths) {
-        this.libraries.addAll(Arrays.asList(paths));
+        this.librariesSettings.addAll(Arrays.asList(paths));
         return this;
     }
 
-    public ConfigBuilder setCreationDate(String creationDate) {
-        this.creationDate = creationDate;
+    public ConfigBuilder setCreationDateSetting(String creationDateSetting) {
+        this.creationDateSetting = creationDateSetting;
         return this;
     }
 
     public ConfigBuilder addFilter(String filter) {
-        this.filters.add(filter);
+        this.filtersSettings.add(filter);
         return this;
     }
 
     public ConfigBuilder addFilters(String... filters) {
-        this.filters.addAll(Arrays.asList(filters));
+        this.filtersSettings.addAll(Arrays.asList(filters));
         return this;
     }
 
     public ConfigBuilder addSubFilter(String transformer, String filter) {
-        this.sub_filters.compute(transformer, (k, v) -> {
+        this.subFiltersSettings.compute(transformer, (k, v) -> {
             if (v == null) {
                 v = new ArrayList<>();
             }
@@ -227,7 +232,7 @@ public class ConfigBuilder {
     }
 
     public ConfigBuilder addSubFilters(String transformer, String... filters) {
-        this.sub_filters.compute(transformer, (k, v) -> {
+        this.subFiltersSettings.compute(transformer, (k, v) -> {
             if (v == null) {
                 v = new ArrayList<>();
             }
@@ -238,92 +243,98 @@ public class ConfigBuilder {
     }
 
     public ConfigBuilder addTarget(String target) {
-        this.targets.add(target);
+        this.targetsSettings.add(target);
         return this;
     }
 
     public ConfigBuilder addTargets(String... targets) {
-        this.targets.addAll(Arrays.asList(targets));
+        this.targetsSettings.addAll(Arrays.asList(targets));
         return this;
     }
 
-    public ConfigBuilder setCppCompiler(String cppCompiler) {
-        this.cppCompiler = cppCompiler;
+    public ConfigBuilder setCppCompilerSetting(String cppCompilerSetting) {
+        this.cppCompilerSetting = cppCompilerSetting;
         return this;
     }
 
-    public ConfigBuilder setCppCompilerArguments(String cppCompilerArguments) {
-        this.cppCompilerArguments = cppCompilerArguments;
+    public ConfigBuilder setCppCompilerArgumentsSetting(String cppCompilerArgumentsSetting) {
+        this.cppCompilerArgumentsSetting = cppCompilerArgumentsSetting;
         return this;
     }
 
-    public ConfigBuilder setCppCompilerOutput(String cppCompilerOutput) {
-        this.cppCompilerOutput = cppCompilerOutput;
+    public ConfigBuilder setCppCompilerOutputSetting(String cppCompilerOutputSetting) {
+        this.cppCompilerOutputSetting = cppCompilerOutputSetting;
         return this;
     }
 
-    public ConfigBuilder setRenamer(boolean renamer) {
-        this.renamer = renamer;
+    public ConfigBuilder setRenamerEnable(boolean renamerEnable) {
+        this.renamerEnable = renamerEnable;
         return this;
     }
 
-    public ConfigBuilder setDictionary(String dictionary) {
-        this.dictionary = Objects.requireNonNull(dictionary);
+    public ConfigBuilder setDictionarySetting(String dictionarySetting) {
+        this.dictionarySetting = Objects.requireNonNull(dictionarySetting);
         return this;
     }
 
-    public ConfigBuilder setRepackage(boolean repackage) {
-        this.repackage = repackage;
+    public ConfigBuilder setRepackageSetting(boolean repackageSetting) {
+        this.repackageSetting = repackageSetting;
         return this;
     }
 
-    public ConfigBuilder setRepackageName(String repackageName) {
-        this.repackageName = repackageName;
+    public ConfigBuilder setRepackageNameSetting(String repackageNameSetting) {
+        this.repackageNameSetting = repackageNameSetting;
         return this;
     }
 
-    public ConfigBuilder setPrintMappings(boolean printMappings) {
-        this.printMappings = printMappings;
+    public ConfigBuilder setPrintMappingsSetting(boolean printMappingsSetting) {
+        this.printMappingsSetting = printMappingsSetting;
         return this;
     }
 
     public ConfigBuilder addAdaptResources(String adaptResources) {
-        this.adaptResources.add(adaptResources);
+        this.adaptResourcesSetting.add(adaptResources);
         return this;
     }
 
     public ConfigBuilder addAdaptResources(String... adaptResources) {
-        this.adaptResources.addAll(Arrays.asList(adaptResources));
+        this.adaptResourcesSetting.addAll(Arrays.asList(adaptResources));
         return this;
     }
 
-    public ConfigBuilder setImportExistingMappings(boolean importExistingMappings) {
-        this.importExistingMappings = importExistingMappings;
+    public ConfigBuilder setImportExistingMappingsSetting(boolean importExistingMappingsSetting) {
+        this.importExistingMappingsSetting = importExistingMappingsSetting;
         return this;
     }
 
-    public ConfigBuilder setInputMappingsFile(String inputMappingsFile) {
-        this.inputMappingsFile = inputMappingsFile;
+    public ConfigBuilder setInputMappingsFileSetting(String inputMappingsFileSetting) {
+        this.inputMappingsFileSetting = inputMappingsFileSetting;
         return this;
     }
 
-    public ConfigBuilder setPrintMappingsFile(String printMappingsFile) {
-        this.printMappingsFile = printMappingsFile;
+    public ConfigBuilder setPrintMappingsFileSetting(String printMappingsFileSetting) {
+        this.printMappingsFileSetting = printMappingsFileSetting;
         return this;
     }
 
-    public ConfigBuilder setRandomSeed(long randomSeed) {
-        this.randomSeed = randomSeed;
+    public ConfigBuilder setRandomSeedSetting(long randomSeedSetting) {
+        this.randomSeedSetting = randomSeedSetting;
         return this;
     }
 
-    public ConfigBuilder setHiddenStackTrace(boolean hiddenStackTrace) {
-        this.hiddenStackTrace = hiddenStackTrace;
+    public ConfigBuilder setHiddenStackTraceSetting(boolean hiddenStackTraceSetting) {
+        this.hiddenStackTraceSetting = hiddenStackTraceSetting;
         return this;
     }
 
-    public ConfigBuilder setMemberShuffler(boolean memberShuffler) {
-        this.memberShuffler = memberShuffler;
+    public ConfigBuilder setMemberShufflerEnable(boolean memberShufflerEnable) {
+        this.memberShufflerEnable = memberShufflerEnable;
         return this;
     }
+
+    public ConfigBuilder setDebugInformationRemoverEnable(boolean debugInformationRemoverEnable) {
+        this.debugInformationRemoverEnable = debugInformationRemoverEnable;
+        return this;
+    }
+
 }
