@@ -3,10 +3,7 @@ package tech.skidonion.obfuscator.transformer;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.filter.Filter;
-import tech.skidonion.obfuscator.transformer.impl.MemberShuffler;
-import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
-import tech.skidonion.obfuscator.transformer.impl.Renamer;
-import tech.skidonion.obfuscator.transformer.impl.StringEncryption;
+import tech.skidonion.obfuscator.transformer.impl.*;
 import tech.skidonion.obfuscator.value.Value;
 
 import java.util.LinkedHashMap;
@@ -21,6 +18,7 @@ public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 
     public TransformerRegister() {
+        this.register(new DebugInformationRemover("debug_information_remover"));
         this.register(new MemberShuffler("member_shuffler"));
         this.register(new Renamer("renamer"));
         this.register(new StringEncryption("string_encryption"));
