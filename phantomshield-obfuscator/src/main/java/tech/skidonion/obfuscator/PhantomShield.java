@@ -144,41 +144,59 @@ public class PhantomShield {
         }
     }
 
+    private void loadClassPath(File file) {
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                File[] files = file.listFiles(filter -> {
+                    String filename = filter.getName().toLowerCase(Locale.ROOT);
+                    return filename.endsWith(".jar") || filename.endsWith(".zip") || filename.endsWith(".jmod");
+                });
+                if (files != null) {
+                    for (File jar : files) {
+                        loadClassPath(jar);
+                    }
+                }
+            } else {
+                INFO("Loading library \"{}\".", file.getAbsolutePath());
+                try (ZipFile zipFile = new ZipFile(file)) {
+                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+                    while (entries.hasMoreElements()) {
+                        ZipEntry entry = entries.nextElement();
+
+                        if (!entry.isDirectory() && entry.getName().endsWith(".class"))
+                            try {
+                                ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
+                                classpath.put(cw.getName(), cw);
+                            } catch (Throwable t) {
+                                ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
+                                t.printStackTrace();
+                            }
+                    }
+                } catch (ZipException e) {
+                    ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
+                    e.printStackTrace();
+                }
+
+            }
+        } else {
+            ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
+        }
+    }
+
     private void loadClassPath() {
         List<String> libraries = config.getList("libraries");
         if (libraries != null) {
             for (String library : libraries) {
                 File file = new File(library);
-                if (file.exists()) {
-                    INFO("Loading library \"{}\".", file.getAbsolutePath());
-                    try (ZipFile zipFile = new ZipFile(file)) {
-                        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
-                        while (entries.hasMoreElements()) {
-                            ZipEntry entry = entries.nextElement();
-
-                            if (!entry.isDirectory() && entry.getName().endsWith(".class"))
-                                try {
-                                    ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
-                                    classpath.put(cw.getName(), cw);
-                                } catch (Throwable t) {
-                                    ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
-                                    t.printStackTrace();
-                                }
-                        }
-                    } catch (ZipException e) {
-                        ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
-                        e.printStackTrace();
-                    }
-                } else
-                    ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
-
+                loadClassPath(file);
             }
         }
     }
+
 
     private void loadInput() {
         File input = new File(config.getString("input"));
