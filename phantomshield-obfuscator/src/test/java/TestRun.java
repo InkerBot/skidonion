@@ -10,22 +10,19 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                // TODO
-                .setMemberShuffler(true)
-                // TODO
-                .setRenamer(true)
+                .setDictionarySetting("random_unicode")
+                .setDebugInformationRemoverEnable(true) // Remover
+                .setRemoveSignaturesSetting(true)
+                .setMemberShufflerEnable(true) // Shuffler
+                .setRenamerEnable(true) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
-//                .setImportExistingMappings(true)
-//                .setInputMappingsFile("mappings.txt")
-                .setRepackage(false)
-                .setPrintMappings(false)
-                .setPrintMappingsFile("mappings.txt")
-                .setRepackageName("skidonion")
-                // TODO
-                .setStringEncryption(true)
-                // TODO
-                .setNativeObfuscation(false)
-                .setModeInvokeDynamicNativeConverter("enhancement")
+                .setRepackageSetting(false)
+                .setPrintMappingsSetting(false)
+                .setPrintMappingsFileSetting("mappings.txt")
+                .setRepackageNameSetting("skidonion")
+                .setStringEncryptionEnable(true) // String
+                .setNativeObfuscationEnable(false) // Native
+                .setInvokedynamicModeSetting("enhancement")
                 .addTarget("x86_64-windows")
                 .addSubFilter("native_obfuscation", "-** void main(java.lang.String[])")
 

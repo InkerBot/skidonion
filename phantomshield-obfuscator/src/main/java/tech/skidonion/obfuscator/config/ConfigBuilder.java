@@ -176,12 +176,12 @@ public class ConfigBuilder {
 
     /*======================*/
 
-    public ConfigBuilder setInputJarSetting(File inputJarSetting) {
+    public ConfigBuilder setInputJar(File inputJarSetting) {
         this.inputJarSetting = inputJarSetting;
         return this;
     }
 
-    public ConfigBuilder setOutputJarSetting(File outputJarSetting) {
+    public ConfigBuilder setOutputJar(File outputJarSetting) {
         this.outputJarSetting = outputJarSetting;
         return this;
     }
