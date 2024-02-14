@@ -1,30 +1,29 @@
 package tech.skidonion.obfuscator.dictionary;
 
-/**
- * String generation interface.
- */
-public interface Dictionary {
-    /**
-     * @param length the length the generated string should be.
-     * @return generates string randomly.
-     */
-    String randomString(int length);
+import java.util.concurrent.atomic.AtomicInteger;
+
+public abstract class Dictionary {
+    private final String name;
+    protected final AtomicInteger uniqueIndex = new AtomicInteger(0);
+
+    public Dictionary(String name) {
+        this.name = name;
+    }
+
+    public abstract String randomString(int length);
+
+    public abstract String nextUniqueString();
 
     /**
-     * @param length the length the generated string should be.
-     * @return generates unique string randomly.
+     * @return reconstruct a new dictionary
      */
-    String uniqueRandomString(int length);
+    public abstract Dictionary copy();
 
-    /**
-     * @return next unique string.
-     */
-    String nextUniqueString();
+    public final String getDictionaryName() {
+        return this.name;
+    }
 
-    /**
-     * @return name of dictionary.
-     */
-    String getDictionaryName();
-
-    Dictionary copy();
+    public final void setUniqueIndex(int index) {
+        this.uniqueIndex.set(index);
+    }
 }

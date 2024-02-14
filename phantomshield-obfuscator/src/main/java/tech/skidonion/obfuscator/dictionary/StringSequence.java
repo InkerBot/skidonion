@@ -27,11 +27,11 @@ public class StringSequence {
         this.sequence = strList.toArray(new String[0]);
     }
 
-    public int length() {
+    public int size() {
         return sequence.length;
     }
 
-    public String strAt(int index) {
+    public String stringAt(int index) {
         return sequence[index];
     }
 

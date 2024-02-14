@@ -66,9 +66,15 @@ public class PhantomShield {
         if (config.has("dictionary")) {
             Object value = config.get("dictionary");
             if (value instanceof List) {
+                List<String> list = ((List<String>) value);
+                if (list.size() < 2)
+                    throw new RuntimeException("it needed at least 2 characters to generate dictionary.");
                 dictionary = DictionaryFactory.getCustom(((List<String>) value));
-            } else if (value instanceof String){
-                dictionary = DictionaryFactory.get(((String) value));
+            } else if (value instanceof String) {
+                String string = (String) value;
+                if (string.length() < 2)
+                    throw new RuntimeException("it needed at least 2 characters to generate dictionary.");
+                dictionary = DictionaryFactory.get(string);
             }
         } else {
             dictionary = DictionaryFactory.get("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
