@@ -148,7 +148,7 @@ public class PhantomShield {
         if (file.exists()) {
             if (file.isDirectory()) {
                 File[] files = file.listFiles(filter -> {
-                    String filename = filter.getName().toLowerCase(Locale.ROOT);
+                    String filename = filter.getName().toLowerCase();
                     return filename.endsWith(".jar") || filename.endsWith(".zip") || filename.endsWith(".jmod");
                 });
                 if (files != null) {
