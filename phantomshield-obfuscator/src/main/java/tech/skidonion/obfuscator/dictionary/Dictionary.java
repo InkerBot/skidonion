@@ -3,7 +3,7 @@ package tech.skidonion.obfuscator.dictionary;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class Dictionary {
-    private final String name;
+    private String name;
     protected final AtomicInteger uniqueIndex = new AtomicInteger(0);
 
     public Dictionary(String name) {
@@ -25,5 +25,9 @@ public abstract class Dictionary {
 
     public final void setUniqueIndex(int index) {
         this.uniqueIndex.set(index);
+    }
+
+    public final void setName(String name) {
+        this.name = name;
     }
 }

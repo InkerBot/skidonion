@@ -11,7 +11,6 @@ import java.util.List;
  */
 public class CustomDictionary extends Dictionary {
     private final StringSequence sequences;
-
     public CustomDictionary(String charset) {
         this(new StringSequence(charset.toCharArray()));
     }

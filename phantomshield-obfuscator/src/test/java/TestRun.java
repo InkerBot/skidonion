@@ -10,7 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setDictionarySetting("random_unicode")
+                .setDictionarySetting("keywords")
                 .setDebugInformationRemoverEnable(true) // Remover
                 .setRemoveSignaturesSetting(true)
                 .setMemberShufflerEnable(true) // Shuffler
@@ -20,6 +20,9 @@ public class TestRun {
                 .setPrintMappingsSetting(false)
                 .setPrintMappingsFileSetting("mappings.txt")
                 .setRepackageNameSetting("skidonion")
+                .addSubFilters("renamer",
+                        "-dev.sim0n.app.Main",
+                        "-dev.sim0n.app.test.impl.annotation.TestAnnotation")
                 .setStringEncryptionEnable(true) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setInvokedynamicModeSetting("enhancement")

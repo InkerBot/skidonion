@@ -19,7 +19,7 @@
 package tech.skidonion.obfuscator.dictionary;
 
 import tech.skidonion.obfuscator.dictionary.impl.CustomDictionary;
-import tech.skidonion.obfuscator.dictionary.impl.RandomUnicodeDictionary;
+import tech.skidonion.obfuscator.dictionary.impl.KeywordDictionary;
 import tech.skidonion.obfuscator.dictionary.impl.SpacesDictionary;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class DictionaryFactory {
     public static Dictionary get(String s) {
         Dictionary[] dictionaries = {
                 new SpacesDictionary(),
-                new RandomUnicodeDictionary(),
+                new KeywordDictionary(),
         };
 
         for (Dictionary dictionary : dictionaries) {
