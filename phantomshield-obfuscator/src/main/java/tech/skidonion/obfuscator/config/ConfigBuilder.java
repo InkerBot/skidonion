@@ -48,6 +48,8 @@ public class ConfigBuilder {
 
     // debug_information_remover
     private boolean debugInformationRemoverEnable = false;
+    private boolean removeSignaturesSetting = true;
+
 
     public final Config build() {
         Config config = new Config();
@@ -153,6 +155,20 @@ public class ConfigBuilder {
                 return v;
             });
             config.add("member_shuffler", member_shuffler);
+        }
+
+        debug_information_remover:
+        {
+            if (!debugInformationRemoverEnable) break debug_information_remover;
+            Map<String, Object> debug_information_remover = new LinkedHashMap<>();
+
+            debug_information_remover.put("remove_signatures", removeSignaturesSetting);
+
+            subFiltersSettings.computeIfPresent("debug_information_remover", (k, v) -> {
+                debug_information_remover.put("filters", v);
+                return v;
+            });
+            config.add("debug_information_remover", debug_information_remover);
         }
 
         return config;
@@ -337,4 +353,8 @@ public class ConfigBuilder {
         return this;
     }
 
+    public ConfigBuilder setRemoveSignaturesSetting(boolean removeSignaturesSetting) {
+        this.removeSignaturesSetting = removeSignaturesSetting;
+        return this;
+    }
 }
