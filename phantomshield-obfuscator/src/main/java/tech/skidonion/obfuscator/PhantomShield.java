@@ -64,7 +64,12 @@ public class PhantomShield {
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
 
         if (config.has("dictionary")) {
-            dictionary = DictionaryFactory.get(config.getString("dictionary"));
+            Object value = config.get("dictionary");
+            if (value instanceof List) {
+                dictionary = DictionaryFactory.getCustom(((List<String>) value));
+            } else if (value instanceof String){
+                dictionary = DictionaryFactory.get(((String) value));
+            }
         } else {
             dictionary = DictionaryFactory.get("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         }
