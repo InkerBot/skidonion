@@ -40,7 +40,7 @@ public class Renamer extends Transformer {
     private final Map<String, String> fieldMappings = new HashMap<>();
     private final Map<String, String> classMappings = new HashMap<>();
     private final Map<String, String> packageMappings = new HashMap<>();
-    private final Map<String, String> dummy = new HashMap<>();
+    private final Map<String, String> mappings = new HashMap<>();
 
     public Renamer(String name) {
         super(name);
@@ -122,13 +122,13 @@ public class Renamer extends Transformer {
         INFO("Applying mappings.");
         current = System.currentTimeMillis();
 
-        dummy.putAll(classMappings);
-        dummy.putAll(methodMappings);
-        dummy.putAll(fieldMappings);
-        dummy.putAll(packageMappings);
+        mappings.putAll(classMappings);
+        mappings.putAll(methodMappings);
+        mappings.putAll(fieldMappings);
+        mappings.putAll(packageMappings);
 
         // Apply mappings
-        Remapper simpleRemapper = new MemberRemapper(dummy);
+        Remapper simpleRemapper = new MemberRemapper(mappings);
         new ArrayList<>(getClassWrappers()).forEach(classWrapper -> {
             ClassNode classNode = classWrapper.getClassNode();
 
@@ -149,7 +149,7 @@ public class Renamer extends Transformer {
             getClassPath().put(classWrapper.getName(), classWrapper);
         });
 
-        INFO("Mapped {} members. [{}ms]", dummy.size(), System.currentTimeMillis() - current);
+        INFO("Mapped {} members. [{}ms]", mappings.size(), System.currentTimeMillis() - current);
         current = System.currentTimeMillis();
 
         // Now we gotta fix those resources because we probably screwed up random files.
@@ -329,7 +329,7 @@ public class Renamer extends Transformer {
             file.createNewFile();
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
 
-            dummy.forEach((oldName, newName) -> {
+            mappings.forEach((oldName, newName) -> {
                 try {
                     bw.append(oldName).append(" -> ").append(newName).append('\n');
                 } catch (IOException ioe) {
