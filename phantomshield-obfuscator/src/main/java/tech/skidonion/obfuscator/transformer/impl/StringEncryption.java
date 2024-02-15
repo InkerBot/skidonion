@@ -3,7 +3,9 @@ package tech.skidonion.obfuscator.transformer.impl;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
+import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
@@ -16,12 +18,10 @@ import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
+
 public class StringEncryption extends Transformer {
-
     private final AtomicInteger count = new AtomicInteger(0);
-
-    private int index = 0;
-
 
     public StringEncryption(String name) {
         super(name, false);
@@ -29,17 +29,16 @@ public class StringEncryption extends Transformer {
 
     @Override
     public void transform() throws Exception {
-
+        long current = System.currentTimeMillis();
         getFilteredClasses().forEach(cw -> {
-            ClassNode classNode = cw.getClassNode();
-            if (isInterfaceClass(classNode)) return;
+            if (cw.getAccess().isInterface()) return;
             String[] strings = new String[65535];
             int numStrings = 0;
-            String decryptorMethodName = generate(index++);
-            String decryptedStringsFieldName = generate(index++);
+            String decryptorMethodName = cw.generateRandomMethodName();
+            String decryptedStringsFieldName = cw.generateRandomFieldName();
             Random rand = new Random();
-            for (MethodNode methods : classNode.methods) {
-                ListIterator<AbstractInsnNode> iter = methods.instructions.iterator();
+            for (MethodWrapper method : cw.getMethods()) {
+                ListIterator<AbstractInsnNode> iter = method.getInstructions().iterator();
                 while (iter.hasNext()) {
                     AbstractInsnNode inst = iter.next();
                     if (inst.getOpcode() == LDC) {
@@ -54,9 +53,9 @@ public class StringEncryption extends Transformer {
                             }
                             if (idx == numStrings) numStrings++;
                             strings[idx] = (String) ldc.cst;
-                            iter.add(createNumberNode(idx | (rand.nextInt() & 0xFFFF0000)));
+                            iter.add(ASMUtils.getNumberInsn(idx | (rand.nextInt() & 0xFFFF0000)));
                             iter.add(new InsnNode(I2C));
-                            iter.add(new MethodInsnNode(INVOKESTATIC, classNode.name, decryptorMethodName, "(C)Ljava/lang/Object;"));
+                            iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
                             iter.add(new TypeInsnNode(CHECKCAST, Type.getInternalName(String.class)));
                         }
                     }
@@ -64,85 +63,34 @@ public class StringEncryption extends Transformer {
             }
             if (numStrings > 0) {
                 this.count.addAndGet(numStrings);
-                classNode.fields.add(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
+                cw.addField(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
                 //TODO:把这个dummy field数量改成可调的
 
                 //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field
                 int randomDummy = new Random().nextInt(10);
                 for (int i = 0; i < randomDummy; i++) {
-                    classNode.fields.add(new FieldNode(ACC_STATIC, generate(index++), "Ljava/lang/Object;", "", null));
+                    cw.addField(new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null));
                 }
                 MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
-                methodNode.visitFieldInsn(GETSTATIC, classNode.name, decryptedStringsFieldName, "Ljava/lang/Object;");
+                methodNode.visitFieldInsn(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;");
                 methodNode.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
                 methodNode.visitVarInsn(ILOAD, 0);
                 methodNode.visitInsn(AALOAD);
                 methodNode.visitInsn(ARETURN);
-                classNode.methods.add(methodNode);
-                MethodNode clinit = getClassInitializer(classNode);
+                cw.addMethod(methodNode);
+                MethodNode clinit = cw.getOrCreateClinit();
 
-                MethodNode decryptor = generateEmptyVoidMethod(generate(index++));
-                classNode.methods.add(decryptor);
-                clinit.instructions.insertBefore(clinit.instructions.getFirst(), new MethodInsnNode(INVOKESTATIC, classNode.name, decryptor.name, decryptor.desc));
-                generateDecryptor(decryptor, classNode.name, decryptedStringsFieldName, strings, numStrings);
+                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings, numStrings);
             }
         });
+        INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
     }
 
-    private boolean isInterfaceClass(ClassNode node) {
-        return (node.access & 0x200) != 0;
-    }
-
-
-    private MethodNode getClassInitializer(ClassNode classNode) {
-        for (MethodNode method : classNode.methods) {
-            if (method.name.equals("<clinit>") && method.desc.equals("()V") && (method.access & Opcodes.ACC_STATIC) != 0)
-                return method;
-        }
-        MethodNode methodNode = generateEmptyVoidMethod("<clinit>");
-        classNode.methods.add(methodNode);
-        return methodNode;
-    }
-
-    public String generate(int index) {
-        int baseIndex = index / 26;
-        int offset = index % 26;
-
-        char newChar = (char) ((offset < 26 ? 'a' : 'A' - 26) + offset);
-
-        if (baseIndex == 0) {
-            return String.valueOf(newChar);
-        } else {
-            return generate(baseIndex - 1) + newChar;
-        }
-    }
 
     private MethodNode generateEmptyVoidMethod(String name) {
         MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, name, "()V", null, null);
         methodNode.visitInsn(Opcodes.RETURN);
         return methodNode;
-    }
-
-    private InsnList getStringInst(String string) {
-        InsnList list = new InsnList();
-        if (string.getBytes(StandardCharsets.UTF_8).length > 65535) {
-            int end;
-            list.add(new TypeInsnNode(Opcodes.NEW, Type.getInternalName(StringBuilder.class)));
-            list.add(new InsnNode(Opcodes.DUP));
-            list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "()V"));
-            while (string.length() > 0) {
-                end = Math.min(string.length(), 65535);
-                while (string.substring(0, end).getBytes(StandardCharsets.UTF_8).length > 65535) end--;
-                String s = string.substring(0, end);
-                string = string.substring(end);
-                list.add(new LdcInsnNode(s));
-                list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;"));
-            }
-            list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;"));
-        } else {
-            list.add(new LdcInsnNode(string));
-        }
-        return list;
     }
 
 
@@ -196,11 +144,11 @@ public class StringEncryption extends Transformer {
 
         InsnList decryptInsts = new InsnList();
         LabelNode realMethodStart = new LabelNode();
-        decryptInsts.add(getStringInst(new String(data, StandardCharsets.ISO_8859_1)));
+        decryptInsts.add(ASMUtils.getStringInst(new String(data, StandardCharsets.ISO_8859_1)));
         decryptInsts.add(new LdcInsnNode("ISO_8859_1"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "getBytes", "(Ljava/lang/String;)[B"));
         decryptInsts.add(new VarInsnNode(ASTORE, 0));
-        decryptInsts.add(getStringInst(new String(keyBytes, StandardCharsets.ISO_8859_1)));
+        decryptInsts.add(ASMUtils.getStringInst(new String(keyBytes, StandardCharsets.ISO_8859_1)));
         decryptInsts.add(new LdcInsnNode("ISO_8859_1"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "getBytes", "(Ljava/lang/String;)[B"));
         decryptInsts.add(new VarInsnNode(ASTORE, 1));
@@ -297,7 +245,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, 5));
         decryptInsts.add(new JumpInsnNode(IFNE, realMethodStart));
 
-        decryptInsts.add(createNumberNode(numStrings));
+        decryptInsts.add(ASMUtils.getNumberInsn(numStrings));
         decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
         decryptInsts.add(new InsnNode(DUP));
         decryptInsts.add(new VarInsnNode(ASTORE, 1));
@@ -366,65 +314,17 @@ public class StringEncryption extends Transformer {
             int j = 0;
             while ((swp[j] & 0xFF) != i) j++;
             insts.add(idx[i] = new LabelNode());
-            insts.add(createNumberNode(j | (rand.nextInt() & 0xFFFFFF00)));
+            insts.add(ASMUtils.getNumberInsn(j | (rand.nextInt() & 0xFFFFFF00)));
             insts.add(new JumpInsnNode(GOTO, end));
         }
         LabelNode def = new LabelNode();
         insts.add(def);
-        insts.add(createNumberNode(rand.nextInt()));
+        insts.add(ASMUtils.getNumberInsn(rand.nextInt()));
         insts.add(end);
         insts.insertBefore(idx[0], new TableSwitchInsnNode(0, 255, def, idx));
         return insts;
     }
 
-    private AbstractInsnNode createNumberNode(int value) {
-        int opcode = getNumberOpcode(value);
-        switch (opcode) {
-            case Opcodes.ICONST_M1:
-            case Opcodes.ICONST_0:
-            case Opcodes.ICONST_1:
-            case Opcodes.ICONST_2:
-            case Opcodes.ICONST_3:
-            case Opcodes.ICONST_4:
-            case Opcodes.ICONST_5:
-                return new InsnNode(opcode);
-            default:
-                if (value >= -128 && value <= 127) {
-                    return new IntInsnNode(Opcodes.BIPUSH, value);
-                } else if (value >= -32768 && value <= 32767) {
-                    return new IntInsnNode(Opcodes.SIPUSH, value);
-                } else {
-                    return new LdcInsnNode(value);
-                }
-        }
-    }
-
-    private int getNumberOpcode(int value) {
-        switch (value) {
-            case -1:
-                return Opcodes.ICONST_M1;
-            case 0:
-                return Opcodes.ICONST_0;
-            case 1:
-                return Opcodes.ICONST_1;
-            case 2:
-                return Opcodes.ICONST_2;
-            case 3:
-                return Opcodes.ICONST_3;
-            case 4:
-                return Opcodes.ICONST_4;
-            case 5:
-                return Opcodes.ICONST_5;
-            default:
-                if (value >= -128 && value <= 127) {
-                    return Opcodes.BIPUSH;
-                } else if (value >= -32768 && value <= 32767) {
-                    return Opcodes.SIPUSH;
-                } else {
-                    return Opcodes.LDC;
-                }
-        }
-    }
 
     @Override
     public void preprocess() throws Exception {

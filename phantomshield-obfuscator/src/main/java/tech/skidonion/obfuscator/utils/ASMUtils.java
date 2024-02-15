@@ -10,6 +10,7 @@ import tech.skidonion.obfuscator.asm.MethodWrapper;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -410,7 +411,29 @@ public class ASMUtils {
         return null;
     }
 
-    public static String toBasicType(Class<?> clz){
+    public static InsnList getStringInst(String string) {
+        InsnList list = new InsnList();
+        if (string.getBytes(StandardCharsets.UTF_8).length > 65535) {
+            int end;
+            list.add(new TypeInsnNode(Opcodes.NEW, Type.getInternalName(StringBuilder.class)));
+            list.add(new InsnNode(Opcodes.DUP));
+            list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "()V"));
+            while (string.length() > 0) {
+                end = Math.min(string.length(), 65535);
+                while (string.substring(0, end).getBytes(StandardCharsets.UTF_8).length > 65535) end--;
+                String s = string.substring(0, end);
+                string = string.substring(end);
+                list.add(new LdcInsnNode(s));
+                list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;"));
+            }
+            list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;"));
+        } else {
+            list.add(new LdcInsnNode(string));
+        }
+        return list;
+    }
+
+    public static String toBasicType(Class<?> clz) {
         if (clz == Integer.class) {
             return "I";
         } else if (clz == Long.class) {
