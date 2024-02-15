@@ -212,6 +212,24 @@ public abstract class Transformer implements Opcodes {
         return ASMUtils.getAnnotationValues(fieldWrapper, annotation());
     }
 
+    protected final void removeAnnotation(ClassWrapper classWrapper) {
+        if (annotation() == null)
+            return;
+        ASMUtils.removeAnnotation(classWrapper, annotation());
+    }
+
+    protected final void removeAnnotation(FieldWrapper fieldWrapper) {
+        if (annotation() == null)
+            return;
+        ASMUtils.removeAnnotation(fieldWrapper, annotation());
+    }
+
+    protected final void removeAnnotation(MethodWrapper methodWrapper) {
+        if (annotation() == null)
+            return;
+        ASMUtils.removeAnnotation(methodWrapper, annotation());
+    }
+
     protected final boolean matchAnnotation(ClassWrapper classWrapper) {
         Map<String, String> map = getAnnotationValues(classWrapper);
         return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));

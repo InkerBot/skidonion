@@ -302,6 +302,33 @@ public class ASMUtils {
         }
     }
 
+    public static void removeAnnotation(ClassWrapper clazz, String desc) {
+        if (clazz.getClassNode().invisibleAnnotations != null) {
+            clazz.getClassNode().invisibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+        if (clazz.getClassNode().visibleAnnotations != null) {
+            clazz.getClassNode().visibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+    }
+
+    public static void removeAnnotation(MethodWrapper method, String desc) {
+        if (method.getMethodNode().invisibleAnnotations != null) {
+            method.getMethodNode().invisibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+        if (method.getMethodNode().visibleAnnotations != null) {
+            method.getMethodNode().visibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+    }
+
+    public static void removeAnnotation(FieldWrapper field, String desc) {
+        if (field.getFieldNode().invisibleAnnotations != null) {
+            field.getFieldNode().invisibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+        if (field.getFieldNode().visibleAnnotations != null) {
+            field.getFieldNode().visibleAnnotations.removeIf(annotationNode -> annotationNode.desc.equals(desc));
+        }
+    }
+
     public static boolean hasAnnotation(ClassWrapper clazz, String desc) {
         if (clazz.getClassNode().invisibleAnnotations != null) {
             for (AnnotationNode annotation : clazz.getClassNode().invisibleAnnotations) {
