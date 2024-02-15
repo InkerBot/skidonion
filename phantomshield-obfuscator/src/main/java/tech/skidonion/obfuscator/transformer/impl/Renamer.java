@@ -69,6 +69,7 @@ public class Renamer extends Transformer {
 
         getClassWrappers().forEach(classWrapper -> {
             classWrapper.getMethods().stream().filter(Renamer::methodCanBeRenamed).forEach(methodWrapper -> {
+                removeAnnotation(methodWrapper);
                 HashSet<String> visited = new HashSet<>();
 
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited))
@@ -76,6 +77,7 @@ public class Renamer extends Transformer {
             });
 
             classWrapper.getFields().forEach(fieldWrapper -> {
+                removeAnnotation(fieldWrapper);
                 HashSet<String> visited = new HashSet<>();
 
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited))
@@ -83,6 +85,7 @@ public class Renamer extends Transformer {
             });
 
             if (match(classWrapper)) {
+                removeAnnotation(classWrapper);
                 String newName;
 
                 if (repackage.isEnable()) {

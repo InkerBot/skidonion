@@ -112,6 +112,7 @@ public class NativeObfuscation extends Transformer {
         Integer[] classIndexReference = new Integer[]{0};
 
         getFilteredClasses().forEach(cw -> {
+            removeAnnotation(cw);
             try {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
@@ -160,6 +161,7 @@ public class NativeObfuscation extends Transformer {
                         if (!MethodProcessor.shouldProcess(method.getMethodNode()) || !match(method)) {
                             continue;
                         }
+                        removeAnnotation(method);
 
                         MethodContext context = new MethodContext(this, method, i, cw, currentClassId);
                         methodProcessor.processMethod(context);

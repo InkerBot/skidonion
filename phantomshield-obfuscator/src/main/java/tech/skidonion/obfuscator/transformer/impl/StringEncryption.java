@@ -1,11 +1,10 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
@@ -14,7 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.util.LinkedHashMap;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,38 +32,34 @@ public class StringEncryption extends Transformer {
     public void transform() throws Exception {
         long current = System.currentTimeMillis();
         getFilteredClasses().forEach(cw -> {
+            removeAnnotation(cw);
             if (cw.getAccess().isInterface()) return;
-            String[] strings = new String[65535];
-            int numStrings = 0;
+            Map<String, Integer> strings = new LinkedHashMap<>();
             String decryptorMethodName = cw.generateRandomMethodName();
             String decryptedStringsFieldName = cw.generateRandomFieldName();
-            Random rand = new Random();
-            for (MethodWrapper method : cw.getMethods()) {
+            cw.getMethods().stream().filter(this::match).forEach(method -> {
+                removeAnnotation(method);
                 ListIterator<AbstractInsnNode> iter = method.getInstructions().iterator();
                 while (iter.hasNext()) {
                     AbstractInsnNode inst = iter.next();
                     if (inst.getOpcode() == LDC) {
                         LdcInsnNode ldc = (LdcInsnNode) inst;
                         if (ldc.cst instanceof String) {
+                            String value = ((String) ldc.cst);
                             iter.remove();
-                            int idx;
-                            for (idx = 0; idx < numStrings; idx++) {
-                                if (strings[idx] == ldc.cst) {
-                                    break;
-                                }
-                            }
-                            if (idx == numStrings) numStrings++;
-                            strings[idx] = (String) ldc.cst;
-                            iter.add(ASMUtils.getNumberInsn(idx | (rand.nextInt() & 0xFFFF0000)));
+                            int index = strings.computeIfAbsent(value, constant -> strings.size());
+                            iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
                             iter.add(new InsnNode(I2C));
                             iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
                             iter.add(new TypeInsnNode(CHECKCAST, Type.getInternalName(String.class)));
                         }
                     }
                 }
-            }
-            if (numStrings > 0) {
-                this.count.addAndGet(numStrings);
+            });
+            if (!strings.isEmpty()) {
+                if (strings.size() > 0xFFFF)
+                    throw new RuntimeException("String Constant Pool is bigger than maximum pool size??");
+                this.count.addAndGet(strings.size());
                 cw.addField(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
                 //TODO:把这个dummy field数量改成可调的
 
@@ -80,24 +77,15 @@ public class StringEncryption extends Transformer {
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
-                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings, numStrings);
+                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings);
             }
         });
         INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
     }
 
-
-    private MethodNode generateEmptyVoidMethod(String name) {
-        MethodNode methodNode = new MethodNode(Opcodes.ACC_STATIC, name, "()V", null, null);
-        methodNode.visitInsn(Opcodes.RETURN);
-        return methodNode;
-    }
-
-
-    private void generateDecryptor(MethodNode method, String ownerName, String decryptorFieldName, String[] strings, int numStrings) {
+    private void generateDecryptor(MethodNode method, String ownerName, String decryptorFieldName, Map<String, Integer> strings) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (int i = 0; i < numStrings; i++) {
-            String string = strings[i];
+        for (String string : strings.keySet()) {
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             int length = b.length;
             out.write(length & 0xFF);
@@ -245,7 +233,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, 5));
         decryptInsts.add(new JumpInsnNode(IFNE, realMethodStart));
 
-        decryptInsts.add(ASMUtils.getNumberInsn(numStrings));
+        decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
         decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
         decryptInsts.add(new InsnNode(DUP));
         decryptInsts.add(new VarInsnNode(ASTORE, 1));
