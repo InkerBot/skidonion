@@ -254,11 +254,11 @@ public class MethodProcessor {
 
         for (int instruction = 0; instruction < method.instructions.size(); ++instruction) {
             AbstractInsnNode node = method.instructions.get(instruction);
-            context.output.append("    // ").append(StringUtils.escapeCommentString(handlers[node.getType()]
-                    .insnToString(context, node))).append("; Stack: ").append(context.stackPointer).append("\n");
+//            context.output.append("    // ").append(StringUtils.escapeCommentString(handlers[node.getType()]
+//                    .insnToString(context, node))).append("; Stack: ").append(context.stackPointer).append("\n");
             handlers[node.getType()].accept(context, node);
             context.stackPointer = handlers[node.getType()].getNewStackPointer(node, context.stackPointer);
-            context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
+//            context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
         }
 
         output.append(String.format("    return (%s) 0;\n", CPP_TYPES[context.ret.getSort()]));
@@ -316,9 +316,4 @@ public class MethodProcessor {
 
         specialMethodProcessor.postProcess(context);
     }
-
-    public static String nameFromNode(MethodNode m, ClassNode cn) {
-        return cn.name + '#' + m.name + '!' + m.desc;
-    }
-
 }
