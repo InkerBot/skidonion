@@ -141,8 +141,8 @@ public class Renamer extends Transformer {
                     .forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
             IntStream.range(0, copy.fields.size())
                     .forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
-
             classWrapper.setClassNode(copy);
+            classWrapper.updateMemberNames();
 
             getClasses().remove(classWrapper.getOriginalName());
             getClasses().put(classWrapper.getName(), classWrapper);

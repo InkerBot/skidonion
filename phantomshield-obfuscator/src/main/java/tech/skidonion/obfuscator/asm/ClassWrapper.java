@@ -7,9 +7,12 @@ import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.accesses.Access;
 import tech.skidonion.obfuscator.asm.accesses.ClassAccess;
+import tech.skidonion.obfuscator.dictionary.Dictionary;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
@@ -22,6 +25,7 @@ public class ClassWrapper {
     private static final int INPUT_FLAGS = ClassReader.SKIP_FRAMES;
     private static final String DEFAULT_ENTRY_PREFIX = "";
 
+    private final PhantomShield obfuscator;
     private ClassNode classNode;
     private final String originalName;
     private final String originalSuperName;
@@ -29,14 +33,18 @@ public class ClassWrapper {
 
     private String entryPrefix;
     private final Access access;
+    private Dictionary methodDictionary;
+    private Dictionary fieldDictionary;
     private final List<AnnotationNode> originalAnnotations = new ArrayList<>();
     private final List<String> originalInterfaces = new ArrayList<>();
     private final List<MethodWrapper> methods = new ArrayList<>();
     private final List<FieldWrapper> fields = new ArrayList<>();
     private final List<String> strConsts = new ArrayList<>();
+    private final Set<String> methodNames = new HashSet<>();
+    private final Set<String> fieldNames = new HashSet<>();
 
-
-    public ClassWrapper(ClassReader cr, boolean libraryNode) {
+    public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode) {
+        this.obfuscator = obfuscator;
         ClassNode classNode = new ClassNode();
         cr.accept(classNode, libraryNode ? LIB_FLAGS : INPUT_FLAGS);
 
@@ -62,7 +70,8 @@ public class ClassWrapper {
         classNode.fields.forEach(fieldNode -> fields.add(new FieldWrapper(fieldNode, this)));
     }
 
-    public ClassWrapper(ClassNode classNode, boolean libraryNode) {
+    public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, boolean libraryNode) {
+        this.obfuscator = obfuscator;
         this.classNode = classNode;
         this.originalName = classNode.name;
         this.originalSuperName = classNode.superName;
@@ -80,18 +89,33 @@ public class ClassWrapper {
         if (classNode.interfaces != null) {
             originalInterfaces.addAll(classNode.interfaces.stream().map(String::new).collect(Collectors.toList()));
         }
-        classNode.methods.forEach(methodNode -> methods.add(new MethodWrapper(methodNode, this)));
-        classNode.fields.forEach(fieldNode -> fields.add(new FieldWrapper(fieldNode, this)));
+        classNode.methods.forEach(methodNode -> {
+            methodNames.add(methodNode.name);
+            methods.add(new MethodWrapper(methodNode, this));
+        });
+        classNode.fields.forEach(fieldNode -> {
+            fieldNames.add(fieldNode.name);
+            fields.add(new FieldWrapper(fieldNode, this));
+        });
     }
 
     public void addMethod(MethodNode methodNode) {
+        methodNames.add(methodNode.name);
         classNode.methods.add(methodNode);
         methods.add(new MethodWrapper(methodNode, this));
     }
 
     public void addField(FieldNode fieldNode) {
+        fieldNames.add(fieldNode.name);
         classNode.fields.add(fieldNode);
         fields.add(new FieldWrapper(fieldNode, this));
+    }
+
+    public void updateMemberNames() {
+        this.fieldNames.clear();
+        this.methodNames.clear();
+        fields.forEach(field -> this.fieldNames.add(field.getName()));
+        methods.forEach(method -> this.methodNames.add(method.getName()));
     }
 
     /**
@@ -246,8 +270,8 @@ public class ClassWrapper {
     /**
      * @return the computed current constant pool size of the wrapped {@link ClassNode}.
      */
-    public int computeConstantPoolSize(PhantomShield obfuscator) {
-        return new ClassReader(toByteArray(obfuscator)).getItemCount();
+    public int computeConstantPoolSize() {
+        return new ClassReader(toByteArray()).getItemCount();
     }
 
     public String getOriginalSuperName() {
@@ -262,7 +286,7 @@ public class ClassWrapper {
         return originalInterfaces;
     }
 
-    public byte[] toByteArray(PhantomShield obfuscator) {
+    public byte[] toByteArray() {
         // Construct byte writer
         ClassWriter writer = new CustomClassWriter(ClassWriter.COMPUTE_FRAMES, obfuscator);
 
@@ -296,5 +320,29 @@ public class ClassWrapper {
 
     public String getEntryName() {
         return entryPrefix + classNode.name + ".class";
+    }
+
+    public Dictionary getFieldDictionary() {
+        if (fieldDictionary == null)
+            fieldDictionary = obfuscator.getDictionary().copy();
+        return fieldDictionary;
+    }
+
+    public Dictionary getMethodDictionary() {
+        if (methodDictionary == null)
+            methodDictionary = obfuscator.getDictionary().copy();
+        return methodDictionary;
+    }
+
+    public String generateRandomMethodName() {
+        String generated;
+        while (methodNames.contains(generated = this.getMethodDictionary().nextUniqueString())) ;
+        return generated;
+    }
+
+    public String generateRandomFieldName() {
+        String generated;
+        while (fieldNames.contains(generated = this.getFieldDictionary().nextUniqueString())) ;
+        return generated;
     }
 }

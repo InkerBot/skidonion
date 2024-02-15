@@ -49,7 +49,7 @@ public abstract class Transformer implements Opcodes {
 
     protected final void injectClasses(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
-            ClassWrapper cw = new ClassWrapper(classNode, false);
+            ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
         }
     }
@@ -174,6 +174,7 @@ public abstract class Transformer implements Opcodes {
 
         return first + '$' + second.substring(second.lastIndexOf("/") + 1);
     }
+
 
     protected final boolean hasAnnotation(ClassWrapper classWrapper) {
         if (annotation() == null)

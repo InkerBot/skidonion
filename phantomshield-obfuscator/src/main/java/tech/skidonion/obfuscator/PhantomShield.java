@@ -40,6 +40,8 @@ public class PhantomShield {
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
+    public final Map<String, Dictionary> classesDictionaries = new HashMap<>();
+    public final Map<String, Dictionary> packageDictionaries = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private long seed;
     private final Config config;
@@ -125,7 +127,7 @@ public class PhantomShield {
                     ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
                     entry.setTime(timestamp);
                     zos.putNextEntry(entry);
-                    zos.write(classWrapper.toByteArray(this));
+                    zos.write(classWrapper.toByteArray());
                     zos.closeEntry();
                 } catch (IOException ioe) {
                     ERROR("Error writing class {}. Skipping.", classWrapper.getName() + ".class");
@@ -177,7 +179,7 @@ public class PhantomShield {
 
                         if (!entry.isDirectory() && entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(new ClassReader(zipFile.getInputStream(entry)), true);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true);
                                 classpath.put(cw.getName(), cw);
                             } catch (Throwable t) {
                                 ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
@@ -228,7 +230,7 @@ public class PhantomShield {
                     if (!entry.isDirectory())
                         if (entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(new ClassReader(in), false);
+                                ClassWrapper cw = new ClassWrapper(this,new ClassReader(in), false);
 
                                 if (cw.getVersion() <= Opcodes.V1_5)
                                     for (int i = 0; i < cw.getMethods().size(); i++) {
