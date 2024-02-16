@@ -100,6 +100,14 @@ public class PhantomShield {
         loadClassPath();
         loadInput();
 
+        INFO("Attempt to build classes inheritance...");
+        try {
+            this.buildInheritance();
+        } catch (Exception e) {
+            INFO("Occurs a error while building classes inheritance...", e);
+            return;
+        }
+
         TransformerRegister register = new TransformerRegister();
         register.parseConfig(config);
         register.process(this);
@@ -230,7 +238,7 @@ public class PhantomShield {
                     if (!entry.isDirectory())
                         if (entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(this,new ClassReader(in), false);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(in), false);
 
                                 if (cw.getVersion() <= Opcodes.V1_5)
                                     for (int i = 0; i < cw.getMethods().size(); i++) {

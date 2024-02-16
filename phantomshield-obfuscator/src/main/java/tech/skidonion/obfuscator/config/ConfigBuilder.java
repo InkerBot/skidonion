@@ -14,6 +14,7 @@ public class ConfigBuilder {
     private String cppCompilerOutputSetting;
     private long randomSeedSetting;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private String inputMappingsFileSetting;
     private final List<String> targetsSettings = new ArrayList<>();
     private final List<String> librariesSettings = new ArrayList<>();
     private final List<String> filtersSettings = new ArrayList<>();
@@ -37,8 +38,6 @@ public class ConfigBuilder {
     private boolean renamerEnable = false;
     private boolean repackageSetting = false;
     private String repackageNameSetting = "skidonion/??????";
-    private boolean importExistingMappingsSetting = false;
-    private String inputMappingsFileSetting = "mappings.txt";
     private boolean printMappingsSetting = false;
     private String printMappingsFileSetting = "mappings.txt";
     private final List<String> adaptResourcesSetting = new ArrayList<>();
@@ -65,6 +64,10 @@ public class ConfigBuilder {
             config.add("random_seed", randomSeedSetting);
         }
 
+        if (inputMappingsFileSetting != null) {
+            config.add("input_mappings_file", inputMappingsFileSetting);
+        }
+
         if (cppCompilerSetting != null) {
             config.add("cpp_compiler", cppCompilerSetting);
         }
@@ -89,6 +92,7 @@ public class ConfigBuilder {
         if (!filtersSettings.isEmpty()) {
             config.add("filters", filtersSettings);
         }
+
 
         // 处理变压器的方法
         native_obfuscation:
@@ -130,8 +134,6 @@ public class ConfigBuilder {
             if (!renamerEnable) break renamer;
             Map<String, Object> renamer = new LinkedHashMap<>();
 
-            renamer.put("import_existing_mappings", importExistingMappingsSetting);
-            renamer.put("input_mappings_file", inputMappingsFileSetting);
             renamer.put("print_mappings", printMappingsSetting);
             renamer.put("print_mappings_file", printMappingsFileSetting);
             renamer.put("repackage", repackageSetting);
@@ -315,11 +317,6 @@ public class ConfigBuilder {
 
     public ConfigBuilder addAdaptResources(String... adaptResources) {
         this.adaptResourcesSetting.addAll(Arrays.asList(adaptResources));
-        return this;
-    }
-
-    public ConfigBuilder setImportExistingMappingsSetting(boolean importExistingMappingsSetting) {
-        this.importExistingMappingsSetting = importExistingMappingsSetting;
         return this;
     }
 

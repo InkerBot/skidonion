@@ -27,6 +27,10 @@ public abstract class Dictionary {
         this.uniqueIndex.set(index);
     }
 
+    public final int getUniqueIndex() {
+        return this.uniqueIndex.get();
+    }
+
     public final void setName(String name) {
         this.name = name;
     }

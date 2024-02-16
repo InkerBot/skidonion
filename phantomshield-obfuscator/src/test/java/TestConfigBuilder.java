@@ -15,7 +15,6 @@ public class TestConfigBuilder {
                 .setCreationDateSetting("2024.2.5 12:00:00")
                 .setRenamerEnable(true)
                 .setPrintMappingsSetting(true)
-                .setImportExistingMappingsSetting(true)
                 .setInputMappingsFileSetting("mappings.txt")
                 .setRepackageSetting(false)
                 .setRepackageNameSetting("skidonion/???")

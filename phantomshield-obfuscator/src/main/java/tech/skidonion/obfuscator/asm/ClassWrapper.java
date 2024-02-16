@@ -41,7 +41,9 @@ public class ClassWrapper {
     private final List<FieldWrapper> fields = new ArrayList<>();
     private final List<String> strConsts = new ArrayList<>();
     private final Set<String> methodNames = new HashSet<>();
+    private final Set<String> methodDescriptors = new HashSet<>();
     private final Set<String> fieldNames = new HashSet<>();
+    private final Set<String> fieldDescriptors = new HashSet<>();
 
     public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode) {
         this.obfuscator = obfuscator;
@@ -66,8 +68,16 @@ public class ClassWrapper {
             originalInterfaces.addAll(classNode.interfaces.stream().map(String::new).collect(Collectors.toList()));
         }
 
-        classNode.methods.forEach(methodNode -> methods.add(new MethodWrapper(methodNode, this)));
-        classNode.fields.forEach(fieldNode -> fields.add(new FieldWrapper(fieldNode, this)));
+        classNode.methods.forEach(methodNode -> {
+            methodNames.add(methodNode.name);
+            methodDescriptors.add(methodNode.name + methodNode.desc);
+            methods.add(new MethodWrapper(methodNode, this));
+        });
+        classNode.fields.forEach(fieldNode -> {
+            fieldNames.add(fieldNode.name);
+            fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
+            fields.add(new FieldWrapper(fieldNode, this));
+        });
     }
 
     public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, boolean libraryNode) {
@@ -91,10 +101,12 @@ public class ClassWrapper {
         }
         classNode.methods.forEach(methodNode -> {
             methodNames.add(methodNode.name);
+            methodDescriptors.add(methodNode.name + methodNode.desc);
             methods.add(new MethodWrapper(methodNode, this));
         });
         classNode.fields.forEach(fieldNode -> {
             fieldNames.add(fieldNode.name);
+            fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
             fields.add(new FieldWrapper(fieldNode, this));
         });
     }
@@ -114,8 +126,16 @@ public class ClassWrapper {
     public void updateMemberNames() {
         this.fieldNames.clear();
         this.methodNames.clear();
-        fields.forEach(field -> this.fieldNames.add(field.getName()));
-        methods.forEach(method -> this.methodNames.add(method.getName()));
+        this.fieldDescriptors.clear();
+        this.methodDescriptors.clear();
+        fields.forEach(field -> {
+            this.fieldNames.add(field.getName());
+            this.fieldDescriptors.add(field.getName() + "." + field.getDescription());
+        });
+        methods.forEach(method -> {
+            this.methodNames.add(method.getName());
+            this.methodDescriptors.add(method.getName() + method.getDescription());
+        });
     }
 
     /**
@@ -336,13 +356,73 @@ public class ClassWrapper {
 
     public String generateRandomMethodName() {
         String generated;
-        while (methodNames.contains(generated = this.getMethodDictionary().nextUniqueString())) ;
+        Set<String> visited;
+        do {
+            visited = new HashSet<>();
+            generated = this.getMethodDictionary().nextUniqueString();
+        } while (isMethodNameUnique(generated, getOriginalName(), visited));
         return generated;
     }
 
     public String generateRandomFieldName() {
         String generated;
-        while (fieldNames.contains(generated = this.getFieldDictionary().nextUniqueString())) ;
+        Set<String> visited;
+        do {
+            visited = new HashSet<>();
+            generated = this.getFieldDictionary().nextUniqueString();
+        } while (isFieldNameUnique(generated, getOriginalName(), visited));
         return generated;
+    }
+
+    private boolean isFieldNameUnique(String name, String owner, Set<String> visited) {
+        if (visited.contains(owner))
+            return true;
+        visited.add(owner);
+        ClassTree tree = obfuscator.getTree(owner);
+        if (tree.getClassWrapper().fieldNames.contains(name))
+            return false;
+        for (String parent : tree.getParentClasses()) {
+            boolean flag = isFieldNameUnique(name, parent, visited);
+            if (!flag) return false;
+        }
+        for (String sub : tree.getSubClasses()) {
+            boolean flag = isFieldNameUnique(name, sub, visited);
+            if (!flag) return false;
+        }
+        return true;
+    }
+
+    private boolean isMethodNameUnique(String name, String owner, Set<String> visited) {
+        if (visited.contains(owner))
+            return true;
+        visited.add(owner);
+        ClassTree tree = obfuscator.getTree(owner);
+        if (tree.getClassWrapper().methodNames.contains(name))
+            return false;
+        for (String parent : tree.getParentClasses()) {
+            boolean flag = isMethodNameUnique(name, parent, visited);
+            if (!flag) return false;
+        }
+        for (String sub : tree.getSubClasses()) {
+            boolean flag = isMethodNameUnique(name, sub, visited);
+            if (!flag) return false;
+        }
+        return true;
+    }
+
+    public Set<String> getMethodNames() {
+        return methodNames;
+    }
+
+    public Set<String> getFieldNames() {
+        return fieldNames;
+    }
+
+    public Set<String> getMethodDescriptors() {
+        return methodDescriptors;
+    }
+
+    public Set<String> getFieldDescriptors() {
+        return fieldDescriptors;
     }
 }
