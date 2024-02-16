@@ -360,7 +360,7 @@ public class ClassWrapper {
         do {
             visited = new HashSet<>();
             generated = this.getMethodDictionary().nextUniqueString();
-        } while (isMethodNameUnique(generated, getOriginalName(), visited));
+        } while (!isMethodNameUnique(generated, getOriginalName(), visited));
         return generated;
     }
 
@@ -370,7 +370,7 @@ public class ClassWrapper {
         do {
             visited = new HashSet<>();
             generated = this.getFieldDictionary().nextUniqueString();
-        } while (isFieldNameUnique(generated, getOriginalName(), visited));
+        } while (!isFieldNameUnique(generated, getOriginalName(), visited));
         return generated;
     }
 

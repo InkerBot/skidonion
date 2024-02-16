@@ -18,13 +18,13 @@ public class TestRun {
                 .setRenamerEnable(true) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setRepackageSetting(false)
-                .setPrintMappingsSetting(true)
+                .setPrintMappingsSetting(false)
                 .setPrintMappingsFileSetting("mappings.json")
                 .setRepackageNameSetting("skidonion")
                 .addSubFilters("renamer",
                         "-dev.sim0n.app.Main",
                         "-dev.sim0n.app.test.impl.annotation.TestAnnotation")
-                .setStringEncryptionEnable(false) // String
+                .setStringEncryptionEnable(true) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setInvokedynamicModeSetting("enhancement")
                 .addTarget("x86_64-windows")
