@@ -127,8 +127,8 @@ public class DebugInformationRemover extends Transformer {
         if (inner_class.get() != 0) INFO("Removed {} inner classes information.", inner_class.get());
         if (source_file.get() != 0) INFO("Removed {} source file attributes.", source_file.get());
         if (outer_method.get() != 0) INFO("Removed {} outer methods.", outer_method.get());
-        if (local_variable.get() != 0) INFO("Removed %d local variables.", local_variable.get());
-        if (line_number.get() != 0) INFO("Removed %d line numbers.", line_number.get());
+        if (local_variable.get() != 0) INFO("Removed {} local variables.", local_variable.get());
+        if (line_number.get() != 0) INFO("Removed {} line numbers.", line_number.get());
     }
 
     @Override
