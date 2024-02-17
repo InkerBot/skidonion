@@ -41,9 +41,7 @@ public class Renamer extends Transformer {
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
     private final Map<String, String> methodMappings = new HashMap<>();
-    final Set<String> methodsObfuscated = new HashSet<>();
     private final Map<String, String> fieldMappings = new HashMap<>();
-    final Set<String> fieldsObfuscated = new HashSet<>();
     private final Map<String, String> classMappings = new HashMap<>();
     private final Map<String, String> packageMappings = new HashMap<>();
     private final Map<String, String> annotationMappings = new HashMap<>();
@@ -72,7 +70,10 @@ public class Renamer extends Transformer {
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
-                    processRenamerResult(genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), new RenamerResult(classWrapper.getMethodDictionary().nextUniqueString(), 0), generated));
+                    RenamerResult result = genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
+                    classWrapper.getMethodDictionary().setUniqueIndex(result.getMaximumIndex());
+                    result.setObfuscatedName(classWrapper.getMethodDictionary().nextUniqueString());
+                    processRenamerResult(result);
                 }
             });
 
@@ -81,7 +82,10 @@ public class Renamer extends Transformer {
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
-                    processRenamerResult(genFieldMappings(fieldWrapper, fieldWrapper.getOwner().getOriginalName(), new RenamerResult(classWrapper.getFieldDictionary().nextUniqueString(), 0), generated));
+                    RenamerResult result = genFieldMappings(fieldWrapper, fieldWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
+                    classWrapper.getFieldDictionary().setUniqueIndex(result.getMaximumIndex());
+                    result.setObfuscatedName(classWrapper.getFieldDictionary().nextUniqueString());
+                    processRenamerResult(result);
                 }
             });
 
@@ -213,12 +217,6 @@ public class Renamer extends Transformer {
                 case METHOD:
                     methodMappings.put(entry.getKey(), obfuscatedName);
                     break;
-                case OBFUSCATED_FIELD:
-                    fieldsObfuscated.add(String.format(entry.getKey(), obfuscatedName));
-                    break;
-                case OBFUSCATED_METHOD:
-                    methodsObfuscated.add(String.format(entry.getKey(), obfuscatedName));
-                    break;
                 case ANNOTATION:
                     annotationMappings.put(entry.getKey(), obfuscatedName);
                     break;
@@ -240,17 +238,10 @@ public class Renamer extends Transformer {
         ClassTree tree = obfuscator.getTree(owner);
         ClassWrapper cw = tree.getClassWrapper();
         Dictionary dictionary = cw.getMethodDictionary();
-        String obfuscatedKey = owner + ".%s" + methodWrapper.getOriginalDescription();
-        if (methodsObfuscated.contains(String.format(obfuscatedKey, result.getObfuscatedName()))) {
-            int index = Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex());
-            dictionary.setUniqueIndex(index);
-            result.setObfuscatedName(dictionary.nextUniqueString());
-            result.setMaximumIndex(dictionary.getUniqueIndex());
-        }
+        result.setMaximumIndex(Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex()));
 
         if (cw.getMethodDescriptors().contains(uniqueMethodName)) {
             result.add(key, RenamerResult.RenamerType.METHOD);
-            result.add(obfuscatedKey, RenamerResult.RenamerType.OBFUSCATED_METHOD);
             if (cw.getAccess().isAnnotation()) {
                 result.add(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), RenamerResult.RenamerType.ANNOTATION);
             }
@@ -274,17 +265,10 @@ public class Renamer extends Transformer {
         ClassTree tree = obfuscator.getTree(owner);
         ClassWrapper cw = tree.getClassWrapper();
         Dictionary dictionary = cw.getFieldDictionary();
-        String obfuscatedKey = owner + ".%s." + fieldWrapper.getOriginalDescription();
-        if (fieldsObfuscated.contains(String.format(obfuscatedKey, result.getObfuscatedName()))) {
-            int index = Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex());
-            dictionary.setUniqueIndex(index);
-            result.setObfuscatedName(dictionary.nextUniqueString());
-            result.setMaximumIndex(dictionary.getUniqueIndex());
-        }
+        result.setMaximumIndex(Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex()));
 
         if (cw.getFieldDescriptors().contains(uniqueFieldName)) {
             result.add(key, RenamerResult.RenamerType.FIELD);
-            result.add(obfuscatedKey, RenamerResult.RenamerType.OBFUSCATED_FIELD);
         } else {
             result.add(key, RenamerResult.RenamerType.DUMMY);
         }

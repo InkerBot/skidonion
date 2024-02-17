@@ -10,7 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setDictionarySetting("keywords")
+                .setDictionarySetting("spaces")
                 .setRandomSeedSetting(5959769109092458520L)
                 .setDebugInformationRemoverEnable(true) // Remover
                 .setRemoveSignaturesSetting(true)
@@ -18,13 +18,13 @@ public class TestRun {
                 .setRenamerEnable(true) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setRepackageSetting(false)
-                .setPrintMappingsSetting(false)
+                .setPrintMappingsSetting(true)
                 .setPrintMappingsFileSetting("mappings.json")
                 .setRepackageNameSetting("skidonion")
                 .addSubFilters("renamer",
                         "-dev.sim0n.app.Main",
                         "-dev.sim0n.app.test.impl.annotation.TestAnnotation")
-                .setStringEncryptionEnable(true) // String
+                .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setInvokedynamicModeSetting("enhancement")
                 .addTarget("x86_64-windows")

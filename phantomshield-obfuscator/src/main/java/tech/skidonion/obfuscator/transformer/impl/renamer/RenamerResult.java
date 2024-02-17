@@ -8,11 +8,6 @@ public class RenamerResult {
     private final Map<String, RenamerType> influences = new HashMap<>();
     private int maximumIndex;
 
-    public RenamerResult(String obfuscatedName, int maximumIndex) {
-        this.obfuscatedName = obfuscatedName;
-        this.maximumIndex = maximumIndex;
-    }
-
     public String getObfuscatedName() {
         return obfuscatedName;
     }
@@ -38,6 +33,6 @@ public class RenamerResult {
     }
 
     public enum RenamerType {
-        FIELD, METHOD, OBFUSCATED_FIELD, OBFUSCATED_METHOD, ANNOTATION, DUMMY;
+        FIELD, METHOD, ANNOTATION, DUMMY;
     }
 }
