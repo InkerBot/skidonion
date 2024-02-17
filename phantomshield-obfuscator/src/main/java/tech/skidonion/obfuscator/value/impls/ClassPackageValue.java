@@ -11,7 +11,7 @@ public class ClassPackageValue extends StringValue {
     public String getValue() {
         String path = super.getValue().replace(".", "/");
         StringBuilder sb = new StringBuilder(path);
-        if (path.endsWith("/")) sb.deleteCharAt(sb.length() - 1);
+        if (!path.endsWith("/")) sb.append('/');
         for (int index = 0; (index = sb.indexOf("?", index)) != -1; ) {
             sb.replace(index, index + 1, RandomUtils.getRandomLetters(1));
         }

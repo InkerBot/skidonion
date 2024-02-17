@@ -77,6 +77,7 @@ public class NativeObfuscation extends Transformer {
         cachedFields = new NodeCache<>("(cfields[%d])");
         methodProcessor = new MethodProcessor(this);
         nativeDir = loader_package.getValue();
+        nativeDir = nativeDir.substring(0, nativeDir.length() - 1);
     }
 
 

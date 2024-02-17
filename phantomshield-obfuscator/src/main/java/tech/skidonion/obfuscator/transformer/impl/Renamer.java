@@ -37,6 +37,11 @@ import static tech.skidonion.obfuscator.PhantomShield.INFO;
 public class Renamer extends Transformer {
     private final BooleanValue printMappings = new BooleanValue("print_mappings", false);
     private final StringValue printMappingsFile = new StringValue("print_mappings_file", "mappings.txt");
+
+    // TODO for stack trace
+//    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
+
+
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
@@ -93,12 +98,14 @@ public class Renamer extends Transformer {
                 removeAnnotation(classWrapper);
 
                 String currentPackageName = classWrapper.getPackageName();
-                Dictionary classDictionary = obfuscator.classesDictionaries.computeIfAbsent(currentPackageName, packageName -> obfuscator.getDictionary().copy());
+                Dictionary classDictionary;
 
                 String newName;
                 if (repackage.isEnable()) {
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent("", packageName -> obfuscator.getDictionary().copy());
                     newName = repackageName.getValue();
                 } else {
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(currentPackageName, packageName -> obfuscator.getDictionary().copy());
                     newName = packageMappings.computeIfAbsent(currentPackageName, package_name -> {
                         StringBuilder packageName = new StringBuilder(package_name);
                         int index = 0;
