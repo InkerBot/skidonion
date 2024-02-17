@@ -209,10 +209,15 @@ public class StringUtils {
         return sb.toString();
     }
 
-    private static String unicodify(String string) {
+    public static String unicodify(String string) {
         StringBuilder result = new StringBuilder();
         for (char c : string.toCharArray()) {
-            result.append("\\u").append(String.format("%04x", (int) c));
+            String hex = Integer.toHexString(c & 0xFFFF);
+            result.append("\\u");
+            for (int j = 0; j < 4 - hex.length(); j++) {
+                result.append('0');
+            }
+            result.append(hex);
         }
         return result.toString();
     }
