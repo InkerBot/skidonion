@@ -1,8 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.asm.ClassTree;
@@ -22,9 +20,7 @@ import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringArrayValue;
 import tech.skidonion.obfuscator.value.impls.StringValue;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,13 +31,10 @@ import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class Renamer extends Transformer {
+    public final String MAPPING_VERSION = "phantom-shield-x,1";
     private final BooleanValue printMappings = new BooleanValue("print_mappings", false);
     private final StringValue printMappingsFile = new StringValue("print_mappings_file", "mappings.txt");
-
-    // TODO for stack trace
-//    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
-
-
+    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
@@ -55,16 +48,19 @@ public class Renamer extends Transformer {
 
     public Renamer(String name) {
         super(name);
-        addSettings(printMappings, printMappingsFile, repackage, repackageName, adaptResources);
+        addSettings(printMappings, printMappingsFile, encrypted_number_line, repackage, repackageName, adaptResources);
     }
 
     private static boolean methodCanBeRenamed(MethodWrapper wrapper) {
-        return !wrapper.getAccess().isNative() && !"main".equals(wrapper.getOriginalName())
-                && !"premain".equals(wrapper.getOriginalName()) && !wrapper.getOriginalName().startsWith("<");
+        return !wrapper.getAccess().isNative() && !"main".equals(wrapper.getOriginalName()) && !"premain".equals(wrapper.getOriginalName()) && !wrapper.getOriginalName().startsWith("<");
     }
 
     @Override
     public void transform() {
+        if (obfuscator.getConfig().has("input_mappings_file")) {
+            this.resolveInputMapping();
+        }
+
         INFO("Generating mappings.");
         long current = System.currentTimeMillis();
 
@@ -128,7 +124,7 @@ public class Renamer extends Transformer {
                     });
                 }
                 newName += classDictionary.nextUniqueString();
-                classMappings.put(classWrapper.getOriginalName(), newName);
+                classMappings.putIfAbsent(classWrapper.getOriginalName(), newName);
             }
         });
 
@@ -153,10 +149,8 @@ public class Renamer extends Transformer {
 
             // In order to preserve the original names to prevent exclusions from breaking,
             // we update the MethodNode/FieldNode/ClassNode each wrapper wraps instead.
-            IntStream.range(0, copy.methods.size())
-                    .forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
-            IntStream.range(0, copy.fields.size())
-                    .forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
+            IntStream.range(0, copy.methods.size()).forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
+            IntStream.range(0, copy.fields.size()).forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
             classWrapper.setClassNode(copy);
             classWrapper.updateMemberNames();
 
@@ -186,10 +180,8 @@ public class Renamer extends Transformer {
                         if ("META-INF/MANIFEST.MF".equals(name) // Manifest
                                 || "plugin.yml".equals(name) // Spigot plugin
                                 || "bungee.yml".equals(name)) // Bungeecord plugin
-                            stringVer = stringVer.replaceAll("(?<=[: ])" + original,
-                                    classMappings.get(mapping).replace("/", "."));
-                        else
-                            stringVer = stringVer.replace(original, classMappings.get(mapping).replace("/", "."));
+                            stringVer = stringVer.replaceAll("(?<=[: ])" + original, classMappings.get(mapping).replace("/", "."));
+                        else stringVer = stringVer.replace(original, classMappings.get(mapping).replace("/", "."));
                     }
                 }
 
@@ -200,8 +192,7 @@ public class Renamer extends Transformer {
 
         INFO("Mapped {} names in resources. [{}ms]", fixed.get(), System.currentTimeMillis() - current);
 
-        if (printMappings.isEnable())
-            printMappings();
+        if (printMappings.isEnable()) printMappings();
     }
 
     @Override
@@ -219,16 +210,16 @@ public class Renamer extends Transformer {
         for (Map.Entry<String, RenamerResult.RenamerType> entry : result.getInfluences().entrySet()) {
             switch (entry.getValue()) {
                 case FIELD:
-                    fieldMappings.put(entry.getKey(), obfuscatedName);
+                    fieldMappings.putIfAbsent(entry.getKey(), obfuscatedName);
                     break;
                 case METHOD:
-                    methodMappings.put(entry.getKey(), obfuscatedName);
+                    methodMappings.putIfAbsent(entry.getKey(), obfuscatedName);
                     break;
                 case ANNOTATION:
-                    annotationMappings.put(entry.getKey(), obfuscatedName);
+                    annotationMappings.putIfAbsent(entry.getKey(), obfuscatedName);
                     break;
                 case DUMMY:
-                    dummy.put(entry.getKey(), obfuscatedName);
+                    dummy.putIfAbsent(entry.getKey(), obfuscatedName);
                     break;
                 default:
                     throw new RuntimeException("impossible renamer type");
@@ -240,7 +231,7 @@ public class Renamer extends Transformer {
         String uniqueMethodName = methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription();
         String key = owner + '.' + uniqueMethodName;
         // ignore generated
-        if (!visited.add(key)) return result;
+        if (!visited.add(key) || methodMappings.containsKey(key)) return result;
 
         ClassTree tree = obfuscator.getTree(owner);
         ClassWrapper cw = tree.getClassWrapper();
@@ -267,7 +258,7 @@ public class Renamer extends Transformer {
     private RenamerResult genFieldMappings(FieldWrapper fieldWrapper, String owner, RenamerResult result, Set<String> visited) {
         String uniqueFieldName = fieldWrapper.getOriginalName() + '.' + fieldWrapper.getOriginalDescription();
         String key = owner + '.' + uniqueFieldName;
-        if (!visited.add(key)) return result;
+        if (!visited.add(key) || fieldMappings.containsKey(key)) return result;
 
         ClassTree tree = obfuscator.getTree(owner);
         ClassWrapper cw = tree.getClassWrapper();
@@ -291,29 +282,23 @@ public class Renamer extends Transformer {
         String check = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + wrapper.getOriginalDescription();
 
         // Don't check these
-        if (visited.contains(check))
-            return false;
+        if (visited.contains(check)) return false;
 
         visited.add(check);
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (methodMappings.containsKey(check) || !match(wrapper))
-            return true;
+        if (methodMappings.containsKey(check) || !match(wrapper)) return true;
 
         // Methods which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
             // We can't rename members which inherit methods from external libraries
-            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode()
-                    && tree.getClassWrapper().getMethods().stream().anyMatch(mw -> mw.getOriginalName().equals(wrapper.getOriginalName())
-                    && mw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
+            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().getMethods().stream().anyMatch(mw -> mw.getOriginalName().equals(wrapper.getOriginalName()) && mw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
                 return true;
 
-            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameMethod(obfuscator.getTree(parent), wrapper, visited))
-                    || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameMethod(obfuscator.getTree(sub), wrapper, visited));
+            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameMethod(obfuscator.getTree(parent), wrapper, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameMethod(obfuscator.getTree(sub), wrapper, visited));
         } else {
-            return tree.getClassWrapper().getAccess().isEnum()
-                    && ("valueOf".equals(wrapper.getOriginalName()) || "values".equals(wrapper.getOriginalName()));
+            return tree.getClassWrapper().getAccess().isEnum() && ("valueOf".equals(wrapper.getOriginalName()) || "values".equals(wrapper.getOriginalName()));
         }
     }
 
@@ -321,26 +306,21 @@ public class Renamer extends Transformer {
         String check = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + '.' + wrapper.getOriginalDescription();
 
         // Don't check these
-        if (visited.contains(check))
-            return false;
+        if (visited.contains(check)) return false;
 
         visited.add(check);
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (fieldMappings.containsKey(check) || !match(wrapper))
-            return true;
+        if (fieldMappings.containsKey(check) || !match(wrapper)) return true;
 
         // Fields which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
             // We can't rename members which inherit methods from external libraries
-            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode()
-                    && tree.getClassWrapper().getFields().stream().anyMatch(fw -> fw.getOriginalName().equals(wrapper.getOriginalName())
-                    && fw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
+            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().getFields().stream().anyMatch(fw -> fw.getOriginalName().equals(wrapper.getOriginalName()) && fw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
                 return true;
 
-            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameField(obfuscator.getTree(parent), wrapper, visited))
-                    || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameField(obfuscator.getTree(sub), wrapper, visited));
+            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameField(obfuscator.getTree(parent), wrapper, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameField(obfuscator.getTree(sub), wrapper, visited));
         }
 
         return false;
@@ -350,14 +330,13 @@ public class Renamer extends Transformer {
         long current = System.currentTimeMillis();
         INFO("Printing mappings.");
         File file = new File(printMappingsFile.getValue());
-        if (file.exists())
-            FileUtils.renameExistingFile(file);
+        if (file.exists()) FileUtils.renameExistingFile(file);
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             final JsonObject mappings = new JsonObject();
-            mappings.addProperty("version", "phantom-shield-x,1");
+            mappings.addProperty("version", MAPPING_VERSION);
 
             final JsonObject packages = new JsonObject();
             final JsonObject rootPackage = new JsonObject();
@@ -395,8 +374,7 @@ public class Renamer extends Transformer {
             final JsonObject annotations = new JsonObject();
             annotationMappings.forEach((origin, obfuscated) -> {
                 String[] parts = origin.split("\\.");
-                if (parts.length != 2)
-                    throw new RuntimeException("impossible annotation mapping: " + origin);
+                if (parts.length != 2) throw new RuntimeException("impossible annotation mapping: " + origin);
                 final JsonObject annotationMapping = new JsonObject();
                 final JsonObject values = annotationsMap.computeIfAbsent(parts[0], annotationName -> {
                     final JsonObject value = new JsonObject();
@@ -410,8 +388,7 @@ public class Renamer extends Transformer {
 
             methodMappings.forEach((origin, obfuscated) -> {
                 String[] parts = origin.split("\\.");
-                if (parts.length != 2)
-                    throw new RuntimeException("impossible method mapping: " + origin);
+                if (parts.length != 2) throw new RuntimeException("impossible method mapping: " + origin);
                 final JsonObject methods = classesMethodMap.computeIfAbsent(parts[0], className -> {
                     final JsonObject classMapping = new JsonObject();
                     final JsonObject methodsMapping = new JsonObject();
@@ -429,8 +406,7 @@ public class Renamer extends Transformer {
 
             fieldMappings.forEach((origin, obfuscated) -> {
                 String[] parts = origin.split("\\.");
-                if (parts.length != 3)
-                    throw new RuntimeException("impossible method mapping: " + origin);
+                if (parts.length != 3) throw new RuntimeException("impossible method mapping: " + origin);
                 final JsonObject fields = classesFieldMap.computeIfAbsent(parts[0], className -> {
                     final JsonObject classMapping = new JsonObject();
                     final JsonObject methodsMapping = new JsonObject();
@@ -445,56 +421,133 @@ public class Renamer extends Transformer {
                 });
                 fields.addProperty(parts[1] + "." + parts[2], obfuscated);
             });
-
-            // TODO dummies should be computed automatically
-
-//            final JsonObject dummies = new JsonObject();
-//            Map<String, JsonObject> dummiesMethodMap = new HashMap<>();
-//            Map<String, JsonObject> dummiesFieldMap = new HashMap<>();
-//            dummy.forEach((origin, obfuscated) -> {
-//                boolean field;
-//                String[] parts = origin.split("\\.");
-//                if (parts.length == 2) {
-//                    field = false;
-//                } else if (parts.length == 3) {
-//                    field = true;
-//                } else {
-//                    throw new RuntimeException("impossible method mapping: " + origin);
-//                }
-//                if (field) {
-//                    final JsonObject fields = dummiesFieldMap.computeIfAbsent(parts[0], className -> {
-//                        final JsonObject classMapping = new JsonObject();
-//                        final JsonObject methodsMapping = new JsonObject();
-//                        final JsonObject fieldsMapping = new JsonObject();
-//                        classMapping.add("methods", methodsMapping);
-//                        classMapping.add("fields", fieldsMapping);
-//                        dummiesMethodMap.put(className, methodsMapping);
-//                        dummies.add(className, classMapping);
-//                        return fieldsMapping;
-//                    });
-//                    fields.addProperty(parts[1] + "." + parts[2], obfuscated);
-//                } else {
-//                    final JsonObject methods = dummiesMethodMap.computeIfAbsent(parts[0], className -> {
-//                        final JsonObject classMapping = new JsonObject();
-//                        final JsonObject methodsMapping = new JsonObject();
-//                        final JsonObject fieldsMapping = new JsonObject();
-//                        classMapping.add("methods", methodsMapping);
-//                        classMapping.add("fields", fieldsMapping);
-//                        dummiesFieldMap.put(className, fieldsMapping);
-//                        dummies.add(className, classMapping);
-//                        return methodsMapping;
-//                    });
-//                    methods.addProperty(parts[1], obfuscated);
-//                }
-//            });
-//            mappings.add("dummies", dummies);
-
             gson.toJson(mappings, bw);
             bw.close();
-            INFO("Finished printing mappings at {}. [{}ms]", file.getAbsolutePath(),
-                    System.currentTimeMillis() - current);
+            INFO("Finished printing mappings at {}. [{}ms]", file.getAbsolutePath(), System.currentTimeMillis() - current);
         } catch (Throwable t) {
             ERROR("Ran into an error trying to create the mappings file.", t);
+        }
+    }
+
+    private void resolveInputMapping() {
+        INFO("Resolving Input Mappings...");
+        long current = System.currentTimeMillis();
+        try (Reader reader = new FileReader(new File(obfuscator.getConfig().getString("input_mappings_file")))) {
+            JsonObject resolved = (JsonObject) JsonParser.parseReader(reader);
+            if (resolved.has("version")) {
+                if (MAPPING_VERSION.equals(resolved.getAsJsonPrimitive("version").getAsString())) {
+                    JsonObject packages = resolved.getAsJsonObject("packages");
+                    if (packages != null) {
+                        for (Map.Entry<String, JsonElement> entry : packages.asMap().entrySet()) {
+                            String name = entry.getKey();
+                            JsonObject object = entry.getValue().getAsJsonObject();
+                            if (object.has("obfuscated"))
+                                packageMappings.put(name, object.getAsJsonPrimitive("obfuscated").getAsString());
+                            if (object.has("unique_index")) {
+                                Dictionary dictionary = obfuscator.packageDictionaries.computeIfAbsent(name, key -> obfuscator.getDictionary().copy());
+                                dictionary.setUniqueIndex(object.getAsJsonPrimitive("unique_index").getAsInt());
+                            }
+                            if (object.has("class_unique_index")) {
+                                Dictionary dictionary = obfuscator.classesDictionaries.computeIfAbsent(name, key -> obfuscator.getDictionary().copy());
+                                dictionary.setUniqueIndex(object.getAsJsonPrimitive("class_unique_index").getAsInt());
+                            }
+                        }
+                    }
+
+                    JsonObject classes = resolved.getAsJsonObject("classes");
+                    if (classes != null) {
+                        for (Map.Entry<String, JsonElement> entry : classes.asMap().entrySet()) {
+                            String name = entry.getKey();
+                            JsonObject object = entry.getValue().getAsJsonObject();
+                            try {
+                                // compute dummy mappings and give methods and fields unique seeds index
+                                ClassTree tree = obfuscator.getTree(name);
+                                Map<String, String> mapped = new HashMap<>();
+
+                                if (object.has("methods")) {
+                                    JsonObject methods = object.getAsJsonObject("methods");
+                                    for (Map.Entry<String, JsonElement> methodEntry : methods.asMap().entrySet()) {
+                                        final String methodName = methodEntry.getKey();
+                                        final String obfuscated = methodEntry.getValue().getAsJsonPrimitive().getAsString();
+                                        methodMappings.put(name + "." + methodName, obfuscated);
+                                        mapped.put(methodName, obfuscated);
+                                    }
+                                }
+                                if (object.has("fields")) {
+                                    JsonObject methods = object.getAsJsonObject("fields");
+                                    for (Map.Entry<String, JsonElement> fieldEntry : methods.asMap().entrySet()) {
+                                        final String fieldName = fieldEntry.getKey();
+                                        final String obfuscated = fieldEntry.getValue().getAsJsonPrimitive().getAsString();
+                                        fieldMappings.put(name + "." + fieldName, obfuscated);
+                                        mapped.put(fieldName, obfuscated);
+                                    }
+                                }
+                                generateDummy(name, mapped, new HashSet<>());
+
+                                ClassWrapper classWrapper = tree.getClassWrapper();
+                                if (object.has("method_unique_index")) {
+                                    classWrapper.getMethodDictionary().setUniqueIndex(object.getAsJsonPrimitive("method_unique_index").getAsInt());
+                                }
+                                if (object.has("field_unique_index")) {
+                                    classWrapper.getFieldDictionary().setUniqueIndex(object.getAsJsonPrimitive("field_unique_index").getAsInt());
+                                }
+                            } catch (RuntimeException e) {
+                                ERROR("Cann't find class '{}'", name);
+                            }
+
+                            if (object.has("obfuscated")) {
+                                classMappings.put(name, object.getAsJsonPrimitive("obfuscated").getAsString());
+                            }
+                        }
+                    }
+                    JsonObject annotations = resolved.getAsJsonObject("annotations");
+                    if (annotations != null) {
+                        for (Map.Entry<String, JsonElement> entry : annotations.asMap().entrySet()) {
+                            String name = entry.getKey();
+                            JsonObject object = entry.getValue().getAsJsonObject();
+                            if (object.has("values")) {
+                                JsonObject values = object.getAsJsonObject("values");
+                                for (Map.Entry<String, JsonElement> valueEntry : values.asMap().entrySet()) {
+                                    annotationMappings.put(name + "." + valueEntry.getKey(), valueEntry.getValue().getAsJsonPrimitive().getAsString());
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    throw new RuntimeException("mappings version is mismatch: " + MAPPING_VERSION);
+                }
+            } else {
+                throw new RuntimeException("is not a valid phantom-shield-x mappings file");
+            }
+        } catch (FileNotFoundException fnfe) {
+            ERROR("Can't find input mappings...", fnfe);
+        } catch (IOException e) {
+            ERROR("Occurs an error while resolving mappings...", e);
+        } catch (RuntimeException e) {
+            ERROR("", e);
+        }
+        INFO("Resolved done. [{}ms]", System.currentTimeMillis() - current);
+    }
+
+    private void generateDummy(String ref, Map<String, String> mapped, Set<String> visited) {
+        if (!visited.add(ref))
+            return;
+        ClassTree tree = obfuscator.getTree(ref);
+        for (String className : tree.getSubClasses()) {
+            for (Map.Entry<String, String> entry : mapped.entrySet()) {
+                String origin = entry.getKey();
+                String obfuscated = entry.getValue();
+                dummy.computeIfAbsent(className + "." + origin, k -> obfuscated);
+                generateDummy(className, mapped, visited);
+            }
+        }
+        for (String className : tree.getParentClasses()) {
+            for (Map.Entry<String, String> entry : mapped.entrySet()) {
+                String origin = entry.getKey();
+                String obfuscated = entry.getValue();
+                dummy.computeIfAbsent(className + "." + origin, k -> obfuscated);
+                generateDummy(className, mapped, visited);
+            }
         }
     }
 
