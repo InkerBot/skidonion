@@ -48,6 +48,10 @@ public class ConfigBuilder {
     // debug_information_remover
     private boolean debugInformationRemoverEnable = false;
     private boolean removeSignaturesSetting = true;
+    private boolean removeSourceFileSetting = true;
+    private boolean removeInnerClassSetting = true;
+    private boolean removeLineNumberSetting = true;
+    private boolean removeLocalVariableSetting = true;
 
 
     public final Config build() {
@@ -165,6 +169,10 @@ public class ConfigBuilder {
             Map<String, Object> debug_information_remover = new LinkedHashMap<>();
 
             debug_information_remover.put("remove_signatures", removeSignaturesSetting);
+            debug_information_remover.put("remove_source_file", removeSourceFileSetting);
+            debug_information_remover.put("remove_inner_class", removeInnerClassSetting);
+            debug_information_remover.put("remove_line_number", removeLineNumberSetting);
+            debug_information_remover.put("remove_local_variable", removeLocalVariableSetting);
 
             subFiltersSettings.computeIfPresent("debug_information_remover", (k, v) -> {
                 debug_information_remover.put("filters", v);

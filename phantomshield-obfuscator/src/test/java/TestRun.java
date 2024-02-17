@@ -10,25 +10,19 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setDictionarySetting("spaces")
-                .setRandomSeedSetting(5959769109092458520L)
                 .setDebugInformationRemoverEnable(true) // Remover
-                .setRemoveSignaturesSetting(true)
-                .setMemberShufflerEnable(true) // Shuffler
+//                .setMemberShufflerEnable(true) // Shuffler
                 .setRenamerEnable(true) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
-                .setRepackageSetting(false)
-                .setPrintMappingsSetting(true)
+                .setRepackageSetting(true)
+                .setPrintMappingsSetting(false)
                 .setPrintMappingsFileSetting("mappings.json")
                 .setRepackageNameSetting("skidonion")
-                .addSubFilters("renamer",
-                        "-dev.sim0n.app.Main",
-                        "-dev.sim0n.app.test.impl.annotation.TestAnnotation")
                 .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setInvokedynamicModeSetting("enhancement")
                 .addTarget("x86_64-windows")
-                .addSubFilter("native_obfuscation", "-** void main(java.lang.String[])")
+                .addSubFilter("native_obfuscation", "+dev/sim0n/app/test/impl/evaluation/EvaluationTest")
 
                 .build());
         obfuscator.process();
