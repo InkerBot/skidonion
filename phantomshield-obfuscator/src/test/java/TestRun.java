@@ -10,13 +10,14 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
+                .setInputMappingsFileSetting("mappings.json")
                 .setDebugInformationRemoverEnable(true) // Remover
 //                .setMemberShufflerEnable(true) // Shuffler
                 .setRenamerEnable(true) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
-                .setRepackageSetting(true)
+                .setRepackageSetting(false)
                 .setPrintMappingsSetting(false)
-                .setPrintMappingsFileSetting("mappings.json")
+//                .setPrintMappingsFileSetting("mappings.json")
                 .setRepackageNameSetting("skidonion")
                 .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native

@@ -362,4 +362,24 @@ public class ConfigBuilder {
         this.removeSignaturesSetting = removeSignaturesSetting;
         return this;
     }
+
+    public ConfigBuilder setRemoveSourceFileSetting(boolean removeSourceFileSetting) {
+        this.removeSourceFileSetting = removeSourceFileSetting;
+        return this;
+    }
+
+    public ConfigBuilder setRemoveInnerClassSetting(boolean removeInnerClassSetting) {
+        this.removeInnerClassSetting = removeInnerClassSetting;
+        return this;
+    }
+
+    public ConfigBuilder setRemoveLineNumberSetting(boolean removeLineNumberSetting) {
+        this.removeLineNumberSetting = removeLineNumberSetting;
+        return this;
+    }
+
+    public ConfigBuilder setRemoveLocalVariableSetting(boolean removeLocalVariableSetting) {
+        this.removeLocalVariableSetting = removeLocalVariableSetting;
+        return this;
+    }
 }
