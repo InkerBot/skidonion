@@ -24,12 +24,18 @@ public class MatcherTest {
         filter.accept("+Test int Test()");
         System.out.println(filter.match("Test int Test()")); // true
         System.out.println(filter.match("Test int Test(int)")); // false
+//        true
+//        false
+//        true
+//        false
+//        true
+//        false
+    }
 
-//        true
-//        false
-//        true
-//        false
-//        true
-//        false
+    @Test
+    void testDescriptor() {
+        Filter filter = new Filter();
+        filter.accept("+** * *(*)");
+        System.out.println(filter.match("Class void test(java/util/function/Supplier,dev/sim0n/app/test/impl/evaluation/Evaluation)"));
     }
 }

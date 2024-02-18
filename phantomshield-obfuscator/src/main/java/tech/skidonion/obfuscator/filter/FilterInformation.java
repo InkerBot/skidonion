@@ -12,7 +12,8 @@ public class FilterInformation {
     private String owner_extends;
     private final List<String> member_annotations = new ArrayList<>();
     private String member;
-    private String descriptor;
+    private String returnType;
+    private String argumentsType;
     private FilterType type;
 
     private FilterInformation() {
@@ -54,6 +55,7 @@ public class FilterInformation {
                     isMember = true;
                 } else if (returnType == null) {
                     returnType = toDescriptor(part);
+                    filter.returnType = returnType;
                 } else if (isLast) {
                     int methodIndex = part.indexOf("(");
                     if (methodIndex != -1) {
@@ -61,17 +63,13 @@ public class FilterInformation {
                         String[] arguments = part.substring(methodIndex + 1, part.length() - 1).split(",");
                         filter.type = FilterType.METHOD;
                         filter.member = part.substring(0, methodIndex);
-                        sb.append("(");
                         for (String argument : arguments) {
                             sb.append(toDescriptor(argument));
                         }
-                        sb.append(")");
-                        sb.append(returnType);
-                        filter.descriptor = sb.toString();
+                        filter.argumentsType = sb.toString();
                     } else {
                         filter.type = FilterType.FIELD;
                         filter.member = part;
-                        filter.descriptor = returnType;
                     }
                 }
             }
@@ -116,12 +114,12 @@ public class FilterInformation {
         this.member = member;
     }
 
-    public String getDescriptor() {
-        return descriptor;
+    public String getArgumentsType() {
+        return argumentsType;
     }
 
-    public void setDescriptor(String descriptor) {
-        this.descriptor = descriptor;
+    public void setArgumentsType(String argumentsType) {
+        this.argumentsType = argumentsType;
     }
 
     public FilterType getType() {
@@ -132,31 +130,12 @@ public class FilterInformation {
         this.type = type;
     }
 
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        FilterInformation filterInformation = (FilterInformation) object;
-        return Objects.equals(owner_annotations, filterInformation.owner_annotations) && Objects.equals(owner, filterInformation.owner) && Objects.equals(owner_implements, filterInformation.owner_implements) && Objects.equals(owner_extends, filterInformation.owner_extends) && Objects.equals(member_annotations, filterInformation.member_annotations) && Objects.equals(member, filterInformation.member) && Objects.equals(descriptor, filterInformation.descriptor) && type == filterInformation.type;
+    public String getReturnType() {
+        return returnType;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(owner_annotations, owner, owner_implements, owner_extends, member_annotations, member, descriptor, type);
-    }
-
-    @Override
-    public String toString() {
-        return "Pattern{" +
-                "owner_annotations=" + Arrays.toString(owner_annotations.toArray()) +
-                ", owner='" + owner + '\'' +
-                ", owner_implements=" + Arrays.toString(owner_implements.toArray()) +
-                ", owner_extends='" + owner_extends + '\'' +
-                ", member_annotations=" + Arrays.toString(member_annotations.toArray()) +
-                ", member='" + member + '\'' +
-                ", descriptor='" + descriptor + '\'' +
-                ", type=" + type +
-                '}';
+    public void setReturnType(String returnType) {
+        this.returnType = returnType;
     }
 
     public enum FilterType {

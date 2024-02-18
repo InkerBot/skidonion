@@ -40,12 +40,18 @@ public class Pattern {
     public MatchResult match(MethodWrapper method, boolean defaultResult) {
         if (filterInformation.getType() != FilterInformation.FilterType.METHOD)
             return new MatchResult(defaultResult, false);
+        String desc = method.getOriginalDescription();
+        int index = desc.lastIndexOf(')');
+
+        String returnType = desc.substring(index + 1);
+        String argumentsType = desc.substring(1, index);
         return new MatchResult(MATCHER.match(filterInformation.getOwner(), method.getOwner().getOriginalName()) &&
                 (filterInformation.getOwnerExtends() == null || method.getOwner().getOriginalSuperName() == null || MATCHER.match(filterInformation.getOwnerExtends(), method.getOwner().getOriginalSuperName())) &&
                 matchAll(filterInformation.getOwnerAnnotations(), method.getOwner().getOriginalAnnotations().stream().map(annotationNode -> annotationNode.desc).collect(Collectors.toList())) &&
                 matchAll(filterInformation.getOwnerImplements(), method.getOwner().getOriginalInterfaces()) &&
                 MATCHER.match(filterInformation.getMember(), method.getOriginalName()) &&
-                MATCHER.match(filterInformation.getDescriptor(), method.getOriginalDescription()) &&
+                MATCHER.match(filterInformation.getArgumentsType(), argumentsType) &&
+                MATCHER.match(filterInformation.getReturnType(), returnType) &&
                 matchAll(filterInformation.getMemberAnnotations(), method.getOriginalAnnotations().stream().map(annotationNode -> annotationNode.desc).collect(Collectors.toList())), true);
     }
 
@@ -57,7 +63,7 @@ public class Pattern {
                 matchAll(filterInformation.getOwnerAnnotations(), field.getOwner().getOriginalAnnotations().stream().map(annotationNode -> annotationNode.desc).collect(Collectors.toList())) &&
                 matchAll(filterInformation.getOwnerImplements(), field.getOwner().getOriginalInterfaces()) &&
                 MATCHER.match(filterInformation.getMember(), field.getOriginalName()) &&
-                MATCHER.match(filterInformation.getDescriptor(), field.getOriginalDescription()) &&
+                MATCHER.match(filterInformation.getReturnType(), field.getOriginalDescription()) &&
                 matchAll(filterInformation.getMemberAnnotations(), field.getOriginalAnnotations().stream().map(annotationNode -> annotationNode.desc).collect(Collectors.toList())), true);
     }
 
@@ -70,13 +76,22 @@ public class Pattern {
                     (filterInformation.getOwnerExtends() == null || info.getOwnerExtends() == null || MATCHER.match(filterInformation.getOwnerExtends(), info.getOwnerExtends())) &&
                     matchAll(filterInformation.getOwnerAnnotations(), info.getOwnerAnnotations()) &&
                     matchAll(filterInformation.getOwnerImplements(), info.getOwnerImplements()), true);
-        } else if (info.getType() == FilterInformation.FilterType.METHOD || info.getType() == FilterInformation.FilterType.FIELD) {
+        } else if (info.getType() == FilterInformation.FilterType.METHOD) {
             return new MatchResult(MATCHER.match(filterInformation.getOwner(), info.getOwner()) &&
                     (filterInformation.getOwnerExtends() == null || info.getOwnerExtends() == null || MATCHER.match(filterInformation.getOwnerExtends(), info.getOwnerExtends())) &&
                     matchAll(filterInformation.getOwnerAnnotations(), info.getOwnerAnnotations()) &&
                     matchAll(filterInformation.getOwnerImplements(), info.getOwnerImplements()) &&
                     MATCHER.match(filterInformation.getMember(), info.getMember()) &&
-                    MATCHER.match(filterInformation.getDescriptor(), info.getDescriptor()) &&
+                    MATCHER.match(filterInformation.getArgumentsType(), info.getArgumentsType()) &&
+                    MATCHER.match(filterInformation.getReturnType(), info.getReturnType()) &&
+                    matchAll(filterInformation.getMemberAnnotations(), info.getMemberAnnotations()), true);
+        } else if (info.getType() == FilterInformation.FilterType.FIELD) {
+            return new MatchResult(MATCHER.match(filterInformation.getOwner(), info.getOwner()) &&
+                    (filterInformation.getOwnerExtends() == null || info.getOwnerExtends() == null || MATCHER.match(filterInformation.getOwnerExtends(), info.getOwnerExtends())) &&
+                    matchAll(filterInformation.getOwnerAnnotations(), info.getOwnerAnnotations()) &&
+                    matchAll(filterInformation.getOwnerImplements(), info.getOwnerImplements()) &&
+                    MATCHER.match(filterInformation.getMember(), info.getMember()) &&
+                    MATCHER.match(filterInformation.getReturnType(), info.getReturnType()) &&
                     matchAll(filterInformation.getMemberAnnotations(), info.getMemberAnnotations()), true);
         }
         throw new RuntimeException("unknown filter type: " + info.getType());
