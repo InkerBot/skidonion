@@ -34,7 +34,9 @@ public class Renamer extends Transformer {
     public final String MAPPING_VERSION = "phantom-shield-x,1";
     private final BooleanValue printMappings = new BooleanValue("print_mappings", false);
     private final StringValue printMappingsFile = new StringValue("print_mappings_file", "mappings.txt");
-    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
+    //    TODO: encrypted number line number for stack trace
+//    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
+    private final StringValue prefix_name = new StringValue("prefix_name", "");
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     private final ClassPackageValue repackageName = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adaptResources = new StringArrayValue("adapt_resources");
@@ -48,7 +50,7 @@ public class Renamer extends Transformer {
 
     public Renamer(String name) {
         super(name);
-        addSettings(printMappings, printMappingsFile, encrypted_number_line, repackage, repackageName, adaptResources);
+        addSettings(printMappings, printMappingsFile/*, encrypted_number_line*/, prefix_name, repackage, repackageName, adaptResources);
     }
 
     private static boolean methodCanBeRenamed(MethodWrapper wrapper) {
@@ -73,7 +75,7 @@ public class Renamer extends Transformer {
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
                     RenamerResult result = genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getMethodDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(classWrapper.getMethodDictionary().nextUniqueString());
+                    result.setObfuscatedName(prefix_name.getValue() + classWrapper.getMethodDictionary().nextUniqueString());
                     processRenamerResult(result);
                 }
             });
@@ -85,7 +87,7 @@ public class Renamer extends Transformer {
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
                     RenamerResult result = genFieldMappings(fieldWrapper, fieldWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getFieldDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(classWrapper.getFieldDictionary().nextUniqueString());
+                    result.setObfuscatedName(prefix_name.getValue() + classWrapper.getFieldDictionary().nextUniqueString());
                     processRenamerResult(result);
                 }
             });
@@ -114,7 +116,7 @@ public class Renamer extends Transformer {
                             Dictionary packageDictionary = obfuscator.packageDictionaries.computeIfAbsent(dictionaryPackage.substring(0, dictionaryPackage.lastIndexOf("/") + 1), subpackage_name -> obfuscator.getDictionary().copy());
                             String mappedPackageName = packageMappings.get(subpackage);
                             if (mappedPackageName == null) {
-                                lastPackageName.append(packageDictionary.nextUniqueString()).append("/");
+                                lastPackageName.append(prefix_name.getValue()).append(packageDictionary.nextUniqueString()).append("/");
                                 packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
                             } else {
                                 lastPackageName = new StringBuilder(mappedPackageName);
@@ -123,6 +125,7 @@ public class Renamer extends Transformer {
                         return lastPackageName.toString();
                     });
                 }
+                newName += prefix_name.getValue();
                 newName += classDictionary.nextUniqueString();
                 classMappings.putIfAbsent(classWrapper.getOriginalName(), newName);
             }
