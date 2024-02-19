@@ -191,9 +191,9 @@ public class StringUtils {
         if (tokens.isEmpty()) {
             return string;
         }
-        String patternString = String.format("(%s)",
-                tokens.keySet().stream().map(StringUtils::unicodify).collect(Collectors.joining("|")));
-        return replaceTokens(string, tokens, patternString);
+
+        return replaceTokens(string, tokens, "(" +
+                tokens.keySet().stream().map(StringUtils::unicodify).collect(Collectors.joining("|")) + ")");
     }
 
     private static String replaceTokens(String string, Map<String, String> tokens, String patternString) {

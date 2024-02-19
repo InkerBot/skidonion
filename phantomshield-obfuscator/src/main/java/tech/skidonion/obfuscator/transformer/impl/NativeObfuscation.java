@@ -7,7 +7,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
@@ -132,18 +131,13 @@ public class NativeObfuscation extends Transformer {
                 ClassNode computedClassNode = new ClassNode(Opcodes.ASM9);
                 computedReader.accept(computedClassNode, 0);
 
-                if (computedClassNode.methods.stream().noneMatch(x -> x.name.equals("<clinit>"))) {
-                    computedClassNode.methods.add(new MethodNode(Opcodes.ASM9, Opcodes.ACC_STATIC,
-                            "<clinit>", "()V", null, new String[0]));
-                }
-
                 IntStream.range(0, computedClassNode.methods.size())
                         .forEach(i -> cw.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
                 IntStream.range(0, computedClassNode.fields.size())
                         .forEach(i -> cw.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
 
                 cw.setClassNode(computedClassNode);
-
+                cw.getOrCreateClinit();
 
                 cachedStrings.clear();
                 cachedClasses.clear();
