@@ -9,6 +9,8 @@
 # 测试
 运行 `TestRun` 运行参数
 
+运行 `TestConfigBuilder` 生成运行配置
+
 ## 设置 Transformers 配置
 你可以这么构造一个Transformer
 
@@ -41,28 +43,24 @@ class DummyTransformer extends Transformer {
 
 ```java
 
-    public TransformerRegister() {
-        this.register(new StringObfuscation("string_obfuscation"));
-        this.register(new NativeObfuscation("native_obfuscation"));
-        
-        /* ... */
-        
-        this.register(new DummyTransformer("dummy_transformer"));
-    }
+public TransformerRegister() {
+    this.register(new StringObfuscation("string_obfuscation"));
+    this.register(new NativeObfuscation("native_obfuscation"));
+
+    /* ... */
+
+    this.register(new DummyTransformer("dummy_transformer"));
+}
 
 ```
 
-此时就可以在 `config.json` 中配置你的变压器了
+此时就可以在 `config.yaml` 中配置你的变压器了
 
-```json
-{
-  "dummy_transformer": {
-    "dummy_setting": true,
-    "filter": [
-      "+top.fl0wowp4rty.phantomshield.**"
-    ]
-  }
-}
+```yaml
+dummy_transformer:
+  dummy_setting: true
+  filter:
+    - +top.fl0wowp4rty.phantomshield.**
 ```
 
 当然你必须为 `ConfigBuilder` 添加你变压器的配置代码
