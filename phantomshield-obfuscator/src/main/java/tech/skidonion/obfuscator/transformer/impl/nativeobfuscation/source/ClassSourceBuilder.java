@@ -37,7 +37,7 @@ public class ClassSourceBuilder implements AutoCloseable {
         hppWriter = Files.newBufferedWriter(hppFile, StandardCharsets.UTF_8);
     }
 
-    public void addHeader(int strings, int classes, int methods, int fields) throws IOException {
+    public void addHeader(int strings, int classes, int methods, int fields, int callsites) throws IOException {
         cppWriter.append("#include \"../native_jvm.hpp\"\n");
         cppWriter.append("#include \"../string_pool.hpp\"\n");
         cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
@@ -58,6 +58,10 @@ public class ClassSourceBuilder implements AutoCloseable {
         }
         if (fields > 0) {
             cppWriter.append(String.format("    jfieldID cfields[%d];\n", fields));
+        }
+
+        if (callsites > 0) {
+            cppWriter.append(String.format("    jobject ccallsites[%d];\n", callsites));
         }
 
         cppWriter.append("\n");

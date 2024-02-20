@@ -6,11 +6,11 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import tech.skidonion.obfuscator.value.impls.ModeValue;
+import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 
 public class LdcPreprocessor implements Preprocessor {
     @Override
-    public void process(ClassNode classNode, MethodNode methodNode, ModeValue mode) {
+    public void process(NativeObfuscation obfuscation, ClassNode classNode, MethodNode methodNode) {
         AbstractInsnNode insnNode = methodNode.instructions.getFirst();
         while (insnNode != null) {
             if (insnNode instanceof LdcInsnNode) {

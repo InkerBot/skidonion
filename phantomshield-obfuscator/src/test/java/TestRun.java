@@ -6,26 +6,30 @@ import java.io.File;
 public class TestRun {
     public static void main(String[] args) {
         PhantomShield obfuscator = new PhantomShield(new ConfigBuilder()
-                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar"))
+                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT-zkm.jar"))
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setInputMappingsFileSetting("mappings.json")
-                .setDebugInformationRemoverEnable(true) // Remover
-//                .setMemberShufflerEnable(true) // Shuffler
-                .setRenamerEnable(true) // Renamer
+//                .setInputMappingsFileSetting("mappings.json")
+                .setDebugInformationRemoverEnable(false) // Remover
+                .setMemberShufflerEnable(false) // Shuffler
+                .setRenamerEnable(false) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setRepackageSetting(false)
                 .setPrintMappingsSetting(false)
 //                .setPrintMappingsFileSetting("mappings.json")
+//                .setPrefixName("狼牙")
                 .setRepackageNameSetting("skidonion")
                 .setStringEncryptionEnable(false) // String
-                .setNativeObfuscationEnable(false) // Native
-                .setInvokedynamicModeSetting("enhancement")
+                .setNativeObfuscationEnable(true) // Native
+                .setPrintInstructionsSetting(false)
                 .addTarget("x86_64-windows")
-                .addSubFilter("native_obfuscation", "+dev/sim0n/app/test/impl/evaluation/EvaluationTest")
+//                .addSubFilters("native_obfuscation",
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest",
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
 
                 .build());
         obfuscator.process();
+        System.exit(0);
     }
 }

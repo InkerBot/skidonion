@@ -30,10 +30,15 @@ public class PreprocessorUtils {
                 return new MethodInsnNode(Opcodes.INVOKESTATIC, "native/magic/1/invoke/obfuscator" + MAGIC_CONST, "a",
                         Type.getMethodDescriptor(Type.getReturnType(desc), argumentTypes.toArray(new Type[0])));
             };
-    public static final Supplier<AbstractInsnNode> LINK_CALL_SITE_METHOD = () -> new MethodInsnNode(Opcodes.INVOKESTATIC,
-            "native/magic/1/linkcallsite/obfuscator" + MAGIC_CONST, "a", "(Ljava/lang/Object;Ljava/lang/Object;" +
-            "Ljava/lang/Object;Ljava/lang/Object;" +
-            "Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;");
+
+    public static final Supplier<AbstractInsnNode> CACHE_CALLSITE = () -> new MethodInsnNode(Opcodes.INVOKESTATIC,
+            "native/magic/1/cachecallsite/obfuscator" + MAGIC_CONST, "a", "(Ljava/lang/invoke/CallSite;)V");
+
+    public static final Supplier<AbstractInsnNode> GET_CALLSITE = () -> new MethodInsnNode(Opcodes.INVOKESTATIC,
+            "native/magic/1/getcallsite/obfuscator" + MAGIC_CONST, "a", "()Ljava/lang/invoke/CallSite;");
+
+    public static final Supplier<AbstractInsnNode> GET_CALLSITE_AND_INCREMENT = () -> new MethodInsnNode(Opcodes.INVOKESTATIC,
+            "native/magic/1/getcallsiteandincrement/obfuscator" + MAGIC_CONST, "a", "()Ljava/lang/invoke/CallSite;");
 
     private static boolean areMethodNodesEqual(MethodInsnNode methodInsnNode, MethodInsnNode realMethodInsnNode) {
         if (methodInsnNode.getType() != realMethodInsnNode.getType()) {
@@ -69,6 +74,14 @@ public class PreprocessorUtils {
         return compareSuppliers(abstractInsnNode, CLASS_LOCAL);
     }
 
+    public static boolean isCacheCallSite(AbstractInsnNode abstractInsnNode) {
+        return compareSuppliers(abstractInsnNode, CACHE_CALLSITE);
+    }
+
+    public static boolean isGetCallSiteAndIncrement(AbstractInsnNode abstractInsnNode) {
+        return compareSuppliers(abstractInsnNode, GET_CALLSITE_AND_INCREMENT);
+    }
+
     public static boolean isInvokeReverse(AbstractInsnNode abstractInsnNode) {
         if (!(abstractInsnNode instanceof MethodInsnNode)) {
             return false;
@@ -78,8 +91,8 @@ public class PreprocessorUtils {
         return methodInsnNode.owner.equals(realMethodInsnNode.owner);
     }
 
-    public static boolean isLinkCallSiteMethod(AbstractInsnNode abstractInsnNode) {
-        return compareSuppliers(abstractInsnNode, LINK_CALL_SITE_METHOD);
+    public static boolean isGetCallSite(AbstractInsnNode abstractInsnNode) {
+        return compareSuppliers(abstractInsnNode, GET_CALLSITE);
     }
 
     private PreprocessorUtils() {

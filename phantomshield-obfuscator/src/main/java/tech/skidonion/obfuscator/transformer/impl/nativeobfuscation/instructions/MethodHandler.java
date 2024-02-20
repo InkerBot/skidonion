@@ -53,32 +53,20 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             instructionName = null;
             return;
         }
-        if (PreprocessorUtils.isLinkCallSiteMethod(node)) {
-            Type returnType = Type.getReturnType(node.desc);
-            Type[] args = Type.getArgumentTypes(node.desc);
-            instructionName += "_" + returnType.getSort();
-
-            StringBuilder argsBuilder = new StringBuilder();
-            List<Integer> argOffsets = new ArrayList<>();
-
-            int stackOffset = context.stackPointer;
-            for (Type argType : args) {
-                stackOffset -= argType.getSize();
-            }
-            int argumentOffset = stackOffset;
-            for (Type argType : args) {
-                argOffsets.add(argumentOffset);
-                argumentOffset += argType.getSize();
-            }
-
-            for (int i = 0; i < argOffsets.size(); i++) {
-                argsBuilder.append(", ").append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[i].getSort(),
-                        StringUtils.createMap("index", argOffsets.get(i))));
-            }
-
-            context.output.append("cstack").append(stackOffset).append(".l = utils::link_call_site(env")
-                    .append(argsBuilder).append("); ");
-            context.output.append(trimmedTryCatchBlock);
+        if (PreprocessorUtils.isGetCallSite(node)) {
+            context.output.append("cstack").append(context.stackPointer).append(".l = ccallsites[").append(context.obfuscator.getCachedCallSitesIndex().get()).append("];");
+            instructionName = null;
+            return;
+        }
+        if (PreprocessorUtils.isGetCallSiteAndIncrement(node)) {
+            context.output.append("cstack").append(context.stackPointer).append(".l = ccallsites[").append(context.obfuscator.getCachedCallSitesIndex().getAndIncrement()).append("];");
+            instructionName = null;
+            return;
+        }
+        if (PreprocessorUtils.isCacheCallSite(node)) {
+//            ccallsites[0] = env->NewGlobalRef(cstack1.l);
+//            env->DeleteLocalRef(cstack1.l);
+            context.output.append("ccallsites[").append(context.obfuscator.getCachedCallSitesIndex().get()).append("] = ").append("env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);").append("env->DeleteLocalRef(cstack").append(context.stackPointer - 1).append(".l);");
             instructionName = null;
             return;
         }

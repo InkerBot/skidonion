@@ -31,7 +31,6 @@ public class ConfigBuilder {
     private boolean nativeObfuscationEnable = false;
     private String loaderPackageSetting = "skidonion/??????";
     private boolean printInstructionsSetting = false;
-    private String invokedynamicModeSetting = "compatibility";
     private boolean hiddenStackTraceSetting = true;
 
     // renamer
@@ -40,6 +39,7 @@ public class ConfigBuilder {
     private String repackageNameSetting = "skidonion/??????";
     private boolean printMappingsSetting = false;
     private String printMappingsFileSetting = "mappings.txt";
+    private String prefixNameSetting = "";
     private final List<String> adaptResourcesSetting = new ArrayList<>();
 
     // member shuffler
@@ -109,7 +109,6 @@ public class ConfigBuilder {
             // 添加 settings
             native_obfuscation.put("loader_package", loaderPackageSetting);
             native_obfuscation.put("print_instructions", printInstructionsSetting);
-            native_obfuscation.put("invokedynamic_mode", invokedynamicModeSetting);
             native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
 
             // 添加 过滤器
@@ -140,6 +139,7 @@ public class ConfigBuilder {
 
             renamer.put("print_mappings", printMappingsSetting);
             renamer.put("print_mappings_file", printMappingsFileSetting);
+            renamer.put("prefix_name", prefixNameSetting);
             renamer.put("repackage", repackageSetting);
             renamer.put("repackage_name", repackageNameSetting);
             renamer.put("adapt_resources", adaptResourcesSetting);
@@ -201,10 +201,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setInvokedynamicModeSetting(String invokedynamicModeSetting) {
-        this.invokedynamicModeSetting = invokedynamicModeSetting;
-        return this;
-    }
 
     public ConfigBuilder setPrintInstructionsSetting(boolean printInstructionsSetting) {
         this.printInstructionsSetting = printInstructionsSetting;
@@ -380,6 +376,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setRemoveLocalVariableSetting(boolean removeLocalVariableSetting) {
         this.removeLocalVariableSetting = removeLocalVariableSetting;
+        return this;
+    }
+
+    public ConfigBuilder setPrefixNameSetting(String prefixNameSetting) {
+        this.prefixNameSetting = prefixNameSetting;
         return this;
     }
 }

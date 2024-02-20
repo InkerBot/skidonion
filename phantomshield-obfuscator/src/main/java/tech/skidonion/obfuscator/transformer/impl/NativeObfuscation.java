@@ -1,9 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
@@ -27,7 +24,6 @@ import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
-import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,9 +31,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -47,22 +42,21 @@ public class NativeObfuscation extends Transformer {
 
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
-    private final ModeValue invokedynamic_mode = new ModeValue("invokedynamic_mode", "compatibility", "compatibility", "enhancement");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
 
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, loader_package, invokedynamic_mode, hidden_stack_trace);
+        addSettings(print_instructions, loader_package, hidden_stack_trace);
     }
 
     private Snippets snippets;
     private StringPool stringPool;
     private MethodProcessor methodProcessor;
-
     private NodeCache<String> cachedStrings;
     private NodeCache<String> cachedClasses;
     private NodeCache<CachedMethodInfo> cachedMethods;
     private NodeCache<CachedFieldInfo> cachedFields;
+    private AtomicInteger cachedCallSitesIndex;
     private HiddenMethodsPool hiddenMethodsPool;
     private int currentClassId;
     private String nativeDir;
@@ -122,7 +116,7 @@ public class NativeObfuscation extends Transformer {
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)
                         .filter(MethodProcessor::shouldProcess)
-                        .forEach(methodNode -> PreprocessorRunner.preprocess(cw.getClassNode(), methodNode, invokedynamic_mode));
+                        .forEach(methodNode -> PreprocessorRunner.preprocess(this, cw.getClassNode(), methodNode));
 
                 ClassWriter computedWriter = new ClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 cw.getClassNode().accept(computedWriter);
@@ -143,6 +137,8 @@ public class NativeObfuscation extends Transformer {
                 cachedClasses.clear();
                 cachedMethods.clear();
                 cachedFields.clear();
+                cachedCallSitesIndex = new AtomicInteger();
+
 
                 try (ClassSourceBuilder cppBuilder =
                              new ClassSourceBuilder(cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
@@ -174,7 +170,7 @@ public class NativeObfuscation extends Transformer {
                     }
 
 
-                    cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size());
+                    cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get());
                     cppBuilder.addInstructions(instructions.toString());
                     cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods);
 
@@ -281,6 +277,10 @@ public class NativeObfuscation extends Transformer {
     @Override
     public String annotation() {
         return Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.class);
+    }
+
+    public AtomicInteger getCachedCallSitesIndex() {
+        return cachedCallSitesIndex;
     }
 
     public Snippets getSnippets() {

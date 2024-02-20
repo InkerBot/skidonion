@@ -92,7 +92,10 @@ public class DebugInformationRemover extends Transformer {
                     if (!remove_local_variable.isEnable()) break remove_local_variable;
                     if (methodWrapper.getMethodNode().localVariables != null) {
                         local_variable.addAndGet(methodWrapper.getMethodNode().localVariables.size());
-                        methodWrapper.getMethodNode().localVariables = null;
+                        methodWrapper.getMethodNode().localVariables.forEach(node -> {
+                            node.name = "\n\n\n\n\n";
+                            node.signature = null;
+                        });
                     }
 
                 }

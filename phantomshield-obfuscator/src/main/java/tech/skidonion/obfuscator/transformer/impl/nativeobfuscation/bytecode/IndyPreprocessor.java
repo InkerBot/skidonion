@@ -5,276 +5,185 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.utils.IOUtils;
-import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class IndyPreprocessor implements Preprocessor {
 
-    private static void processIndy(ClassNode classNode, MethodNode methodNode,
-                                    InvokeDynamicInsnNode invokeDynamicInsnNode, String mode) {
+    private static void processIndy(NativeObfuscation obfuscation, ClassNode classNode, MethodNode methodNode,
+                                    InvokeDynamicInsnNode invokeDynamicInsnNode) {
         LabelNode bootstrapStart = new LabelNode(new Label());
         LabelNode bootstrapEnd = new LabelNode(new Label());
         LabelNode bsmeStart = new LabelNode(new Label());
         LabelNode invokeStart = new LabelNode(new Label());
 
-        InsnList bootstrapInstructions = new InsnList();
-        bootstrapInstructions.add(bootstrapStart); // 0
 
+        LabelNode isCachedCallSiteStart = new LabelNode(new Label());
+        InsnList checkIsCallSiteCachedInstructions = new InsnList();
+        checkIsCallSiteCachedInstructions.add(isCachedCallSiteStart);
+        checkIsCallSiteCachedInstructions.add(PreprocessorUtils.GET_CALLSITE.get());
+        checkIsCallSiteCachedInstructions.add(new JumpInsnNode(Opcodes.IFNULL, bootstrapStart));
+        checkIsCallSiteCachedInstructions.add(new JumpInsnNode(Opcodes.GOTO, invokeStart));
 
-        switch (mode) {
-            case "compatibility": {
-                Type[] bsmArguments = Type.getArgumentTypes(invokeDynamicInsnNode.bsm.getDesc());
-                int targetArgLength = bsmArguments.length - 3;
-                int originArgLength = invokeDynamicInsnNode.bsmArgs.length;
+        LabelNode prepareArgumentsStart = new LabelNode(new Label());
+        InsnList prepareArgumentsInstructions = new InsnList();
+        prepareArgumentsInstructions.add(prepareArgumentsStart);
+        Type[] arguments = Type.getArgumentTypes(invokeDynamicInsnNode.desc);
 
-                // process variable arguments for bsm like StringConcatFactory.makeConcatWithConstants(Lookup, String, MethodType, String, Object...)
-                // jvm will process variable argument automatically when using linkCallSite
-                // but if we want to use invokeWithArguments, we need to process variable argument manually
-                if (originArgLength < targetArgLength) {
-                    Object[] newArgs = new Object[targetArgLength];
-                    System.arraycopy(invokeDynamicInsnNode.bsmArgs, 0, newArgs, 0, originArgLength);
-
-                    if (targetArgLength - originArgLength != 1)
-                        throw new RuntimeException("Impossible BootstrapMethod Arguments Length");
-
-                    if (bsmArguments[originArgLength + 3].getSort() == Type.ARRAY) {
-                        newArgs[originArgLength] = new Object[0];
-                    } else {
-                        throw new RuntimeException("Last Argument of BootstrapMethod is NOT a Variable Argument");
+        prepareArgumentsInstructions.add(new LdcInsnNode(arguments.length)); // 1
+        prepareArgumentsInstructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/Object")); // 1
+        {
+            int index = arguments.length;
+            for (Type argument : IOUtils.reverse(Arrays.stream(arguments)).collect(Collectors.toList())) {
+                index--;
+                if (argument.getSize() == 1) {
+                    if (argument.getSort() != Type.ARRAY && argument.getSort() != Type.OBJECT) {
+                        prepareArgumentsInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
+                        prepareArgumentsInstructions.add(getBoxingInsnNode(argument)); // 2
+                        prepareArgumentsInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
                     }
-
-                    invokeDynamicInsnNode.bsmArgs = newArgs;
-                } else if (originArgLength > targetArgLength || (bsmArguments[bsmArguments.length - 1].getSort() == Type.ARRAY && Type.getType(invokeDynamicInsnNode.bsmArgs[invokeDynamicInsnNode.bsmArgs.length - 1].getClass()).getSort() != Type.ARRAY)) {
-                    Object[] newArgs = new Object[targetArgLength];
-                    System.arraycopy(invokeDynamicInsnNode.bsmArgs, 0, newArgs, 0, targetArgLength - 1);
-
-                    Object[] varArgs = new Object[originArgLength - targetArgLength + 1];
-                    System.arraycopy(invokeDynamicInsnNode.bsmArgs, targetArgLength - 1, varArgs, 0, originArgLength - targetArgLength + 1);
-
-                    newArgs[targetArgLength - 1] = varArgs;
-                    invokeDynamicInsnNode.bsmArgs = newArgs;
+                } else if (argument.getSize() == 2) {
+                    prepareArgumentsInstructions.add(new InsnNode(Opcodes.DUP_X2)); // 3
+                    prepareArgumentsInstructions.add(new InsnNode(Opcodes.POP)); // 2
+                    prepareArgumentsInstructions.add(getBoxingInsnNode(argument)); // 2
+                    prepareArgumentsInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
                 }
-
-
-                if (bsmArguments.length < 3 || !bsmArguments[0].getDescriptor().equals("Ljava/lang/invoke/MethodHandles$Lookup;") ||
-                        !bsmArguments[1].getDescriptor().equals("Ljava/lang/String;") ||
-                        !bsmArguments[2].getDescriptor().equals("Ljava/lang/invoke/MethodType;")) {
-                    InsnList resultInstructions = new InsnList();
-                    resultInstructions.add(new TypeInsnNode(Opcodes.NEW, "java/lang/BootstrapMethodError")); // 1
-                    resultInstructions.add(new InsnNode(Opcodes.DUP)); // 2
-                    resultInstructions.add(new LdcInsnNode("Wrong 3 first arguments in bsm")); // 3
-                    resultInstructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/BootstrapMethodError",
-                            "<init>", "(Ljava/lang/String;)V")); // 1
-                    resultInstructions.add(new InsnNode(Opcodes.ATHROW)); // 0
-                    methodNode.instructions.insert(invokeDynamicInsnNode, resultInstructions);
-                    methodNode.instructions.remove(invokeDynamicInsnNode);
-                    return;
-                }
-
-
-                Type[] arguments = Type.getArgumentTypes(invokeDynamicInsnNode.desc);
-
-
-                bootstrapInstructions.add(new LdcInsnNode(arguments.length)); // 1
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/Object")); // 1
-                {
-                    int index = arguments.length;
-                    for (Type argument : IOUtils.reverse(Arrays.stream(arguments)).collect(Collectors.toList())) {
-                        index--;
-                        if (argument.getSize() == 1) {
-                            if (argument.getSort() != Type.ARRAY && argument.getSort() != Type.OBJECT) {
-                                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
-                                bootstrapInstructions.add(getBoxingInsnNode(argument)); // 2
-                                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
-                            }
-                        } else if (argument.getSize() == 2) {
-                            bootstrapInstructions.add(new InsnNode(Opcodes.DUP_X2)); // 3
-                            bootstrapInstructions.add(new InsnNode(Opcodes.POP)); // 2
-                            bootstrapInstructions.add(getBoxingInsnNode(argument)); // 2
-                            bootstrapInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
-                        }
-                        bootstrapInstructions.add(new InsnNode(Opcodes.DUP)); // 3
-                        bootstrapInstructions.add(new InsnNode(Opcodes.DUP2_X1)); // 5
-                        bootstrapInstructions.add(new InsnNode(Opcodes.POP2)); // 3
-                        bootstrapInstructions.add(new LdcInsnNode(index)); // 4
-                        bootstrapInstructions.add(new InsnNode(Opcodes.SWAP)); // 4
-                        bootstrapInstructions.add(new InsnNode(Opcodes.AASTORE)); // 1
-                    }
-                }
-
-                bootstrapInstructions.add(PreprocessorUtils.LOOKUP_LOCAL.get()); // 2
-                bootstrapInstructions.add(new LdcInsnNode(invokeDynamicInsnNode.name)); // 3
-                bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn(Type.getMethodType(invokeDynamicInsnNode.desc)));
-
-                for (Object bsmArgument : invokeDynamicInsnNode.bsmArgs) {
-                    if (bsmArgument instanceof String) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
-                    } else if (bsmArgument instanceof Type) {
-                        if (((Type) bsmArgument).getSort() == Type.METHOD) {
-                            bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn((Type) bsmArgument));
-                        } else {
-                            bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
-                        }
-                    } else if (bsmArgument instanceof Integer) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
-                    } else if (bsmArgument instanceof Long) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
-                    } else if (bsmArgument instanceof Float) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
-                    } else if (bsmArgument instanceof Double) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
-                    } else if (bsmArgument instanceof Handle) {
-                        bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn((Handle) bsmArgument));
-                    } else if (bsmArgument instanceof Object[]) {
-                        Object[] objects = (Object[]) bsmArgument;
-                        bootstrapInstructions.add(new LdcInsnNode(objects.length));
-                        bootstrapInstructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/Object"));
-
-                        int index = 0;
-                        for (Object object : objects) {
-                            bootstrapInstructions.add(new InsnNode(Opcodes.DUP));
-                            bootstrapInstructions.add(new LdcInsnNode(index));
-                            if (object instanceof String) {
-                                bootstrapInstructions.add(new LdcInsnNode(object));
-                            } else if (object instanceof Type) {
-                                if (((Type) object).getSort() == Type.METHOD) {
-                                    bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn((Type) object));
-                                } else {
-                                    bootstrapInstructions.add(new LdcInsnNode(object));
-                                }
-                            } else if (object instanceof Integer) {
-                                bootstrapInstructions.add(new LdcInsnNode(object));
-                                bootstrapInstructions.add(getBoxingInsnNode(Type.INT_TYPE));
-                            } else if (object instanceof Long) {
-                                bootstrapInstructions.add(new LdcInsnNode(object));
-                                bootstrapInstructions.add(getBoxingInsnNode(Type.LONG_TYPE));
-                            } else if (object instanceof Float) {
-                                bootstrapInstructions.add(new LdcInsnNode(object));
-                                bootstrapInstructions.add(getBoxingInsnNode(Type.FLOAT_TYPE));
-                            } else if (object instanceof Double) {
-                                bootstrapInstructions.add(new LdcInsnNode(object));
-                                bootstrapInstructions.add(getBoxingInsnNode(Type.DOUBLE_TYPE));
-                            } else if (object instanceof Handle) {
-                                bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn((Handle) object));
-                            } else {
-                                throw new RuntimeException("Wrong argument type: " + object.getClass());
-                            }
-                            bootstrapInstructions.add(new InsnNode(Opcodes.AASTORE));
-                            index++;
-                        }
-
-                    } else {
-                        throw new RuntimeException("Wrong argument type: " + bsmArgument.getClass());
-                    }
-                }
-                bootstrapInstructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, invokeDynamicInsnNode.bsm.getOwner(),
-                        invokeDynamicInsnNode.bsm.getName(), invokeDynamicInsnNode.bsm.getDesc())); // 2
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/invoke/CallSite")); // 2
-                bootstrapInstructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, "java/lang/invoke/CallSite",
-                        "getTarget", "()Ljava/lang/invoke/MethodHandle;")); // 2
-                bootstrapInstructions.add(new JumpInsnNode(Opcodes.GOTO, invokeStart)); // 2
-                break;
+                prepareArgumentsInstructions.add(new InsnNode(Opcodes.DUP)); // 3
+                prepareArgumentsInstructions.add(new InsnNode(Opcodes.DUP2_X1)); // 5
+                prepareArgumentsInstructions.add(new InsnNode(Opcodes.POP2)); // 3
+                prepareArgumentsInstructions.add(new LdcInsnNode(index)); // 4
+                prepareArgumentsInstructions.add(new InsnNode(Opcodes.SWAP)); // 4
+                prepareArgumentsInstructions.add(new InsnNode(Opcodes.AASTORE)); // 1
             }
-            case "enhancement": {
-                bootstrapInstructions.add(new InsnNode(Opcodes.ICONST_1));
+        }
+
+        InsnList bootstrapInstructions = new InsnList();
+        bootstrapInstructions.add(bootstrapStart); // 1
+
+
+        Type[] bsmArguments = Type.getArgumentTypes(invokeDynamicInsnNode.bsm.getDesc());
+        int targetArgLength = bsmArguments.length - 3;
+        int originArgLength = invokeDynamicInsnNode.bsmArgs.length;
+
+        // process variable arguments for bsm like StringConcatFactory.makeConcatWithConstants(Lookup, String, MethodType, String, Object...)
+        // jvm will process variable argument automatically when using linkCallSite
+        // but if we want to use invokeWithArguments, we need to process variable argument manually
+        if (originArgLength < targetArgLength) {
+            Object[] newArgs = new Object[targetArgLength];
+            System.arraycopy(invokeDynamicInsnNode.bsmArgs, 0, newArgs, 0, originArgLength);
+
+            if (targetArgLength - originArgLength != 1)
+                throw new RuntimeException("Impossible BootstrapMethod Arguments Length");
+
+            if (bsmArguments[originArgLength + 3].getSort() == Type.ARRAY) {
+                newArgs[originArgLength] = new Object[0];
+            } else {
+                throw new RuntimeException("Last Argument of BootstrapMethod is NOT a Variable Argument");
+            }
+
+            invokeDynamicInsnNode.bsmArgs = newArgs;
+        } else if (originArgLength > targetArgLength || (bsmArguments[bsmArguments.length - 1].getSort() == Type.ARRAY && Type.getType(invokeDynamicInsnNode.bsmArgs[invokeDynamicInsnNode.bsmArgs.length - 1].getClass()).getSort() != Type.ARRAY)) {
+            Object[] newArgs = new Object[targetArgLength];
+            System.arraycopy(invokeDynamicInsnNode.bsmArgs, 0, newArgs, 0, targetArgLength - 1);
+
+            Object[] varArgs = new Object[originArgLength - targetArgLength + 1];
+            System.arraycopy(invokeDynamicInsnNode.bsmArgs, targetArgLength - 1, varArgs, 0, originArgLength - targetArgLength + 1);
+
+            newArgs[targetArgLength - 1] = varArgs;
+            invokeDynamicInsnNode.bsmArgs = newArgs;
+        }
+
+
+        bootstrapInstructions.add(PreprocessorUtils.LOOKUP_LOCAL.get()); // 2
+        bootstrapInstructions.add(new LdcInsnNode(invokeDynamicInsnNode.name)); // 3
+        bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn(Type.getMethodType(invokeDynamicInsnNode.desc)));
+
+        for (Object bsmArgument : invokeDynamicInsnNode.bsmArgs) {
+            if (bsmArgument instanceof String) {
+                bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+            } else if (bsmArgument instanceof Type) {
+                if (((Type) bsmArgument).getSort() == Type.METHOD) {
+                    bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn((Type) bsmArgument));
+                } else {
+                    bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+                }
+            } else if (bsmArgument instanceof Integer) {
+                bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+            } else if (bsmArgument instanceof Long) {
+                bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
+            } else if (bsmArgument instanceof Float) {
+                bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+            } else if (bsmArgument instanceof Double) {
+                bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
+            } else if (bsmArgument instanceof Handle) {
+                bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn((Handle) bsmArgument));
+            } else if (bsmArgument instanceof Object[]) {
+                Object[] objects = (Object[]) bsmArgument;
+                bootstrapInstructions.add(new LdcInsnNode(objects.length));
                 bootstrapInstructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/Object"));
-                bootstrapInstructions.add(new InsnNode(Opcodes.DUP));
-                bootstrapInstructions.add(new LdcInsnNode(Type.getObjectType(classNode.name)));
-                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP));
-                bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn(invokeDynamicInsnNode.bsm));
-                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP));
-                bootstrapInstructions.add(new LdcInsnNode(invokeDynamicInsnNode.name));
-                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP));
-                bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn(Type.getMethodType(invokeDynamicInsnNode.desc)));
-                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP));
-                bootstrapInstructions.add(new LdcInsnNode(invokeDynamicInsnNode.bsmArgs.length));
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/Object"));
+
                 int index = 0;
-                for (Object bsmArgument : invokeDynamicInsnNode.bsmArgs) {
+                for (Object object : objects) {
                     bootstrapInstructions.add(new InsnNode(Opcodes.DUP));
                     bootstrapInstructions.add(new LdcInsnNode(index));
-                    if (bsmArgument instanceof String) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
-                    } else if (bsmArgument instanceof Type) {
-                        if (((Type) bsmArgument).getSort() == Type.METHOD) {
-                            bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn((Type) bsmArgument));
+                    if (object instanceof String) {
+                        bootstrapInstructions.add(new LdcInsnNode(object));
+                    } else if (object instanceof Type) {
+                        if (((Type) object).getSort() == Type.METHOD) {
+                            bootstrapInstructions.add(MethodHandleUtils.generateMethodTypeLdcInsn((Type) object));
                         } else {
-                            bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+                            bootstrapInstructions.add(new LdcInsnNode(object));
                         }
-                    } else if (bsmArgument instanceof Integer) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+                    } else if (object instanceof Integer) {
+                        bootstrapInstructions.add(new LdcInsnNode(object));
                         bootstrapInstructions.add(getBoxingInsnNode(Type.INT_TYPE));
-                    } else if (bsmArgument instanceof Long) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
+                    } else if (object instanceof Long) {
+                        bootstrapInstructions.add(new LdcInsnNode(object));
                         bootstrapInstructions.add(getBoxingInsnNode(Type.LONG_TYPE));
-                    } else if (bsmArgument instanceof Float) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 5
+                    } else if (object instanceof Float) {
+                        bootstrapInstructions.add(new LdcInsnNode(object));
                         bootstrapInstructions.add(getBoxingInsnNode(Type.FLOAT_TYPE));
-                    } else if (bsmArgument instanceof Double) {
-                        bootstrapInstructions.add(new LdcInsnNode(bsmArgument)); // 6
+                    } else if (object instanceof Double) {
+                        bootstrapInstructions.add(new LdcInsnNode(object));
                         bootstrapInstructions.add(getBoxingInsnNode(Type.DOUBLE_TYPE));
-                    } else if (bsmArgument instanceof Handle) {
-                        bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn((Handle) bsmArgument));
+                    } else if (object instanceof Handle) {
+                        bootstrapInstructions.add(MethodHandleUtils.generateMethodHandleLdcInsn((Handle) object));
                     } else {
-                        throw new RuntimeException("Wrong argument type: " + bsmArgument.getClass());
+                        throw new RuntimeException("Wrong argument type: " + object.getClass());
                     }
                     bootstrapInstructions.add(new InsnNode(Opcodes.AASTORE));
                     index++;
                 }
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Object"));
-                bootstrapInstructions.add(new InsnNode(Opcodes.SWAP));
-                bootstrapInstructions.add(PreprocessorUtils.LINK_CALL_SITE_METHOD.get());
-                bootstrapInstructions.add(new InsnNode(Opcodes.POP));
-                bootstrapInstructions.add(new InsnNode(Opcodes.ICONST_0));
-                bootstrapInstructions.add(new InsnNode(Opcodes.AALOAD)); // 1
-                bootstrapInstructions.add(new InsnNode(Opcodes.DUP)); // 2
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.INSTANCEOF, "java/lang/invoke/CallSite")); // 2
-                LabelNode methodHandleReady = new LabelNode(new Label());
-                bootstrapInstructions.add(new JumpInsnNode(Opcodes.IFEQ, methodHandleReady)); // 1
-                bootstrapInstructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, "java/lang/invoke/CallSite",
-                        "getTarget", "()Ljava/lang/invoke/MethodHandle;")); // 1
-                bootstrapInstructions.add(methodHandleReady); // 1
-                bootstrapInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle"));
-                bootstrapInstructions.add(new JumpInsnNode(Opcodes.GOTO, invokeStart)); // 2
-                break;
+
+            } else {
+                throw new RuntimeException("Wrong argument type: " + bsmArgument.getClass());
             }
-            default:
-                throw new RuntimeException("Unknown mode: " + mode);
         }
+        bootstrapInstructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, invokeDynamicInsnNode.bsm.getOwner(),
+                invokeDynamicInsnNode.bsm.getName(), invokeDynamicInsnNode.bsm.getDesc())); // 2
+        bootstrapInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/invoke/CallSite")); // 2
+        bootstrapInstructions.add(PreprocessorUtils.CACHE_CALLSITE.get()); // 1
+        bootstrapInstructions.add(new JumpInsnNode(Opcodes.GOTO, invokeStart)); // 1
         bootstrapInstructions.add(bootstrapEnd);
 
         InsnList invokeInstructions = new InsnList();
         invokeInstructions.add(invokeStart);
-        switch (mode) {
-            case "enhancement": {
-                invokeInstructions.add(PreprocessorUtils.INVOKE_REVERSE.apply(invokeDynamicInsnNode.desc));
-                Type returnType = Type.getReturnType(invokeDynamicInsnNode.desc);
-                if (returnType.getSort() == Type.OBJECT) {
-                    invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName())); // 1
-                } else if (returnType.getSort() == Type.ARRAY) {
-                    invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getDescriptor())); // 1
-                }
-                break;
-            }
-            case "compatibility": {
-                invokeInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
-                invokeInstructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
-                        "invokeWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;")); // 1
-                Type returnType = Type.getReturnType(invokeDynamicInsnNode.desc);
-                if (returnType.getSort() == Type.OBJECT) {
-                    invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName())); // 1
-                } else if (returnType.getSort() == Type.ARRAY) {
-                    invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getDescriptor())); // 1
-                } else {
-                    invokeInstructions.add(getUnboxingTypeInsn(returnType));
-                }
-                break;
-            }
-            default:
-                throw new RuntimeException("Unknown mode: " + mode);
+        invokeInstructions.add(PreprocessorUtils.GET_CALLSITE_AND_INCREMENT.get()); // 2
+        invokeInstructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, "java/lang/invoke/CallSite",
+                "getTarget", "()Ljava/lang/invoke/MethodHandle;")); // 2
+        invokeInstructions.add(new InsnNode(Opcodes.SWAP)); // 2
+        invokeInstructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
+                "invokeWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;")); // 1
+        Type returnType = Type.getReturnType(invokeDynamicInsnNode.desc);
+        if (returnType.getSort() == Type.OBJECT) {
+            invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName())); // 1
+        } else if (returnType.getSort() == Type.ARRAY) {
+            invokeInstructions.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getDescriptor())); // 1
+        } else {
+            invokeInstructions.add(getUnboxingTypeInsn(returnType));
         }
 
         InsnList bsmeInstructions = new InsnList();
@@ -293,6 +202,8 @@ public class IndyPreprocessor implements Preprocessor {
         bsmeInstructions.add(new InsnNode(Opcodes.ATHROW)); // 0
 
         InsnList resultInstructions = new InsnList();
+        resultInstructions.add(prepareArgumentsInstructions);
+        resultInstructions.add(checkIsCallSiteCachedInstructions);
         resultInstructions.add(bootstrapInstructions);
         resultInstructions.add(bsmeInstructions);
         resultInstructions.add(invokeInstructions);
@@ -371,11 +282,11 @@ public class IndyPreprocessor implements Preprocessor {
     }
 
     @Override
-    public void process(ClassNode classNode, MethodNode methodNode, ModeValue mode) {
+    public void process(NativeObfuscation obfuscation, ClassNode classNode, MethodNode methodNode) {
         for (int i = 0; i < methodNode.instructions.size(); i++) {
             AbstractInsnNode insnNode = methodNode.instructions.get(i);
             if (insnNode instanceof InvokeDynamicInsnNode) {
-                processIndy(classNode, methodNode, (InvokeDynamicInsnNode) insnNode, mode.getValue());
+                processIndy(obfuscation, classNode, methodNode, (InvokeDynamicInsnNode) insnNode);
             }
         }
     }

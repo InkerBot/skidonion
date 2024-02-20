@@ -21,7 +21,6 @@ public class TestConfigBuilder {
                 .addAdaptResources("META-INF/MANIFEST.MF")
                 .setStringEncryptionEnable(true)
                 .setNativeObfuscationEnable(true)
-                .setInvokedynamicModeSetting("enhancement")
                 .setLoaderPackageSetting("skidonion/?????")
                 .addTarget("x86_64-windows")
                 .setPrintInstructionsSetting(false)

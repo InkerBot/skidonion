@@ -44,6 +44,7 @@ public class MethodContext {
 
     public String cppNativeMethodName;
 
+
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
                          int classIndex) {
         this.obfuscator = obfuscator;
@@ -61,6 +62,7 @@ public class MethodContext {
         this.tryCatches = new HashSet<>();
         this.catches = new HashMap<>();
     }
+
 
     public NodeCache<String> getCachedStrings() {
         return obfuscator.getCachedStrings();

@@ -26,15 +26,7 @@ namespace native_jvm::utils {
     template <int sort>
     jarray create_multidim_array_value(JNIEnv *env, jint count, jint required_count,
         const char *name, int line, std::initializer_list<jint> sizes, int dim_index = 0) {
-        if (required_count == 0) {
-            env->FatalError("required_count == 0");
-            return nullptr;
-        }
         jint current_size = sizes.begin()[dim_index];
-        if (current_size < 0) {
-            throw_re(env, "java/lang/NegativeArraySizeException", "MULTIANEWARRAY size < 0", line);
-            return nullptr;
-        }
         if (count == 1) {
             return create_array_value<sort>(env, current_size);
         }
