@@ -14,6 +14,7 @@ import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
+import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 
@@ -63,7 +64,7 @@ public class PhantomShield {
     @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
-        INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2019-2024 fl0wowp4rty", "All rights reserved");
+        INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2024 fl0wowp4rty", "All rights reserved");
 
         if (config.has("dictionary")) {
             Object value = config.get("dictionary");
@@ -111,6 +112,15 @@ public class PhantomShield {
         TransformerRegister register = new TransformerRegister();
         register.parseConfig(config);
         register.process(this);
+
+        try {
+            Watermarking watermarking = new Watermarking();
+            watermarking.init(this);
+            watermarking.transform();
+        } catch (Exception e) {
+            ERROR("Occurs a FATAL ERROR: ", e);
+            return;
+        }
 
         writeOutput();
     }

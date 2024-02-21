@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+}
+
+sourceCompatibility = targetCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.ow2.asm:asm:9.6'
+    implementation 'org.ow2.asm:asm-tree:9.6'
+    implementation 'org.ow2.asm:asm-commons:9.6'
+
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+jar {
+    manifest.attributes([
+            'Main-Class': 'tech.skidonion.obfuscator.trace.Main',
+            'Class-Path': buildClassPath(),
+    ])
+}
+
+task copyDenpendecies(type: Copy) {
+    from configurations.runtimeClasspath
+    into 'libs'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+String buildClassPath() {
+    StringBuilder path = new StringBuilder()
+    configurations.runtimeClasspath.each {
+        path.append("libs//").append(it.name).append(" ");
+    }
+    return path.toString()
+}

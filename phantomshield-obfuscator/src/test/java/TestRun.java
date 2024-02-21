@@ -6,7 +6,7 @@ import java.io.File;
 public class TestRun {
     public static void main(String[] args) {
         PhantomShield obfuscator = new PhantomShield(new ConfigBuilder()
-                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT-zkm.jar"))
+                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar"))
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
@@ -21,7 +21,7 @@ public class TestRun {
 //                .setPrefixName("狼牙")
                 .setRepackageNameSetting("skidonion")
                 .setStringEncryptionEnable(false) // String
-                .setNativeObfuscationEnable(true) // Native
+                .setNativeObfuscationEnable(false) // Native
                 .setPrintInstructionsSetting(false)
                 .addTarget("x86_64-windows")
 //                .addSubFilters("native_obfuscation",

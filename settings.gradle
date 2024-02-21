@@ -1,3 +1,5 @@
 include 'phantomshield-obfuscator'
 include 'phantomshield-annotations'
 include 'phantomshield-loader'
+include 'phantomshield-watermark-trace'
+

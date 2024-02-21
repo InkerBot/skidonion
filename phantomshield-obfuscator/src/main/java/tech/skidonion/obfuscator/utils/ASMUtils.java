@@ -445,7 +445,7 @@ public class ASMUtils {
             list.add(new TypeInsnNode(Opcodes.NEW, Type.getInternalName(StringBuilder.class)));
             list.add(new InsnNode(Opcodes.DUP));
             list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "()V"));
-            while (string.length() > 0) {
+            while (!string.isEmpty()) {
                 end = Math.min(string.length(), 65535);
                 while (string.substring(0, end).getBytes(StandardCharsets.UTF_8).length > 65535) end--;
                 String s = string.substring(0, end);

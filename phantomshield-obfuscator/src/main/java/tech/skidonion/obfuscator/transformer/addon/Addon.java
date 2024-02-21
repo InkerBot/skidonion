@@ -15,7 +15,7 @@ public abstract class Addon {
         this.obfuscator = obfuscator;
     }
 
-    public abstract void transform();
+    public abstract void transform() throws Exception;
 
     protected final Map<String, ClassWrapper> getClasses() {
         return this.obfuscator.classes;
