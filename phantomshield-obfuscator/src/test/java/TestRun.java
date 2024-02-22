@@ -10,6 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
+                .setControlFlowObfuscationEnable(true) // control flow
 //                .setInputMappingsFileSetting("mappings.json")
                 .setDebugInformationRemoverEnable(false) // Remover
                 .setMemberShufflerEnable(false) // Shuffler

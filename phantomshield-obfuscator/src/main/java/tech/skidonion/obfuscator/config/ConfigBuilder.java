@@ -53,6 +53,9 @@ public class ConfigBuilder {
     private boolean removeLineNumberSetting = true;
     private boolean removeLocalVariableSetting = true;
 
+    // control flow obfuscation
+    private boolean controlFlowObfuscationEnable = false;
+
 
     public final Config build() {
         Config config = new Config();
@@ -179,6 +182,19 @@ public class ConfigBuilder {
                 return v;
             });
             config.add("debug_information_remover", debug_information_remover);
+        }
+
+        control_flow_obfuscation:
+        {
+            if (!controlFlowObfuscationEnable) break control_flow_obfuscation;
+            Map<String, Object> control_flow_obfuscation = new LinkedHashMap<>();
+
+
+            subFiltersSettings.computeIfPresent("control_flow_obfuscation", (k, v) -> {
+                control_flow_obfuscation.put("filters", v);
+                return v;
+            });
+            config.add("control_flow_obfuscation", control_flow_obfuscation);
         }
 
         return config;
@@ -381,6 +397,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setPrefixNameSetting(String prefixNameSetting) {
         this.prefixNameSetting = prefixNameSetting;
+        return this;
+    }
+
+    public ConfigBuilder setControlFlowObfuscationEnable(boolean controlFlowObfuscationEnable) {
+        this.controlFlowObfuscationEnable = controlFlowObfuscationEnable;
         return this;
     }
 }

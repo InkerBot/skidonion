@@ -20,6 +20,7 @@ dependencies {
 
     implementation 'org.ow2.asm:asm:9.6'
     implementation 'org.ow2.asm:asm-tree:9.6'
+    implementation 'org.ow2.asm:asm-analysis:9.6'
     implementation 'org.ow2.asm:asm-commons:9.6'
 
     implementation 'org.slf4j:slf4j-api:1.7.36'
