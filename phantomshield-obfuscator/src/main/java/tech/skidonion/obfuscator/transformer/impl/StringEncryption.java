@@ -332,7 +332,7 @@ public class StringEncryption extends Transformer {
         }
 
         int varIn = 0;
-        final int realVar = RandomUtils.getRandomInt(0, shuffle.size() - 1);
+        final int realVar = RandomUtils.getRandomInt(0, Math.min(shuffle.size() - 1, 7));
         for (List<String> strings : restore) {
             if (realVar == varIn) { // insert real local
                 insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
