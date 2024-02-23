@@ -10,6 +10,8 @@ import tech.skidonion.obfuscator.asm.MethodWrapper;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -524,6 +526,57 @@ public class ASMUtils {
         return null;
     }
 
+    public static InsnList generateTrue() {
+        final InsnList insnList = new InsnList();
+        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+        float sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        while (f1 - 0.1 == sub) {
+            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+            sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        }
+
+        final LabelNode start = new LabelNode();
+        final LabelNode const1 = new LabelNode();
+        final LabelNode const0 = new LabelNode();
+        insnList.add(start);
+        insnList.add(new LdcInsnNode(f1));
+        insnList.add(new LdcInsnNode(0.1));
+        insnList.add(new InsnNode(Opcodes.FADD));
+        insnList.add(new LdcInsnNode(sub));
+        insnList.add(new InsnNode(Opcodes.FCMPL));
+        insnList.add(new JumpInsnNode(Opcodes.IFEQ, const0));
+        insnList.add(const1);
+        insnList.add(new InsnNode(Opcodes.ICONST_1));
+        insnList.add(const0);
+        insnList.add(new InsnNode(Opcodes.ICONST_0));
+        return insnList;
+    }
+
+    public static InsnList generateFalse() {
+        final InsnList insnList = new InsnList();
+        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+        float sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        while (f1 - 0.1 == sub) {
+            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+            sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        }
+
+        final LabelNode start = new LabelNode();
+        final LabelNode const1 = new LabelNode();
+        final LabelNode const0 = new LabelNode();
+        insnList.add(start);
+        insnList.add(new LdcInsnNode(f1));
+        insnList.add(new LdcInsnNode(0.1));
+        insnList.add(new InsnNode(Opcodes.FADD));
+        insnList.add(new LdcInsnNode(sub));
+        insnList.add(new InsnNode(Opcodes.FCMPL));
+        insnList.add(new JumpInsnNode(Opcodes.IFNE, const0));
+        insnList.add(const1);
+        insnList.add(new InsnNode(Opcodes.ICONST_1));
+        insnList.add(const0);
+        insnList.add(new InsnNode(Opcodes.ICONST_0));
+        return insnList;
+    }
 
     private static final Map<Integer, String> OPCODE_NAME_MAP = new HashMap<>();
 

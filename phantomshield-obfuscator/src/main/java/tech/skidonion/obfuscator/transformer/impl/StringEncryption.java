@@ -13,10 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.util.LinkedHashMap;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
@@ -34,7 +31,8 @@ public class StringEncryption extends Transformer {
         getFilteredClasses().forEach(cw -> {
             removeAnnotation(cw);
             if (cw.getAccess().isInterface()) return;
-            Map<String, Integer> strings = new LinkedHashMap<>();
+            List<String> strings = new ArrayList<>();
+            List<FieldNode> dummys = new ArrayList<>();
             String decryptorMethodName = cw.generateRandomMethodName();
             String decryptedStringsFieldName = cw.generateRandomFieldName();
             cw.getMethods().stream().filter(this::match).forEach(method -> {
@@ -45,7 +43,8 @@ public class StringEncryption extends Transformer {
                     if (ASMUtils.isStringInsn(inst)) {
                         String value = ASMUtils.getStringFromInsn(inst);
                         iter.remove();
-                        int index = strings.computeIfAbsent(value, constant -> strings.size());
+                        int index = strings.size();
+                        strings.add(value);
                         iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
                         iter.add(new InsnNode(I2C));
                         iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
@@ -62,10 +61,13 @@ public class StringEncryption extends Transformer {
 
                 //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field \ 可以再给获取字符串的方法自动上native注解
                 if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
-                    for (int i = 0; i < Math.min(7, strings.size() - 1); i++) {
-                        cw.addField(new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null));
+                    for (int i = 0; i < Math.min(7, strings.size() - 1); i++) { // 均分 最大7个dummy field
+                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null);
+                        cw.addField(fieldNode);
+                        dummys.add(fieldNode);
                     }
                 }
+                // 制作缺陷
                 MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
                 methodNode.visitFieldInsn(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;");
                 methodNode.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
@@ -75,15 +77,16 @@ public class StringEncryption extends Transformer {
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
-                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings);
+                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings, dummys);
             }
         });
         INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
     }
 
-    private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, Map<String, Integer> strings) {
+    private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, List<String> strings, List<FieldNode> dummys) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (String string : strings.keySet()) {
+        final List<String> shuffled = shuffleString(strings);
+        for (String string : shuffled) {
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             int length = b.length;
             out.write(length & 0xFF);
@@ -231,11 +234,16 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, 5));
         decryptInsts.add(new JumpInsnNode(IFNE, realMethodStart));
 
-        decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
-        decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
-        decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ASTORE, 1));
-        decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
+        if (dummys.isEmpty()) {
+            decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
+            decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+            decryptInsts.add(new InsnNode(DUP));
+            decryptInsts.add(new VarInsnNode(ASTORE, 1));
+            decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
+        } else {
+            decryptInsts.add(generateDummy(dummys, ownerName, decryptedStringsFieldName, shuffled, strings));
+        }
+
         decryptInsts.add(new VarInsnNode(ILOAD, 2));
         decryptInsts.add(new VarInsnNode(ISTORE, 3));
         decryptInsts.add(new InsnNode(ICONST_0));
@@ -311,6 +319,52 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
+    private InsnList generateDummy(List<FieldNode> dummys, String ownerName, String decryptedStringsFieldName, List<String> shuffle, List<String> origin) {
+        final InsnList insnList = new InsnList();
+        if (dummys.isEmpty()) return insnList;
+
+        if (dummys.size() == 1) {
+            final FieldNode fieldNode = dummys.get(0);
+            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
+            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+            insnList.add(new VarInsnNode(ASTORE, 1));
+            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
+            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+            insnList.add(new VarInsnNode(ASTORE, 7));
+            insnList.add(new VarInsnNode(ALOAD, 7));
+            insnList.add(new InsnNode(ICONST_1));
+            insnList.add(new VarInsnNode(ALOAD, 1));
+            insnList.add(new InsnNode(ICONST_0));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(AASTORE));
+            insnList.add(new VarInsnNode(ALOAD, 7));
+            insnList.add(new InsnNode(ICONST_0));
+            insnList.add(new VarInsnNode(ALOAD, 1));
+            insnList.add(new InsnNode(ICONST_1));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(AASTORE));
+            insnList.add(new VarInsnNode(ALOAD, 7));
+            if (origin.get(0).equals(shuffle.get(0))) {
+                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, fieldNode.name, "Ljava/lang/Object;"));
+                insnList.add(new VarInsnNode(ALOAD, 1));
+                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
+            } else {
+                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
+                insnList.add(new VarInsnNode(ALOAD, 1));
+                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, fieldNode.name, "Ljava/lang/Object;"));
+            }
+        } else {
+
+        }
+
+        return insnList;
+    }
+
+    private List<String> shuffleString(List<String> origin) {
+        final List<String> shuffle = new ArrayList<>(origin);
+        Collections.shuffle(shuffle);
+        return shuffle;
+    }
 
     @Override
     public void preprocess() throws Exception {
