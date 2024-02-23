@@ -43,8 +43,9 @@ public class StringEncryption extends Transformer {
                     if (ASMUtils.isStringInsn(inst)) {
                         String value = ASMUtils.getStringFromInsn(inst);
                         iter.remove();
-                        int index = strings.size();
-                        strings.add(value);
+                        if (!strings.contains(value))
+                            strings.add(value);
+                        int index = strings.size() - 1;
                         iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
                         iter.add(new InsnNode(I2C));
                         iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
