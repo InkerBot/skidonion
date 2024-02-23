@@ -234,16 +234,13 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, 5));
         decryptInsts.add(new JumpInsnNode(IFNE, realMethodStart));
 
-        if (dummys.isEmpty()) {
-            decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
-            decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+        decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
+        decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+        if (dummys.isEmpty())
             decryptInsts.add(new InsnNode(DUP));
-            decryptInsts.add(new VarInsnNode(ASTORE, 1));
+        decryptInsts.add(new VarInsnNode(ASTORE, 1));
+        if (dummys.isEmpty())
             decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
-        } else {
-            decryptInsts.add(generateDummy(dummys, ownerName, decryptedStringsFieldName, shuffled, strings));
-        }
-
         decryptInsts.add(new VarInsnNode(ILOAD, 2));
         decryptInsts.add(new VarInsnNode(ISTORE, 3));
         decryptInsts.add(new InsnNode(ICONST_0));
@@ -319,43 +316,10 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private InsnList generateDummy(List<FieldNode> dummys, String ownerName, String decryptedStringsFieldName, List<String> shuffle, List<String> origin) {
+    private InsnList generateDummy(List<FieldNode> dummys) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
 
-        if (dummys.size() == 1) {
-            final FieldNode fieldNode = dummys.get(0);
-            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
-            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
-            insnList.add(new VarInsnNode(ASTORE, 1));
-            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
-            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
-            insnList.add(new VarInsnNode(ASTORE, 7));
-            insnList.add(new VarInsnNode(ALOAD, 7));
-            insnList.add(new InsnNode(ICONST_1));
-            insnList.add(new VarInsnNode(ALOAD, 1));
-            insnList.add(new InsnNode(ICONST_0));
-            insnList.add(new InsnNode(AALOAD));
-            insnList.add(new InsnNode(AASTORE));
-            insnList.add(new VarInsnNode(ALOAD, 7));
-            insnList.add(new InsnNode(ICONST_0));
-            insnList.add(new VarInsnNode(ALOAD, 1));
-            insnList.add(new InsnNode(ICONST_1));
-            insnList.add(new InsnNode(AALOAD));
-            insnList.add(new InsnNode(AASTORE));
-            insnList.add(new VarInsnNode(ALOAD, 7));
-            if (origin.get(0).equals(shuffle.get(0))) {
-                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, fieldNode.name, "Ljava/lang/Object;"));
-                insnList.add(new VarInsnNode(ALOAD, 1));
-                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
-            } else {
-                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
-                insnList.add(new VarInsnNode(ALOAD, 1));
-                insnList.add(new FieldInsnNode(PUTSTATIC, ownerName, fieldNode.name, "Ljava/lang/Object;"));
-            }
-        } else {
-
-        }
 
         return insnList;
     }
