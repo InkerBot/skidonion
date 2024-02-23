@@ -1,16 +1,13 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
-import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

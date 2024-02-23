@@ -10,7 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("D:\\Code\\_HackLife_\\Crack\\ZelixKillMaster\\out\\artifacts\\ZKM\\ZKM-out.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setControlFlowObfuscationEnable(true) // control flow
+                .setControlFlowObfuscationEnable(false) // control flow
                 .addSubFilters("control_flow_obfuscation",
                         "+dev/sim0n/app/test/impl/flow/**",
                         "+dev/sim0n/app/test/impl/flow/** * *(*)")
@@ -24,7 +24,7 @@ public class TestRun {
 //                .setPrintMappingsFileSetting("mappings.json")
 //                .setPrefixName("狼牙")
                 .setRepackageNameSetting("skidonion")
-                .setStringEncryptionEnable(false) // String
+                .setStringEncryptionEnable(true) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setPrintInstructionsSetting(false)
                 .addTarget("x86_64-windows")
