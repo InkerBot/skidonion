@@ -10,7 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setControlFlowObfuscationEnable(false) // control flow
+                .setControlFlowObfuscationEnable(true) // control flow
 //                .setInputMappingsFileSetting("mappings.json")
                 .setDebugInformationRemoverEnable(false) // Remover
                 .setMemberShufflerEnable(false) // Shuffler
@@ -21,7 +21,7 @@ public class TestRun {
 //                .setPrintMappingsFileSetting("mappings.json")
 //                .setPrefixName("狼牙")
                 .setRepackageNameSetting("skidonion")
-                .setStringEncryptionEnable(true) // String
+                .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setPrintInstructionsSetting(false)
                 .addTarget("x86_64-windows")

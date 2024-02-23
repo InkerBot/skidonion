@@ -1,15 +1,13 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
-import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,22 +24,24 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             MethodNode method = wrapper.getMethodNode();
             ResolvedBlocks resolve = CodeBlockResolver.resolve(method);
 
-            // shuffle labels orders
-            InsnList shuffled = new InsnList();
 
-            // goto the entry point
-            shuffled.add(new LabelNode(new Label()));
-            shuffled.add(new JumpInsnNode(GOTO, resolve.getResolvedBlocks().getFirst().getLabel()));
-            shuffle(resolve);
-            shuffled.add(resolve.toInsnList());
-
-            // add a default return value or will loop while compute max stacks/locals
-            Type returnType = Type.getReturnType(method.desc);
-            int opcode = ASMUtils.getReturnOpcode(returnType);
-            shuffled.add(new LabelNode(new Label()));
-            if (opcode != Opcodes.RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
-            shuffled.add(new InsnNode(opcode));
-
+            // TODO shuffle has some bugs
+//            // shuffle labels orders
+//            InsnList shuffled = new InsnList();
+//
+//            // goto the entry point
+//            shuffled.add(new LabelNode(new Label()));
+//            shuffled.add(new JumpInsnNode(GOTO, resolve.getResolvedBlocks().getFirst().getLabel()));
+//            shuffle(resolve);
+//            shuffled.add(resolve.toInsnList());
+//
+//            // add a default return value or will loop while compute max stacks/locals
+//            Type returnType = Type.getReturnType(method.desc);
+//            int opcode = ASMUtils.getReturnOpcode(returnType);
+//            shuffled.add(new LabelNode(new Label()));
+//            if (opcode != Opcodes.RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
+//            shuffled.add(new InsnNode(opcode));
+//
 //            method.instructions = shuffled;
 
 //            Frame<SourceValue>[] frames;

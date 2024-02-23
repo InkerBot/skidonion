@@ -264,6 +264,7 @@ public class ASMUtils {
             case Type.DOUBLE:
                 return ASMUtils.getNumberInsn(0d);
             case Type.OBJECT:
+            case Type.ARRAY:
                 return new InsnNode(Opcodes.ACONST_NULL);
             default:
                 throw new AssertionError();
