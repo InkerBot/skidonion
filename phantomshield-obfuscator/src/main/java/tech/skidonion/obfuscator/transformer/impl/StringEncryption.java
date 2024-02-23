@@ -60,7 +60,7 @@ public class StringEncryption extends Transformer {
                 cw.addField(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
                 //TODO:把这个dummy field数量改成可调的
 
-                //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field
+                //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field \ 可以再给获取字符串的方法自动上native注解
                 if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     for (int i = 0; i < Math.min(7, strings.size() - 1); i++) {
                         cw.addField(new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null));
