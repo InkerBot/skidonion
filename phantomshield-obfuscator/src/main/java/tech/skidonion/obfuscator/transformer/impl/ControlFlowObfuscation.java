@@ -2,12 +2,14 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
+import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +24,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     public void transform() throws Exception {
         getFilteredClasses().forEach(cw -> cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
             MethodNode method = wrapper.getMethodNode();
+            // delete the fuck shit
+            method.localVariables = null;
             ResolvedBlocks resolve = CodeBlockResolver.resolve(method);
 
 
@@ -36,12 +40,11 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
 
             // add a default return value or will loop while compute max stacks/locals
-            // 1 edited: it isn't needed
-//            Type returnType = Type.getReturnType(method.desc);
-//            int opcode = ASMUtils.getReturnOpcode(returnType);
-//            shuffled.add(new LabelNode(new Label()));
-//            if (opcode != Opcodes.RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
-//            shuffled.add(new InsnNode(Opcodes.RETURN));
+            Type returnType = Type.getReturnType(method.desc);
+            int opcode = ASMUtils.getReturnOpcode(returnType);
+            shuffled.add(new LabelNode(new Label()));
+            if (opcode != Opcodes.RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
+            shuffled.add(new InsnNode(opcode));
 
             method.instructions = shuffled;
 
@@ -72,7 +75,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 continue;
             }
             CodeBlock next = resolvedBlock.getNext();
-            if (next != null) {
+            AbstractInsnNode insn = resolvedBlock.getInstructions().getLast();
+            if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
                 resolvedBlock.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
             }
         }
@@ -93,19 +97,22 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                     continue;
                 }
                 CodeBlock next = code.getNext();
-                code.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next != null ? next.getLabel() : endBlock.getLabel()));
+                AbstractInsnNode insn = code.getInstructions().getLast();
+                if (insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
+                    code.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next != null ? next.getLabel() : endBlock.getLabel()));
+                }
             }
             shuffled.add(codes.getFirst());
             codes.remove();
             ArrayList<CodeBlock> clone = new ArrayList<>(codes);
-//            Collections.shuffle(clone);
+            Collections.shuffle(clone);
             shuffled.addAll(clone);
             tryCatchBlock.setCodes(shuffled);
         }
 
         CodeBlock next = endBlock.getNext();
         if (next != null) {
-            next.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
+            endBlock.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
         }
     }
 
