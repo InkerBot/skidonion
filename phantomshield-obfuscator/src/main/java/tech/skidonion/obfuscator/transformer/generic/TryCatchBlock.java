@@ -11,7 +11,7 @@ import java.util.Objects;
 public class TryCatchBlock extends CodeBlock {
     private TryCatchBlock parent;
     private final List<TryCatchBlock> subTryCatches = new ArrayList<>();
-    private final List<CodeBlock> codes = new LinkedList<>();
+    private LinkedList<CodeBlock> codes = new LinkedList<>();
     private final CodeBlock endBlock;
     private final int startIndex;
     private final int endIndex;
@@ -72,8 +72,12 @@ public class TryCatchBlock extends CodeBlock {
     }
 
 
-    public List<CodeBlock> getCodes() {
+    public LinkedList<CodeBlock> getCodes() {
         return codes;
+    }
+
+    public void setCodes(LinkedList<CodeBlock> codes) {
+        this.codes = codes;
     }
 
     public void addBlock(CodeBlock block) {

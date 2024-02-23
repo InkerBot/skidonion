@@ -21,7 +21,7 @@ public class CodeBlockResolver {
             buildTryCatchTree(tryCatchList, resolvedBlocks, resultBlocks, blocksMap, node);
         }
 
-        return new ResolvedBlocks(resolvedBlocks);
+        return new ResolvedBlocks(tryCatchList, resolvedBlocks);
     }
 
     private static void buildTryCatchTree(
