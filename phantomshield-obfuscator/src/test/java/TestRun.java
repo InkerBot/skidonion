@@ -11,8 +11,11 @@ public class TestRun {
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
                 .setControlFlowObfuscationEnable(true) // control flow
+                .addSubFilters("control_flow_obfuscation",
+                        "+dev/sim0n/app/test/impl/flow/**",
+                        "+dev/sim0n/app/test/impl/flow/** * *(*)")
 //                .setInputMappingsFileSetting("mappings.json")
-                .setDebugInformationRemoverEnable(false) // Remover
+                .setDebugInformationRemoverEnable(true) // Remover
                 .setMemberShufflerEnable(false) // Shuffler
                 .setRenamerEnable(false) // Renamer
                 .addAdaptResources("META-INF/MANIFEST.MF")
