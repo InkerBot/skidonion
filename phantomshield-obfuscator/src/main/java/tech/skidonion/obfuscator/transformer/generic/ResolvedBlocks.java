@@ -2,14 +2,16 @@ package tech.skidonion.obfuscator.transformer.generic;
 
 import org.objectweb.asm.tree.InsnList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 
 public class ResolvedBlocks {
-    private final List<CodeBlock> resolvedBlocks;
+    private final ArrayList<TryCatchBlock> tryCatchBlocks;
+    private LinkedList<CodeBlock> resolvedBlocks;
 
-    public ResolvedBlocks(Collection<CodeBlock> resolvedBlocks) {
+    public ResolvedBlocks(Collection<TryCatchBlock> tryCatchBlocks, Collection<CodeBlock> resolvedBlocks) {
+        this.tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
         this.resolvedBlocks = new LinkedList<>(resolvedBlocks);
     }
 
@@ -21,7 +23,15 @@ public class ResolvedBlocks {
         return insns;
     }
 
-    public List<CodeBlock> getResolvedBlocks() {
+    public void setResolvedBlocks(LinkedList<CodeBlock> resolvedBlocks) {
+        this.resolvedBlocks = resolvedBlocks;
+    }
+
+    public LinkedList<CodeBlock> getResolvedBlocks() {
         return resolvedBlocks;
+    }
+
+    public ArrayList<TryCatchBlock> getTryCatchBlocks() {
+        return tryCatchBlocks;
     }
 }
