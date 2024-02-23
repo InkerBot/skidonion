@@ -84,6 +84,7 @@ public class StringEncryption extends Transformer {
     }
 
     private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, List<String> strings, List<FieldNode> dummys) {
+        final int startIndex = method.maxLocals + 1;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         final List<String> shuffled = shuffleString(strings);
         for (String string : shuffled) {
@@ -136,35 +137,35 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(ASMUtils.getStringInst(new String(data, StandardCharsets.ISO_8859_1)));
         decryptInsts.add(new LdcInsnNode("ISO_8859_1"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "getBytes", "(Ljava/lang/String;)[B"));
-        decryptInsts.add(new VarInsnNode(ASTORE, 0));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex));
         decryptInsts.add(ASMUtils.getStringInst(new String(keyBytes, StandardCharsets.ISO_8859_1)));
         decryptInsts.add(new LdcInsnNode("ISO_8859_1"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "getBytes", "(Ljava/lang/String;)[B"));
-        decryptInsts.add(new VarInsnNode(ASTORE, 1));
+        decryptInsts.add(new VarInsnNode(ASTORE,  startIndex + 1));
 
         decryptInsts.add(new InsnNode(ICONST_0));
-        decryptInsts.add(new VarInsnNode(ISTORE, 2));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
         decryptInsts.add(new InsnNode(ARRAYLENGTH));
-        decryptInsts.add(new VarInsnNode(ISTORE, 3));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 3));
 
         // 循环
         LabelNode start = new LabelNode();
         decryptInsts.add(start);
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
         decryptInsts.add(new InsnNode(BALOAD));
         decryptInsts.add(new IntInsnNode(SIPUSH, 0xFF));
         decryptInsts.add(new InsnNode(IAND));
         decryptInsts.add(generateSwitchCase(swp, rand));
         decryptInsts.add(new InsnNode(I2B));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new IincInsnNode(2, 1));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new IincInsnNode(startIndex + 2, 1));
         decryptInsts.add(new InsnNode(SWAP));
         decryptInsts.add(new InsnNode(BASTORE));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ILOAD, 3));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
 
 
@@ -176,7 +177,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new MethodInsnNode(INVOKESTATIC, Type.getInternalName(SecretKeyFactory.class), "getInstance", "(Ljava/lang/String;)Ljavax/crypto/SecretKeyFactory;"));
         decryptInsts.add(new TypeInsnNode(NEW, Type.getInternalName(DESKeySpec.class)));
         decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ALOAD, 1));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex + 1));
         decryptInsts.add(new MethodInsnNode(INVOKESPECIAL, Type.getInternalName(DESKeySpec.class), "<init>", "([B)V"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(SecretKeyFactory.class), "generateSecret", "(Ljava/security/spec/KeySpec;)Ljavax/crypto/SecretKey;"));
         decryptInsts.add(new TypeInsnNode(NEW, Type.getInternalName(IvParameterSpec.class)));
@@ -185,78 +186,78 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new IntInsnNode(NEWARRAY, T_BYTE));
         decryptInsts.add(new MethodInsnNode(INVOKESPECIAL, Type.getInternalName(IvParameterSpec.class), "<init>", "([B)V"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(Cipher.class), "init", "(ILjava/security/Key;Ljava/security/spec/AlgorithmParameterSpec;)V"));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(Cipher.class), "doFinal", "([B)[B"));
         decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ASTORE, 0));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex));
         decryptInsts.add(new InsnNode(ARRAYLENGTH));
-        decryptInsts.add(new VarInsnNode(ISTORE, 3));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 3));
         decryptInsts.add(new LdcInsnNode("SHA-256"));
         decryptInsts.add(new MethodInsnNode(INVOKESTATIC, Type.getInternalName(MessageDigest.class), "getInstance", "(Ljava/lang/String;)Ljava/security/MessageDigest;"));
         decryptInsts.add(new InsnNode(DUP));
         decryptInsts.add(new InsnNode(DUP));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(MessageDigest.class), "reset", "()V"));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
         decryptInsts.add(new InsnNode(ICONST_0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 3));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new IntInsnNode(BIPUSH, 32));
         decryptInsts.add(new InsnNode(ISUB));
         decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ISTORE, 2));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 2));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(MessageDigest.class), "update", "([BII)V"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(MessageDigest.class), "digest", "()[B"));
-        decryptInsts.add(new VarInsnNode(ASTORE, 1));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex + 1));
 
         decryptInsts.add(new InsnNode(ICONST_0));
         decryptInsts.add(new InsnNode(ICONST_0));
         decryptInsts.add(new InsnNode(ICONST_0));
-        decryptInsts.add(new VarInsnNode(ISTORE, 4));
-        decryptInsts.add(new VarInsnNode(ISTORE, 5));
-        decryptInsts.add(new VarInsnNode(ISTORE, 6));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 4));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 5));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 6));
         start = new LabelNode();
         decryptInsts.add(start);
-        decryptInsts.add(new VarInsnNode(ILOAD, 5));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ILOAD, 4));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 5));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 4));
         decryptInsts.add(new InsnNode(IADD));
         decryptInsts.add(new InsnNode(BALOAD));
-        decryptInsts.add(new VarInsnNode(ALOAD, 1));
-        decryptInsts.add(new VarInsnNode(ILOAD, 4));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex + 1));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 4));
         decryptInsts.add(new InsnNode(BALOAD));
         decryptInsts.add(new InsnNode(IXOR));
         decryptInsts.add(new InsnNode(IOR));
-        decryptInsts.add(new VarInsnNode(ISTORE, 5));
-        decryptInsts.add(new IincInsnNode(4, 1));
-        decryptInsts.add(new VarInsnNode(ILOAD, 4));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 5));
+        decryptInsts.add(new IincInsnNode(startIndex + 4, 1));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 4));
         decryptInsts.add(new IntInsnNode(BIPUSH, 32));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
-        decryptInsts.add(new VarInsnNode(ILOAD, 5));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 5));
         decryptInsts.add(new JumpInsnNode(IFNE, realMethodStart));
 
         decryptInsts.add(ASMUtils.getNumberInsn(strings.size()));
         decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
         if (dummys.isEmpty())
             decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ASTORE, 1));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex + 1));
         if (dummys.isEmpty())
             decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ISTORE, 3));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 3));
         decryptInsts.add(new InsnNode(ICONST_0));
-        decryptInsts.add(new VarInsnNode(ISTORE, 2));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 2));
         start = new LabelNode();
         decryptInsts.add(start);
 
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new IincInsnNode(2, 1));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new IincInsnNode(startIndex + 2, 1));
         decryptInsts.add(new InsnNode(BALOAD));
         decryptInsts.add(new IntInsnNode(SIPUSH, 0xFF));
         decryptInsts.add(new InsnNode(IAND));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new IincInsnNode(2, 1));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new IincInsnNode(startIndex + 2, 1));
         decryptInsts.add(new InsnNode(BALOAD));
         decryptInsts.add(new IntInsnNode(SIPUSH, 0xFF));
         decryptInsts.add(new InsnNode(IAND));
@@ -264,34 +265,35 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new InsnNode(ISHL));
         decryptInsts.add(new InsnNode(IOR));
         decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ISTORE, 4));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 4));
         decryptInsts.add(new IntInsnNode(NEWARRAY, T_BYTE));
-        decryptInsts.add(new VarInsnNode(ASTORE, 5));
-        decryptInsts.add(new VarInsnNode(ALOAD, 0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ALOAD, 5));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex + 5));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex + 5));
         decryptInsts.add(new InsnNode(ICONST_0));
-        decryptInsts.add(new VarInsnNode(ILOAD, 4));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 4));
         decryptInsts.add(new MethodInsnNode(INVOKESTATIC, Type.getInternalName(System.class), "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V"));
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ILOAD, 4));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 4));
         decryptInsts.add(new InsnNode(IADD));
-        decryptInsts.add(new VarInsnNode(ISTORE, 2));
-        decryptInsts.add(new VarInsnNode(ALOAD, 1));
-        decryptInsts.add(new VarInsnNode(ILOAD, 6));
-        decryptInsts.add(new IincInsnNode(6, 1));
+        decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex + 1));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 6));
+        decryptInsts.add(new IincInsnNode(startIndex + 6, 1));
         decryptInsts.add(new TypeInsnNode(NEW, Type.getInternalName(String.class)));
         decryptInsts.add(new InsnNode(DUP));
-        decryptInsts.add(new VarInsnNode(ALOAD, 5));
+        decryptInsts.add(new VarInsnNode(ALOAD, startIndex + 5));
         decryptInsts.add(new LdcInsnNode("UTF-8"));
         decryptInsts.add(new MethodInsnNode(INVOKESPECIAL, Type.getInternalName(String.class), "<init>", "([BLjava/lang/String;)V"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "intern", "()Ljava/lang/String;"));
         decryptInsts.add(new InsnNode(AASTORE));
 
-        decryptInsts.add(new VarInsnNode(ILOAD, 2));
-        decryptInsts.add(new VarInsnNode(ILOAD, 3));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
+        decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
 
+        decryptInsts.add(generateDummy(dummys, shuffled, strings, startIndex));
 
         decryptInsts.add(realMethodStart);
         method.instructions.insertBefore(method.instructions.getFirst(), decryptInsts);
@@ -316,10 +318,35 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private InsnList generateDummy(List<FieldNode> dummys) {
+    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, List<String> origin, int startIndex) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
+        Collections.shuffle(dummys); // dummy field也打乱 防止鉴定
 
+        List<List<String>> restore = new ArrayList<>();
+
+        for (int i = 0; i < dummys.size(); i++) {
+            final List<String> shuffleList = new ArrayList<>(shuffle);
+            Collections.shuffle(shuffleList);
+            restore.add(shuffleList);
+        }
+
+        int varIn = 0;
+        for (List<String> strings : restore) {
+            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
+            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+            insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
+            for (String string : strings) {
+                final int i = origin.indexOf(string);
+                insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
+                insnList.add(ASMUtils.getNumberInsn(varIn));
+                insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
+                insnList.add(ASMUtils.getNumberInsn(i));
+                insnList.add(new InsnNode(AALOAD));
+                insnList.add(new InsnNode(AASTORE));
+            }
+            varIn++;
+        }
 
         return insnList;
     }
