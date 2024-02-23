@@ -293,7 +293,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
 
-        decryptInsts.add(generateDummy(dummys, shuffled, strings, startIndex));
+        decryptInsts.add(generateDummy(dummys, shuffled, strings, ownerName, decryptedStringsFieldName, startIndex));
 
         decryptInsts.add(realMethodStart);
         method.instructions.insertBefore(method.instructions.getFirst(), decryptInsts);
@@ -318,7 +318,7 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, List<String> origin, int startIndex) {
+    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, List<String> origin, String owner, String fieldName, int startIndex) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
         Collections.shuffle(dummys); // dummy field也打乱 防止鉴定
@@ -332,19 +332,51 @@ public class StringEncryption extends Transformer {
         }
 
         int varIn = 0;
+        final int realVar = RandomUtils.getRandomInt(0, shuffle.size() - 1);
         for (List<String> strings : restore) {
+            if (realVar == varIn) { // insert real local
+                insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
+                insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+                insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
+                int conVar = 0;
+                for (String string : origin) {
+                    final int i = shuffle.indexOf(string);
+                    insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
+                    insnList.add(ASMUtils.getNumberInsn(conVar));
+                    insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
+                    insnList.add(ASMUtils.getNumberInsn(i));
+                    insnList.add(new InsnNode(AALOAD));
+                    insnList.add(new InsnNode(AASTORE));
+                    conVar++;
+                }
+                varIn++;
+            }
             insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
             insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
             insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
+            int conVar = 0;
             for (String string : strings) {
-                final int i = origin.indexOf(string);
+                final int i = shuffle.indexOf(string);
                 insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
-                insnList.add(ASMUtils.getNumberInsn(varIn));
+                insnList.add(ASMUtils.getNumberInsn(conVar));
                 insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
                 insnList.add(ASMUtils.getNumberInsn(i));
                 insnList.add(new InsnNode(AALOAD));
                 insnList.add(new InsnNode(AASTORE));
+                conVar++;
             }
+            varIn++;
+        }
+
+        varIn = 0;
+        for (FieldNode dummy : dummys) {
+            if (varIn == realVar) {
+                insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
+                insnList.add(new FieldInsnNode(PUTSTATIC, owner, fieldName, "Ljava/lang/Object;"));
+                varIn++;
+            }
+            insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
+            insnList.add(new FieldInsnNode(PUTSTATIC, owner, dummy.name, "Ljava/lang/Object;"));
             varIn++;
         }
 
