@@ -61,9 +61,10 @@ public class StringEncryption extends Transformer {
                 //TODO:把这个dummy field数量改成可调的
 
                 //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field
-                int randomDummy = new Random().nextInt(10);
-                for (int i = 0; i < randomDummy; i++) {
-                    cw.addField(new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null));
+                if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
+                    for (int i = 0; i < Math.min(7, strings.size() - 1); i++) {
+                        cw.addField(new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null));
+                    }
                 }
                 MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
                 methodNode.visitFieldInsn(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;");
@@ -80,7 +81,7 @@ public class StringEncryption extends Transformer {
         INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
     }
 
-    private void generateDecryptor(MethodNode method, String ownerName, String decryptorFieldName, Map<String, Integer> strings) {
+    private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, Map<String, Integer> strings) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (String string : strings.keySet()) {
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
@@ -234,7 +235,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
         decryptInsts.add(new InsnNode(DUP));
         decryptInsts.add(new VarInsnNode(ASTORE, 1));
-        decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptorFieldName, "Ljava/lang/Object;"));
+        decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
         decryptInsts.add(new VarInsnNode(ILOAD, 2));
         decryptInsts.add(new VarInsnNode(ISTORE, 3));
         decryptInsts.add(new InsnNode(ICONST_0));
