@@ -21,7 +21,7 @@ public class CodeBlockResolver {
             buildTryCatchTree(tryCatchList, resolvedBlocks, resultBlocks, blocksMap, node);
         }
 
-        return new ResolvedBlocks(tryCatchList, resolvedBlocks);
+        return new ResolvedBlocks(tryCatchList, resultBlocks);
     }
 
     private static void buildTryCatchTree(
@@ -95,7 +95,7 @@ public class CodeBlockResolver {
         CodeBlock previousBlock = null;
         CodeBlock block = null;
         InsnList insns = null;
-        int index = 0;
+        int index = -1;
         for (AbstractInsnNode insn : node.instructions) {
             if (insn instanceof LabelNode) {
                 if (block != null) {
@@ -119,6 +119,7 @@ public class CodeBlockResolver {
                     insns = new InsnList();
                     block = new CodeBlock(start);
                     insns.add(start);
+                    index++;
                 }
             }
             insns.add(insn);
