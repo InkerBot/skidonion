@@ -1,28 +1,59 @@
 package tech.skidonion.obfuscator.transformer.impl.generic;
 
+import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 public class TryCatchBlock extends CodeBlock {
-    private CodeBlock parent;
+    private TryCatchBlock parent;
     private final List<TryCatchBlock> subTryCatches = new ArrayList<>();
     private final List<CodeBlock> codes = new LinkedList<>();
-    private CodeBlock endBlock;
-    private int startIndex;
-    private int endIndex;
+    private final CodeBlock endBlock;
+    private final int startIndex;
+    private final int endIndex;
 
-    public TryCatchBlock(LabelNode startLabel) {
+    public TryCatchBlock(LabelNode startLabel, CodeBlock endBlock, int startIndex, int endIndex) {
         super(startLabel);
+        this.endBlock = Objects.requireNonNull(endBlock);
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
+    }
+
+    @Override
+    public InsnList getInstructions() {
+        InsnList insns = new InsnList();
+        for (CodeBlock code : codes) {
+            insns.add(code.getInstructions());
+        }
+        if (!isSameEndBlockBetweenParent()) insns.add(endBlock.getInstructions());
+        return insns;
+    }
+
+    private boolean isSameEndBlockBetweenParent() {
+        if (parent != null) {
+            if (parent.endBlock == endBlock ||
+                    parent.endBlock.getLabel() == endBlock.getLabel() ||
+                    parent.endBlock.getLabel().getLabel() == endBlock.getLabel().getLabel())
+                return true;
+            return parent.isSameEndBlockBetweenParent();
+        }
+        return false;
+    }
+
+    @Override
+    public void setInstructions(InsnList instructions) {
+        throw new UnsupportedOperationException("Try Catch Code Block can't set Instructions as it's provided by its members.");
     }
 
     public CodeBlock getParent() {
         return parent;
     }
 
-    public void setParent(CodeBlock parent) {
+    public void setParent(TryCatchBlock parent) {
         this.parent = parent;
     }
 
@@ -30,25 +61,16 @@ public class TryCatchBlock extends CodeBlock {
         return endBlock;
     }
 
-    public void setEndBlock(CodeBlock endBlock) {
-        this.endBlock = endBlock;
-    }
 
     public int getStartIndex() {
         return startIndex;
     }
 
-    public void setStartIndex(int startIndex) {
-        this.startIndex = startIndex;
-    }
 
     public int getEndIndex() {
         return endIndex;
     }
 
-    public void setEndIndex(int endIndex) {
-        this.endIndex = endIndex;
-    }
 
     public List<CodeBlock> getCodes() {
         return codes;

@@ -4,6 +4,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.generic.CodeBlock;
+import tech.skidonion.obfuscator.transformer.impl.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.impl.generic.TryCatchBlock;
 
 import java.util.*;
@@ -29,6 +30,10 @@ public class ControlFlowObfuscation extends Transformer {
                 buildTryCatchTree(tryCatchList, resolvedBlocks, resultBlocks, blocksMap, node);
             }
 
+            ResolvedBlocks resolve = new ResolvedBlocks(resolvedBlocks);
+            InsnList generated = resolve.toInsnList();
+            System.out.println(method.instructions.size() + "|" + generated.size());
+            method.instructions = generated;
 
 //            Frame<SourceValue>[] frames;
 //            try {
@@ -93,10 +98,9 @@ public class ControlFlowObfuscation extends Transformer {
             }
         }
         if (shouldProcess || !iterator.hasNext()) {
-            TryCatchBlock tryCatchBlock = new TryCatchBlock(startLabel);
-            tryCatchBlock.setStartIndex(startIndex);
-            tryCatchBlock.setEndIndex(endIndex);
-            tryCatchBlock.setEndBlock(blocksMap.get(endLabel));
+            TryCatchBlock tryCatchBlock = new TryCatchBlock(startLabel, blocksMap.get(endLabel), startIndex, endIndex);
+            tryCatchBlock.setPrevious(blocksMap.get(startLabel).getPrevious());
+            tryCatchBlock.setNext(tryCatchBlock.getEndBlock());
             for (int i = startIndex; i < endIndex; i++) {
                 tryCatchBlock.addBlock(resolvedBlocks.get(i));
             }
@@ -112,7 +116,10 @@ public class ControlFlowObfuscation extends Transformer {
                 int index = it.getIndex();
                 if (index >= startIndex && index < endIndex) {
                     codeIterator.remove();
-                } else if (index >= endIndex) {
+                } else if (index == endIndex) {
+                    codeIterator.remove();
+                    break;
+                } else if (index > endIndex) {
                     break;
                 }
             }
