@@ -57,9 +57,7 @@ public class StringEncryption extends Transformer {
                     throw new RuntimeException("String Constant Pool is bigger than maximum pool size??");
                 this.count.addAndGet(strings.size());
                 cw.addField(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
-                //TODO:把这个dummy field数量改成可调的
 
-                //TODO:解密时候给dummy field塞入顺序错误的字符串，这样deobf就不能判断哪个是正确的field \ 可以再给获取字符串的方法自动上native注解
                 if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     for (int i = 0; i < Math.min(7, strings.size() - 1); i++) { // 均分 最大7个dummy field
                         final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null);
@@ -74,6 +72,8 @@ public class StringEncryption extends Transformer {
                 methodNode.visitVarInsn(ILOAD, 0);
                 methodNode.visitInsn(AALOAD);
                 methodNode.visitInsn(ARETURN);
+                methodNode.visibleAnnotations = new ArrayList<>();
+                methodNode.visibleAnnotations.add(new AnnotationNode("Ltech/skidonion/obfuscator/annotation/NativeObfuacation;"));
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
