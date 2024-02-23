@@ -1,4 +1,4 @@
-package tech.skidonion.obfuscator.transformer.impl.generic;
+package tech.skidonion.obfuscator.transformer.generic;
 
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
