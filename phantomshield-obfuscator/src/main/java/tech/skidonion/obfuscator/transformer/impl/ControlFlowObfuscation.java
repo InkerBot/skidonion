@@ -55,9 +55,6 @@ public class ControlFlowObfuscation extends Transformer {
         return null;
     }
 
-    /**
-     * @return is processed result successful
-     */
     private void buildTryCatchTree(
             List<TryCatchBlock> tryCatchList,
             List<CodeBlock> resolvedBlocks,
@@ -65,7 +62,6 @@ public class ControlFlowObfuscation extends Transformer {
             Map<LabelNode, CodeBlock> blocksMap,
             TryCatchBlockNode node) {
         TryCatchBlock sub = null;
-        boolean shouldProcess = true;
         LabelNode startLabel = node.start;
         LabelNode endLabel = node.end;
         int startIndex = blocksMap.get(startLabel).getIndex();
@@ -73,7 +69,6 @@ public class ControlFlowObfuscation extends Transformer {
         ListIterator<TryCatchBlock> iterator = tryCatchList.listIterator();
         while (iterator.hasNext()) {
             TryCatchBlock it = iterator.next();
-            shouldProcess = false;
             if (it.getStartIndex() <= startIndex) {
                 if (it.getStartIndex() == startIndex && it.getEndIndex() == endIndex) {
                     return; // same
@@ -88,7 +83,6 @@ public class ControlFlowObfuscation extends Transformer {
             } else {
                 if (it.getEndIndex() <= endIndex) {
                     sub = it;
-                    shouldProcess = true;
                     break;
                 } else if (it.getStartIndex() >= endIndex) {
                     continue; // not inclusive
@@ -97,35 +91,33 @@ public class ControlFlowObfuscation extends Transformer {
                 }
             }
         }
-        if (shouldProcess || !iterator.hasNext()) {
-            TryCatchBlock tryCatchBlock = new TryCatchBlock(startLabel, blocksMap.get(endLabel), startIndex, endIndex);
-            tryCatchBlock.setPrevious(blocksMap.get(startLabel).getPrevious());
-            tryCatchBlock.setNext(tryCatchBlock.getEndBlock());
-            for (int i = startIndex; i < endIndex; i++) {
-                tryCatchBlock.addBlock(resolvedBlocks.get(i));
-            }
-            if (sub != null) {
-                tryCatchBlock.addTryCatchBlock(sub);
-                sub.setParent(tryCatchBlock);
-                iterator.remove();
-                iterator.add(tryCatchBlock);
-            }
-            ListIterator<CodeBlock> codeIterator = resultBlocks.listIterator();
-            while (codeIterator.hasNext()) {
-                CodeBlock it = codeIterator.next();
-                int index = it.getIndex();
-                if (index >= startIndex && index < endIndex) {
-                    codeIterator.remove();
-                } else if (index == endIndex) {
-                    codeIterator.remove();
-                    break;
-                } else if (index > endIndex) {
-                    break;
-                }
-            }
-            codeIterator.add(tryCatchBlock);
-            tryCatchList.add(tryCatchBlock);
+        TryCatchBlock tryCatchBlock = new TryCatchBlock(startLabel, blocksMap.get(endLabel), startIndex, endIndex);
+        tryCatchBlock.setPrevious(blocksMap.get(startLabel).getPrevious());
+        tryCatchBlock.setNext(tryCatchBlock.getEndBlock());
+        for (int i = startIndex; i < endIndex; i++) {
+            tryCatchBlock.addBlock(resolvedBlocks.get(i));
         }
+        if (sub != null) {
+            tryCatchBlock.addTryCatchBlock(sub);
+            sub.setParent(tryCatchBlock);
+            iterator.remove();
+            iterator.add(tryCatchBlock);
+        }
+        ListIterator<CodeBlock> codeIterator = resultBlocks.listIterator();
+        while (codeIterator.hasNext()) {
+            CodeBlock it = codeIterator.next();
+            int index = it.getIndex();
+            if (index >= startIndex && index < endIndex) {
+                codeIterator.remove();
+            } else if (index == endIndex) {
+                codeIterator.remove();
+                break;
+            } else if (index > endIndex) {
+                break;
+            }
+        }
+        codeIterator.add(tryCatchBlock);
+        tryCatchList.add(tryCatchBlock);
     }
 
     private Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node) {
