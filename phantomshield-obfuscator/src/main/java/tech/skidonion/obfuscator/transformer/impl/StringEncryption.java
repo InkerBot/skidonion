@@ -42,17 +42,14 @@ public class StringEncryption extends Transformer {
                 ListIterator<AbstractInsnNode> iter = method.getInstructions().iterator();
                 while (iter.hasNext()) {
                     AbstractInsnNode inst = iter.next();
-                    if (inst.getOpcode() == LDC) {
-                        LdcInsnNode ldc = (LdcInsnNode) inst;
-                        if (ldc.cst instanceof String) {
-                            String value = ((String) ldc.cst);
-                            iter.remove();
-                            int index = strings.computeIfAbsent(value, constant -> strings.size());
-                            iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
-                            iter.add(new InsnNode(I2C));
-                            iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
-                            iter.add(new TypeInsnNode(CHECKCAST, Type.getInternalName(String.class)));
-                        }
+                    if (ASMUtils.isStringInsn(inst)) {
+                        String value = ASMUtils.getStringFromInsn(inst);
+                        iter.remove();
+                        int index = strings.computeIfAbsent(value, constant -> strings.size());
+                        iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
+                        iter.add(new InsnNode(I2C));
+                        iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
+                        iter.add(new TypeInsnNode(CHECKCAST, Type.getInternalName(String.class)));
                     }
                 }
             });

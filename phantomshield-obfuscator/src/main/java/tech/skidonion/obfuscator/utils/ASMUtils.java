@@ -42,6 +42,10 @@ public class ASMUtils {
                 || (fieldNode.invisibleAnnotations != null && !fieldNode.invisibleAnnotations.isEmpty());
     }
 
+    public static boolean isStringInsn(AbstractInsnNode insn) {
+        return insn.getOpcode() == Opcodes.LDC && ((LdcInsnNode) insn).cst instanceof String;
+    }
+
     public static boolean isIntInsn(AbstractInsnNode insn) {
         if (insn == null) {
             return false;
@@ -105,6 +109,14 @@ public class ASMUtils {
             return new InsnNode((int) (number + 14));
         else
             return new LdcInsnNode(number);
+    }
+
+    public static String getStringFromInsn(AbstractInsnNode insn) {
+        if (isStringInsn(insn)) {
+            return (String) ((LdcInsnNode) insn).cst;
+        }
+
+        throw new RuntimeException("Unexpected instruction");
     }
 
     public static int getIntegerFromInsn(AbstractInsnNode insn) {
