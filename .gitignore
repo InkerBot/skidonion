@@ -93,6 +93,7 @@ modules.xml
 .gradle/
 /build/
 build/
+.run/
 # Ignore Gradle GUI config
 gradle-app.setting
 
