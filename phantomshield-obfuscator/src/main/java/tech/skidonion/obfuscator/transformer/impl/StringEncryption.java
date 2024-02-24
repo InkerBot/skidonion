@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.ASMUtils;
@@ -78,7 +79,8 @@ public class StringEncryption extends Transformer {
     }
 
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName, List<FieldNode> dummys) {
-        MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
+        final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
+        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
         final InsnList insnList = new InsnList();
         if (dummys.size() <= 1) {
             insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
