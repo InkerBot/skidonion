@@ -530,21 +530,20 @@ public class ASMUtils implements Opcodes {
 
     public static InsnList generateTrue() {
         final InsnList insnList = new InsnList();
-        double doubleValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
-        if (doubleValue == 0.0 || doubleValue == 0.5 || doubleValue == 1.0) {
-            while (doubleValue == 0.0 || doubleValue == 0.5 || doubleValue == 1.0)
-                doubleValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        double d2 = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        if (d2 == 0.0 || d2 == 0.5 || d2 == 1.0) {
+            while (d2 == 0.0 || d2 == 0.5 || d2 == 1.0)
+                d2 = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
         }
-        float floatValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).floatValue();
-        float sub = new BigDecimal(floatValue).subtract(new BigDecimal(doubleValue)).floatValue();
-        while (floatValue - doubleValue == sub) {
-            floatValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).floatValue();
-            sub = new BigDecimal(floatValue).subtract(new BigDecimal(doubleValue)).floatValue();
+        double d1 = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).doubleValue();
+        float sub = new BigDecimal(d1).subtract(new BigDecimal(d2)).floatValue();
+        while (d1 - d2 == sub) {
+            d1 = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).doubleValue();
+            sub = new BigDecimal(d1).subtract(new BigDecimal(d2)).floatValue();
         }
 
-        insnList.add(new LdcInsnNode(floatValue));
-        insnList.add(new InsnNode(F2D));
-        insnList.add(new LdcInsnNode(doubleValue));
+        insnList.add(new LdcInsnNode(d1));
+        insnList.add(new LdcInsnNode(d2));
         insnList.add(new InsnNode(DSUB));
         insnList.add(new LdcInsnNode(sub));
         insnList.add(new InsnNode(F2D));
