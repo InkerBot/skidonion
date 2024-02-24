@@ -529,53 +529,37 @@ public class ASMUtils implements Opcodes {
 
     public static InsnList generateTrue() {
         final InsnList insnList = new InsnList();
-        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).setScale(1, RoundingMode.HALF_UP).floatValue();
         float sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
-        while (f1 - 0.1 == sub) {
-            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
+        while (f1 - 0.1F == sub) {
+            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).setScale(1, RoundingMode.HALF_UP).floatValue();
             sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
         }
 
-        final LabelNode start = new LabelNode();
-        final LabelNode const1 = new LabelNode();
-        final LabelNode const0 = new LabelNode();
-        insnList.add(start);
         insnList.add(new LdcInsnNode(f1));
-        insnList.add(new LdcInsnNode(0.1));
-        insnList.add(new InsnNode(FADD));
+        insnList.add(new LdcInsnNode(0.1F));
+        insnList.add(new InsnNode(FSUB));
         insnList.add(new LdcInsnNode(sub));
         insnList.add(new InsnNode(FCMPL));
-        insnList.add(new JumpInsnNode(IFEQ, const0));
-        insnList.add(const1);
-        insnList.add(new InsnNode(ICONST_1));
-        insnList.add(const0);
-        insnList.add(new InsnNode(ICONST_0));
         return insnList;
     }
 
     public static InsnList generateFalse() {
         final InsnList insnList = new InsnList();
-        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
-        float sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
-        while (f1 - 0.1 == sub) {
-            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 20 + 10).setScale(1, RoundingMode.HALF_UP).floatValue();
-            sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).floatValue();
+        float f2 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 10 + 5).floatValue();
+        float sub = new BigDecimal(f1).subtract(new BigDecimal(f2)).floatValue();
+        while (f1 - f2 != sub) {
+            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).floatValue();
+            f2 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 10 + 5).floatValue();
+            sub = new BigDecimal(f1).subtract(new BigDecimal(f2)).floatValue();
         }
 
-        final LabelNode start = new LabelNode();
-        final LabelNode const1 = new LabelNode();
-        final LabelNode const0 = new LabelNode();
-        insnList.add(start);
         insnList.add(new LdcInsnNode(f1));
-        insnList.add(new LdcInsnNode(0.1));
-        insnList.add(new InsnNode(FADD));
+        insnList.add(new LdcInsnNode(f2));
+        insnList.add(new InsnNode(FSUB));
         insnList.add(new LdcInsnNode(sub));
         insnList.add(new InsnNode(FCMPL));
-        insnList.add(new JumpInsnNode(IFNE, const0));
-        insnList.add(const1);
-        insnList.add(new InsnNode(ICONST_1));
-        insnList.add(const0);
-        insnList.add(new InsnNode(ICONST_0));
         return insnList;
     }
 

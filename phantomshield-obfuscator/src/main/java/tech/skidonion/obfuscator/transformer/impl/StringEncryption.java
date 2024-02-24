@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
@@ -66,15 +67,7 @@ public class StringEncryption extends Transformer {
                         dummys.add(fieldNode);
                     }
                 }
-                // 制作缺陷
-                MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
-                methodNode.visitFieldInsn(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;");
-                methodNode.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
-                methodNode.visitVarInsn(ILOAD, 0);
-                methodNode.visitInsn(AALOAD);
-                methodNode.visitInsn(ARETURN);
-                methodNode.visibleAnnotations = new ArrayList<>();
-                methodNode.visibleAnnotations.add(new AnnotationNode("Ltech/skidonion/obfuscator/annotation/NativeObfuacation;"));
+                final MethodNode methodNode = getPullMethod(cw, decryptorMethodName, decryptedStringsFieldName, dummys);
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
@@ -82,6 +75,54 @@ public class StringEncryption extends Transformer {
             }
         });
         INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
+    }
+
+    private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName, List<FieldNode> dummys) {
+        MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
+        final InsnList insnList = new InsnList();
+        if (dummys.size() <= 1) {
+            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
+            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
+            insnList.add(new VarInsnNode(ILOAD, 0));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(ARETURN));
+            methodNode.instructions = insnList;
+            return methodNode;
+        }
+        final boolean randomBoolean = RandomUtils.getRandomBoolean();
+        final LabelNode label0 = new LabelNode();
+        final LabelNode label1 = new LabelNode();
+        if (randomBoolean) {
+            insnList.add(ASMUtils.generateTrue());
+            insnList.add(new JumpInsnNode(IFEQ, label1));
+            insnList.add(label0);
+            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
+            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
+            insnList.add(new VarInsnNode(ILOAD, 0));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(ARETURN));
+            insnList.add(label1);
+            final FieldNode fieldNode = dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
+            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
+        } else {
+            insnList.add(ASMUtils.generateFalse());
+            insnList.add(new JumpInsnNode(IFEQ, label1));
+            insnList.add(label0);
+            final FieldNode fieldNode = dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
+            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
+            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
+            insnList.add(new VarInsnNode(ILOAD, 0));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(ARETURN));
+            insnList.add(label1);
+            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
+        }
+        insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
+        insnList.add(new VarInsnNode(ILOAD, 0));
+        insnList.add(new InsnNode(AALOAD));
+        insnList.add(new InsnNode(ARETURN));
+        methodNode.instructions = insnList;
+        return methodNode;
     }
 
     private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, List<String> strings, List<FieldNode> dummys) {
