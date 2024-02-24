@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -529,18 +530,25 @@ public class ASMUtils implements Opcodes {
 
     public static InsnList generateTrue() {
         final InsnList insnList = new InsnList();
-        float f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).setScale(1, RoundingMode.HALF_UP).floatValue();
-        float sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
-        while (f1 - 0.1F == sub) {
-            f1 = BigDecimal.valueOf(RandomUtils.getRandomFloat() * 1000 + 500).setScale(1, RoundingMode.HALF_UP).floatValue();
-            sub = new BigDecimal(f1).subtract(new BigDecimal("0.1")).setScale(1, RoundingMode.HALF_UP).floatValue();
+        double doubleValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        if (doubleValue == 0.0 || doubleValue == 0.5 || doubleValue == 1.0) {
+            while (doubleValue == 0.0 || doubleValue == 0.5 || doubleValue == 1.0)
+                doubleValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
+        }
+        float floatValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).floatValue();
+        float sub = new BigDecimal(floatValue).subtract(new BigDecimal(doubleValue)).floatValue();
+        while (floatValue - doubleValue == sub) {
+            floatValue = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat() * 1000 + 500).floatValue();
+            sub = new BigDecimal(floatValue).subtract(new BigDecimal(doubleValue)).floatValue();
         }
 
-        insnList.add(new LdcInsnNode(f1));
-        insnList.add(new LdcInsnNode(0.1F));
-        insnList.add(new InsnNode(FSUB));
+        insnList.add(new LdcInsnNode(floatValue));
+        insnList.add(new InsnNode(F2D));
+        insnList.add(new LdcInsnNode(doubleValue));
+        insnList.add(new InsnNode(DSUB));
         insnList.add(new LdcInsnNode(sub));
-        insnList.add(new InsnNode(FCMPL));
+        insnList.add(new InsnNode(F2D));
+        insnList.add(new InsnNode(DCMPL));
         return insnList;
     }
 

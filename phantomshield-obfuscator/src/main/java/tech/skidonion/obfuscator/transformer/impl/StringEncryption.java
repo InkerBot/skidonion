@@ -82,7 +82,7 @@ public class StringEncryption extends Transformer {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
         methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
         final InsnList insnList = new InsnList();
-        if (dummys.size() <= 1) {
+        if (dummys.isEmpty()) {
             insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
             insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
             insnList.add(new VarInsnNode(ILOAD, 0));
@@ -104,13 +104,13 @@ public class StringEncryption extends Transformer {
             insnList.add(new InsnNode(AALOAD));
             insnList.add(new InsnNode(ARETURN));
             insnList.add(label1);
-            final FieldNode fieldNode = dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
+            final FieldNode fieldNode = dummys.size() == 1 ? dummys.get(0) : dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
             insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
         } else {
             insnList.add(ASMUtils.generateFalse());
             insnList.add(new JumpInsnNode(IFEQ, label1));
             insnList.add(label0);
-            final FieldNode fieldNode = dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
+            final FieldNode fieldNode = dummys.size() == 1 ? dummys.get(0) : dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
             insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
             insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
             insnList.add(new VarInsnNode(ILOAD, 0));
