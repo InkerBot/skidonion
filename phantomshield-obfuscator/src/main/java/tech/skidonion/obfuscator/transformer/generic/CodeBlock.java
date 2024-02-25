@@ -2,8 +2,11 @@ package tech.skidonion.obfuscator.transformer.generic;
 
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.SourceValue;
 
 public class CodeBlock {
+    private Frame<SourceValue> frame;
     private CodeBlock previous;
     private CodeBlock next;
     private final LabelNode label;
@@ -48,5 +51,13 @@ public class CodeBlock {
 
     public void setIndex(int index) {
         this.index = index;
+    }
+
+    public Frame<SourceValue> getFrame() {
+        return frame;
+    }
+
+    public void setFrame(Frame<SourceValue> frame) {
+        this.frame = frame;
     }
 }

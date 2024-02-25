@@ -1,17 +1,21 @@
 package tech.skidonion.obfuscator.transformer.generic.resolver;
 
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.*;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 
 import java.util.*;
 
-public class CodeBlockResolver {
+public class CodeBlockResolver implements Opcodes {
     public static ResolvedBlocks resolve(MethodNode method) {
+        final Type[] localTypes = new Type[method.maxLocals];
         // analyze all code blocks first
-        final Map<LabelNode, CodeBlock> blocksMap = resolveSimpleCodeBlocks(method);
+        final Map<LabelNode, CodeBlock> blocksMap = resolveSimpleCodeBlocks(method, localTypes);
 
         List<TryCatchBlock> tryCatchList = new LinkedList<>();
         List<CodeBlock> resolvedBlocks = new ArrayList<>(blocksMap.values());
@@ -21,7 +25,7 @@ public class CodeBlockResolver {
             buildTryCatchTree(tryCatchList, resolvedBlocks, resultBlocks, blocksMap, node);
         }
 
-        return new ResolvedBlocks(tryCatchList, resultBlocks);
+        return new ResolvedBlocks(tryCatchList, resultBlocks, localTypes);
     }
 
     private static void buildTryCatchTree(
@@ -89,7 +93,14 @@ public class CodeBlockResolver {
         tryCatchList.add(tryCatchBlock);
     }
 
-    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(org.objectweb.asm.tree.MethodNode node) {
+    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, Type[] localTypes) {
+        Frame<SourceValue>[] frames;
+        try {
+            frames = new Analyzer<>(new SourceInterpreter()).analyze(node.name, node);
+        } catch (AnalyzerException e) {
+            throw new RuntimeException(e);
+        }
+        int insnIndex = 0;
         final Map<LabelNode, CodeBlock> blocksMap = new LinkedHashMap<>();
         LabelNode start = null;
         CodeBlock previousBlock = null;
@@ -109,10 +120,37 @@ public class CodeBlockResolver {
                 previousBlock = block;
                 insns = new InsnList();
                 block = new CodeBlock(start);
+                block.setFrame(frames[insnIndex]);
 
                 if (previousBlock != null) previousBlock.setNext(block);
 
                 index++;
+            } else if (insn instanceof VarInsnNode) {
+                VarInsnNode varInsnNode = (VarInsnNode) insn;
+                switch (insn.getOpcode()) {
+                    case ISTORE:
+                    case ILOAD:
+                        localTypes[varInsnNode.var] = Type.INT_TYPE;
+                        break;
+                    case FSTORE:
+                    case FLOAD:
+                        localTypes[varInsnNode.var] = Type.FLOAT_TYPE;
+                        break;
+                    case LLOAD:
+                    case LSTORE:
+                        localTypes[varInsnNode.var] = Type.LONG_TYPE;
+                        break;
+                    case DLOAD:
+                    case DSTORE:
+                        localTypes[varInsnNode.var] = Type.DOUBLE_TYPE;
+                        break;
+                    case ALOAD:
+                    case ASTORE:
+                        localTypes[varInsnNode.var] = Type.getType("Ljava/lang/Object;");
+                        break;
+                    case RET:
+                        throw new RuntimeException("can't resolve RET opcode");
+                }
             } else {
                 if (start == null) {
                     start = new LabelNode(new Label());
@@ -123,6 +161,7 @@ public class CodeBlockResolver {
                 }
             }
             insns.add(insn);
+            insnIndex++;
         }
         if (block != null) {
             block.setPrevious(previousBlock);
