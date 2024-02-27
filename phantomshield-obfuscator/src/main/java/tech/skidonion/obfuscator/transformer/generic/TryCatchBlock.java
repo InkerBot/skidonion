@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator.transformer.generic;
 
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 
@@ -46,7 +47,12 @@ public class TryCatchBlock extends CodeBlock {
 
     @Override
     public void setInstructions(InsnList instructions) {
-        throw new UnsupportedOperationException("Try Catch Code Block can't set Instructions as it's provided by its members.");
+        throw new UnsupportedOperationException("Try Catch Code Block can't set instructions as it's provided by its members.");
+    }
+
+    @Override
+    public AbstractInsnNode[] getOriginInstructions() {
+        throw new UnsupportedOperationException("Try Catch Code Block can't get origin instructions as it's provided by its members.");
     }
 
     public CodeBlock getParent() {

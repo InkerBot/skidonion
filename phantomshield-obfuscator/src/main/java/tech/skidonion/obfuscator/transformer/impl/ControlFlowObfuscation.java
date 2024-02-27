@@ -4,6 +4,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.SourceValue;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
@@ -11,9 +13,10 @@ import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
+import javax.management.InstanceNotFoundException;
+import java.util.*;
+
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class ControlFlowObfuscation extends Transformer implements Opcodes {
     public ControlFlowObfuscation(String name) {
@@ -74,7 +77,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     private void shuffle(ResolvedBlocks resolved) {
         for (CodeBlock resolvedBlock : resolved.getResolvedBlocks()) {
             if (resolvedBlock instanceof TryCatchBlock) {
-                shuffle(resolved, (TryCatchBlock) resolvedBlock);
+                shuffle((TryCatchBlock) resolvedBlock);
                 continue;
             }
         }
@@ -83,7 +86,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         resolved.setResolvedBlocks(new LinkedList<>(clone));
     }
 
-    private void shuffle(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock) {
+    private void shuffle(TryCatchBlock tryCatchBlock) {
         LinkedList<CodeBlock> codes = tryCatchBlock.getCodes();
         CodeBlock endBlock = tryCatchBlock.getEndBlock();
 
@@ -91,7 +94,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         if (codes.size() > 2) {
             for (CodeBlock code : codes) {
                 if (code instanceof TryCatchBlock) {
-                    shuffle(resolved, (TryCatchBlock) code);
+                    shuffle((TryCatchBlock) code);
                     continue;
                 }
             }
@@ -110,31 +113,32 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     }
 
     private void addOpaquePredicate(ResolvedBlocks resolved) {
-        for (CodeBlock code : resolved.getResolvedBlocks()) {
+        for (ListIterator<CodeBlock> iterator = resolved.getResolvedBlocks().listIterator(); iterator.hasNext(); ) {
+            CodeBlock code = iterator.next();
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate(resolved, (TryCatchBlock) code);
                 continue;
             }
-            addOpaquePredicate(resolved, code);
+            addOpaquePredicate(resolved, code, iterator);
         }
     }
 
     private void addOpaquePredicate(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock) {
-        for (CodeBlock code : tryCatchBlock.getCodes()) {
+        for (ListIterator<CodeBlock> iterator = tryCatchBlock.getCodes().listIterator(); iterator.hasNext(); ) {
+            CodeBlock code = iterator.next();
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate(resolved, (TryCatchBlock) code);
                 continue;
             }
-            addOpaquePredicate(resolved, code);
+            addOpaquePredicate(resolved, code, iterator);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code) {
+    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, ListIterator<CodeBlock> iterator) {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
-
             // TODO: the fuck opaque predications
 //            boolean generate = RandomUtils.getRandomBoolean();
 //            boolean if_equals = RandomUtils.getRandomBoolean();
@@ -142,18 +146,66 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 //            LabelNode label2;
 //            if ((generate && if_equals) || (!generate && !if_equals)) {
 //                label1 = next.getLabel();
-//                label2 = resolved.getRandomCodeBlock(null).getLabel();
+//                label2 = resolved.getRandomCodeBlock().getLabel();
 //            } else {
 //                label2 = next.getLabel();
-//                label1 = resolved.getRandomCodeBlock(null).getLabel();
+//                label1 = resolved.getRandomCodeBlock().getLabel();
 //            }
 //            insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
 //            insns.add(new JumpInsnNode(if_equals ? IFEQ : IFNE, label1));
 //            insns.add(new JumpInsnNode(Opcodes.GOTO, label2));
 
 
+            // balance frame stack map
+            CodeBlock magicBlock = code;
+            LabelNode magic = magicBlock.getLabel();
+
+            LabelNode balancedLabel = new LabelNode(new Label());
+            CodeBlock balancedBlock = new CodeBlock(balancedLabel);
+            InsnList balanced = new InsnList();
+            balanced.add(balancedLabel);
+
+            Frame<SourceValue>[] currentFrames = code.getFrames();
+            Frame<SourceValue> currentFrame = currentFrames[currentFrames.length - 1];
+            Frame<SourceValue> magicFrame = next.getFrame(0);
+
+            int currentLocalSize = currentFrame.getLocals();
+            int magicLocalSize = magicFrame.getLocals();
+            if (currentLocalSize > magicLocalSize) {
+                INFO("currentLocalSize > magicLocalSize");
+            } else if (currentLocalSize < magicLocalSize) {
+                INFO("currentLocalSize < magicLocalSize");
+            } else {
+                INFO("currentLocalSize == magicLocalSize");
+            }
+
+            int currentStackSize = currentFrame.getStackSize();
+            int magicStackSize = magicFrame.getStackSize();
+            if (currentStackSize > magicStackSize) {
+//                int l = currentStackSize - magicStackSize;
+//                for (int i = 0; i < l; i++) {
+//                    SourceValue value = currentFrame.getStack(currentStackSize - 1 - i);
+//                    if (value.getSize() == 1) {
+//                        balanced.add(new InsnNode(POP));
+//                    } else {
+//                        balanced.add(new InsnNode(POP2));
+//                    }
+//                }
+//                INFO("currentStackSize > magicStackSize");
+            } else if (currentStackSize < magicStackSize) {
+                INFO("currentStackSize < magicStackSize");
+            } else {
+                INFO("currentStackSize == magicStackSize");
+            }
+
+
+            balanced.add(new JumpInsnNode(GOTO, magic));
+            balancedBlock.setInstructions(balanced);
+            iterator.add(balancedBlock);
+
+
             insns.add(new InsnNode(ICONST_1));
-            insns.add(new JumpInsnNode(IFEQ, code.getLabel()));
+            insns.add(new JumpInsnNode(IFEQ, balancedLabel));
             insns.add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
         }
     }

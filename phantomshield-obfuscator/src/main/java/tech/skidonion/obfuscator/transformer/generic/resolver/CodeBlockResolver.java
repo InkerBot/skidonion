@@ -93,6 +93,7 @@ public class CodeBlockResolver implements Opcodes {
         tryCatchList.add(tryCatchBlock);
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, Type[] localTypes) {
         Frame<SourceValue>[] frames;
         try {
@@ -101,6 +102,7 @@ public class CodeBlockResolver implements Opcodes {
             throw new RuntimeException(e);
         }
         int insnIndex = 0;
+        int lastGroupInsnIndex = 0;
         final Map<LabelNode, CodeBlock> blocksMap = new LinkedHashMap<>();
         LabelNode start = null;
         CodeBlock previousBlock = null;
@@ -113,6 +115,13 @@ public class CodeBlockResolver implements Opcodes {
                     block.setPrevious(previousBlock);
                     block.setInstructions(insns);
                     block.setIndex(index);
+
+                    int length = insnIndex - lastGroupInsnIndex;
+                    Frame<?>[] subFrames = new Frame[length];
+                    System.arraycopy(frames, lastGroupInsnIndex, subFrames, 0, length);
+                    block.setFrames((Frame<SourceValue>[]) subFrames);
+                    lastGroupInsnIndex = insnIndex;
+
                     blocksMap.put(start, block);
                 }
 
@@ -120,9 +129,9 @@ public class CodeBlockResolver implements Opcodes {
                 previousBlock = block;
                 insns = new InsnList();
                 block = new CodeBlock(start);
-                block.setFrame(frames[insnIndex]);
 
                 if (previousBlock != null) previousBlock.setNext(block);
+
 
                 index++;
             } else if (insn instanceof VarInsnNode) {
@@ -167,6 +176,12 @@ public class CodeBlockResolver implements Opcodes {
             block.setPrevious(previousBlock);
             block.setInstructions(insns);
             block.setIndex(index);
+
+            int length = insnIndex - lastGroupInsnIndex;
+            Frame<?>[] subFrames = new Frame[length];
+            System.arraycopy(frames, lastGroupInsnIndex, subFrames, 0, length);
+            block.setFrames((Frame<SourceValue>[]) subFrames);
+
             blocksMap.put(start, block);
         }
         return blocksMap;

@@ -51,7 +51,7 @@ public class ResolvedBlocks {
         return tryCatchBlocks;
     }
 
-    public CodeBlock getRandomCodeBlock(Frame<SourceValue> value) {
+    public CodeBlock getRandomCodeBlock() {
         return this.clone.get(RandomUtils.getRandomInt(this.clone.size()));
     }
 
