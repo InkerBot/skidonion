@@ -7,7 +7,7 @@ import tech.skidonion.obfuscator.asm.FieldWrapper;
  * Wrapper for FieldNode access flags.
  */
 public class FieldAccess implements Access {
-    private FieldWrapper wrapper;
+    private final FieldWrapper wrapper;
 
     public FieldAccess(FieldWrapper wrapper) {
         this.wrapper = wrapper;

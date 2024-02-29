@@ -6,7 +6,7 @@ import tech.skidonion.obfuscator.asm.MethodWrapper;
  * Wrapper for MethodNode access flags.
  */
 public class MethodAccess implements Access {
-    private MethodWrapper wrapper;
+    private final MethodWrapper wrapper;
 
     public MethodAccess(MethodWrapper wrapper) {
         this.wrapper = wrapper;

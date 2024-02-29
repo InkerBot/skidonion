@@ -3,7 +3,7 @@ package tech.skidonion.obfuscator.asm.accesses;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 
 public class ClassAccess implements Access {
-    private ClassWrapper wrapper;
+    private final ClassWrapper wrapper;
 
     public ClassAccess(ClassWrapper wrapper) {
         this.wrapper = wrapper;
