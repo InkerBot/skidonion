@@ -1,4 +1,4 @@
-package tech.skidonion.obfuscator.utils;
+package tech.skidonion.obfuscator.asm;
 
 
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -7,13 +7,14 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class InstructionModifier {
     private static final InsnList EMPTY_LIST = new InsnList();
 
-    private final HashMap<AbstractInsnNode, InsnList> replacements = new HashMap<>();
-    private final HashMap<AbstractInsnNode, InsnList> appends = new HashMap<>();
-    private final HashMap<AbstractInsnNode, InsnList> prepends = new HashMap<>();
+    private final Map<AbstractInsnNode, InsnList> replacements = new HashMap<>();
+    private final Map<AbstractInsnNode, InsnList> appends = new HashMap<>();
+    private final Map<AbstractInsnNode, InsnList> prepends = new HashMap<>();
 
     public void append(AbstractInsnNode original, InsnList append) {
         appends.put(original, append);

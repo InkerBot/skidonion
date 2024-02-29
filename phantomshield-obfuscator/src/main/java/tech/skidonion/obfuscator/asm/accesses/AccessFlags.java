@@ -1,13 +1,8 @@
-package tech.skidonion.obfuscator.utils;
+package tech.skidonion.obfuscator.asm.accesses;
 
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
-
 public class AccessFlags {
-    public static final AccessFlags PRIVATE = new AccessFlags(Opcodes.ACC_PRIVATE);
-    public static final AccessFlags PUBLIC = new AccessFlags(Opcodes.ACC_PUBLIC);
-
     private int flags;
 
     public AccessFlags(int flags) {
@@ -15,15 +10,15 @@ public class AccessFlags {
     }
 
     public boolean isPrivate() {
-        return Modifier.isPrivate(this.flags);
+        return (this.flags & Opcodes.ACC_PRIVATE) != 0;
     }
 
     public boolean isProtected() {
-        return Modifier.isProtected(this.flags);
+        return (this.flags & Opcodes.ACC_PROTECTED) != 0;
     }
 
     public boolean isPublic() {
-        return Modifier.isPublic(this.flags);
+        return (this.flags & Opcodes.ACC_PUBLIC) != 0;
     }
 
     public boolean isSynthetic() {
@@ -31,7 +26,7 @@ public class AccessFlags {
     }
 
     public boolean isStatic() {
-        return Modifier.isStatic(this.flags);
+        return (flags & Opcodes.ACC_STATIC) != 0;
     }
 
     public boolean isEnum() {

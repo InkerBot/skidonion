@@ -1,4 +1,4 @@
-package tech.skidonion.obfuscator.utils;
+package tech.skidonion.obfuscator.utils.commons;
 
 public class Pair<X, Y> {
     private final X x;

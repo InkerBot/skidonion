@@ -196,6 +196,7 @@ public class ASMUtils implements Opcodes {
                 return DRETURN;
             case Type.ARRAY:
             case Type.OBJECT:
+            case Type.METHOD:
                 return ARETURN;
             case Type.VOID:
                 return RETURN;
@@ -518,6 +519,36 @@ public class ASMUtils implements Opcodes {
         return null;
     }
 
+    /**
+     * Computes and returns the maximum number of local variables used in the given method.
+     *
+     * @param method a method.
+     * @return the maximum number of local variables used in the given method.
+     */
+    public static int computeMaxLocals(MethodNode method) {
+        int maxLocals = Type.getArgumentsAndReturnSizes(method.desc) >> 2;
+        if ((method.access & Opcodes.ACC_STATIC) != 0) {
+            maxLocals -= 1;
+        }
+        for (AbstractInsnNode insnNode : method.instructions) {
+            if (insnNode instanceof VarInsnNode) {
+                int local = ((VarInsnNode) insnNode).var;
+                int size =
+                        (insnNode.getOpcode() == Opcodes.LLOAD
+                                || insnNode.getOpcode() == Opcodes.DLOAD
+                                || insnNode.getOpcode() == Opcodes.LSTORE
+                                || insnNode.getOpcode() == Opcodes.DSTORE)
+                                ? 2
+                                : 1;
+                maxLocals = Math.max(maxLocals, local + size);
+            } else if (insnNode instanceof IincInsnNode) {
+                int local = ((IincInsnNode) insnNode).var;
+                maxLocals = Math.max(maxLocals, local + 1);
+            }
+        }
+        return maxLocals;
+    }
+
     public static InsnList generateTrue() {
         final InsnList insnList = new InsnList();
         double d2 = BigDecimal.valueOf(ThreadLocalRandom.current().nextFloat()).setScale(1, RoundingMode.HALF_UP).doubleValue();
@@ -573,9 +604,11 @@ public class ASMUtils implements Opcodes {
             case LOOKUPSWITCH:
             case TABLESWITCH:
                 return true;
+            default:
+                return false;
         }
-        return false;
     }
+
 
     private static final Map<Integer, String> OPCODE_NAME_MAP = new HashMap<>();
 
