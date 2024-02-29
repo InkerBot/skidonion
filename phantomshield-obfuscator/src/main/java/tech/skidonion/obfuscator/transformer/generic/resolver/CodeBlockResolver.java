@@ -5,15 +5,17 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.*;
+import tech.skidonion.obfuscator.asm.SimpleInterpreter;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CodeBlockResolver implements Opcodes {
     public static ResolvedBlocks resolve(MethodNode method) {
-        final Type[] localTypes = new Type[method.maxLocals];
+        final List<Type> localTypes = new ArrayList<>(Arrays.asList(new Type[method.maxLocals]));
         // analyze all code blocks first
         final Map<LabelNode, CodeBlock> blocksMap = resolveSimpleCodeBlocks(method, localTypes);
 
@@ -94,20 +96,24 @@ public class CodeBlockResolver implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, Type[] localTypes) {
+    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, List<Type> localTypes) {
+        AtomicInteger maxLocals = new AtomicInteger(node.maxLocals);
         Frame<BasicValue>[] frames;
+
+        // TODO
         try {
-            frames = new Analyzer<>(new BasicInterpreter()).analyze(node.name, node);
+            frames = new Analyzer<>(new SimpleInterpreter()).analyze(node.name, node);
         } catch (AnalyzerException e) {
             throw new RuntimeException(e);
         }
         int insnIndex = 0;
         int lastGroupInsnIndex = 0;
+        final Map<Integer, Integer> variablesMap = new HashMap<>();
         final Map<LabelNode, CodeBlock> blocksMap = new LinkedHashMap<>();
         LabelNode start = null;
         CodeBlock previousBlock = null;
         CodeBlock block = null;
-        InsnList insns = null;
+        InsnList insns = new InsnList();
         int index = -1;
         for (AbstractInsnNode insn : node.instructions) {
             if (insn instanceof LabelNode) {
@@ -135,27 +141,29 @@ public class CodeBlockResolver implements Opcodes {
 
                 index++;
             } else if (insn instanceof VarInsnNode) {
+
+                // TODO
                 VarInsnNode varInsnNode = (VarInsnNode) insn;
                 switch (insn.getOpcode()) {
                     case ISTORE:
                     case ILOAD:
-                        localTypes[varInsnNode.var] = Type.INT_TYPE;
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.INT, Type.INT_TYPE);
                         break;
                     case FSTORE:
                     case FLOAD:
-                        localTypes[varInsnNode.var] = Type.FLOAT_TYPE;
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.FLOAT, Type.FLOAT_TYPE);
                         break;
                     case LLOAD:
                     case LSTORE:
-                        localTypes[varInsnNode.var] = Type.LONG_TYPE;
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.LONG, Type.LONG_TYPE);
                         break;
                     case DLOAD:
                     case DSTORE:
-                        localTypes[varInsnNode.var] = Type.DOUBLE_TYPE;
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.DOUBLE, Type.DOUBLE_TYPE);
                         break;
                     case ALOAD:
                     case ASTORE:
-                        localTypes[varInsnNode.var] = Type.getType("Ljava/lang/Object;");
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.OBJECT, Type.getType("Ljava/lang/Object;"));
                         break;
                     case RET:
                         throw new RuntimeException("can't resolve RET opcode");
@@ -184,6 +192,27 @@ public class CodeBlockResolver implements Opcodes {
 
             blocksMap.put(start, block);
         }
+        node.maxLocals = maxLocals.get();
         return blocksMap;
+    }
+
+
+    /**
+     * process local variables which used by a same index
+     */
+    private static void processLocals(VarInsnNode varInsnNode, AtomicInteger maxLocals, List<Type> localTypes, Map<Integer, Integer> variablesMap, int sort, Type localType) {
+        // TODO
+        Type type = localTypes.get(varInsnNode.var);
+        if (type == null) {
+            localTypes.set(varInsnNode.var, localType);
+        } else if (type.getSort() != sort && (!variablesMap.containsKey(varInsnNode.var) || localTypes.get(variablesMap.get(varInsnNode.var)) != localType)) {
+            int size = (sort == Type.LONG || sort == Type.DOUBLE) ? 2 : 1;
+            int index = maxLocals.getAndAdd(size);
+            localTypes.add(localType);
+            variablesMap.put(varInsnNode.var, index);
+        }
+        if (variablesMap.containsKey(varInsnNode.var)) {
+            varInsnNode.var = variablesMap.get(varInsnNode.var);
+        }
     }
 }

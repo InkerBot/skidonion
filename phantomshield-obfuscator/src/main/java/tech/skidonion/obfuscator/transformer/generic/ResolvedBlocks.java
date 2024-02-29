@@ -9,14 +9,15 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 public class ResolvedBlocks {
     private final ArrayList<TryCatchBlock> tryCatchBlocks;
     private LinkedList<CodeBlock> resolvedBlocks;
     private ArrayList<CodeBlock> clone;
-    private final Type[] locals;
+    private final List<Type> locals;
 
-    public ResolvedBlocks(Collection<TryCatchBlock> tryCatchBlocks, Collection<CodeBlock> resolvedBlocks, Type[] locals) {
+    public ResolvedBlocks(Collection<TryCatchBlock> tryCatchBlocks, Collection<CodeBlock> resolvedBlocks, List<Type> locals) {
         this.tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
         this.resolvedBlocks = new LinkedList<>(resolvedBlocks);
         this.clone = new ArrayList<>(resolvedBlocks);
@@ -55,7 +56,7 @@ public class ResolvedBlocks {
         return this.clone.get(RandomUtils.getRandomInt(this.clone.size()));
     }
 
-    public Type[] getLocals() {
+    public List<Type> getLocals() {
         return locals;
     }
 }

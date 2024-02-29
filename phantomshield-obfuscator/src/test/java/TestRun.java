@@ -12,8 +12,8 @@ public class TestRun {
 //        shuffler(builder);
 //        renamer(builder);
 //        string_encryption(builder);
-        invoke_wrapper(builder);
-//        control_flow(builder);
+//        invoke_wrapper(builder);
+        control_flow(builder);
 //        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();

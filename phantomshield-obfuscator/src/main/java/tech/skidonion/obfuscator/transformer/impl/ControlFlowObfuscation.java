@@ -6,7 +6,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.SourceValue;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
@@ -15,7 +14,6 @@ import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 
-import javax.management.InstanceNotFoundException;
 import java.util.*;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
@@ -45,17 +43,19 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             shuffled.add(new LabelNode(new Label()));
 
             // initialization all variables
+            // TODO
             int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
             for (Type type : Type.getArgumentTypes(method.desc)) {
                 locals += type.getSize();
             }
-            for (int index = locals; index < resolved.getLocals().length; index++) {
-                Type type = resolved.getLocals()[index];
+            for (int index = locals; index < resolved.getLocals().size(); index++) {
+                Type type = resolved.getLocals().get(index);
                 if (type != null) {
                     shuffled.add(ASMUtils.getDefaultValue(type));
                     shuffled.add(new VarInsnNode(ASMUtils.getVarOpcode(type, true), index));
                 }
             }
+
             // goto the entry point
             shuffled.add(new JumpInsnNode(GOTO, resolved.getResolvedBlocks().getFirst().getLabel()));
             shuffle(resolved);
