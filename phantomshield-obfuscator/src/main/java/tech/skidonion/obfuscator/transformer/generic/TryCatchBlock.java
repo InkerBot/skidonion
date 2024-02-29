@@ -3,6 +3,8 @@ package tech.skidonion.obfuscator.transformer.generic;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.analysis.BasicValue;
+import org.objectweb.asm.tree.analysis.Frame;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -43,6 +45,16 @@ public class TryCatchBlock extends CodeBlock {
             return parent.isSameEndBlockBetweenParent();
         }
         return false;
+    }
+
+    @Override
+    public Frame<BasicValue> getFrame(int i) {
+        return this.codes.getFirst().getFrame(i);
+    }
+
+    @Override
+    public Frame<BasicValue>[] getFrames() {
+        return this.codes.getFirst().getFrames();
     }
 
     @Override

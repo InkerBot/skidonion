@@ -3,11 +3,12 @@ package tech.skidonion.obfuscator.transformer.generic;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.SourceValue;
 
 public class CodeBlock {
-    private Frame<SourceValue>[] frames;
+    private Frame<BasicValue>[] frames;
     private AbstractInsnNode[] originInstructions;
     private CodeBlock previous;
     private CodeBlock next;
@@ -63,15 +64,15 @@ public class CodeBlock {
         this.index = index;
     }
 
-    public Frame<SourceValue>[] getFrames() {
+    public Frame<BasicValue>[] getFrames() {
         return frames;
     }
 
-    public Frame<SourceValue> getFrame(int i) {
+    public Frame<BasicValue> getFrame(int i) {
         return frames[i];
     }
 
-    public void setFrames(Frame<SourceValue>[] frames) {
+    public void setFrames(Frame<BasicValue>[] frames) {
         this.frames = frames;
     }
 

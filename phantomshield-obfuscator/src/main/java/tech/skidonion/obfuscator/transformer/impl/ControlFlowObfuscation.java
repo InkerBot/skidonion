@@ -4,6 +4,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.SourceValue;
 import tech.skidonion.obfuscator.transformer.Transformer;
@@ -12,6 +13,7 @@ import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
 import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import javax.management.InstanceNotFoundException;
 import java.util.*;
@@ -27,6 +29,10 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     public void transform() throws Exception {
         getFilteredClasses().forEach(cw -> cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
             MethodNode method = wrapper.getMethodNode();
+            // TODO: ignore init??
+            if (method.name.equals("<init>")) {
+                return;
+            }
             // delete the fuck shit
             method.localVariables = null;
             ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
@@ -36,11 +42,14 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
             // shuffle labels orders
             InsnList shuffled = new InsnList();
+            shuffled.add(new LabelNode(new Label()));
 
             // initialization all variables
-            shuffled.add(new LabelNode(new Label()));
-            int i = (ASMUtils.getFlag(method.access, Opcodes.ACC_STATIC) ? 0 : 1) + Type.getArgumentTypes(method.desc).length;
-            for (int index = i; index < resolved.getLocals().length; index++) {
+            int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
+            for (Type type : Type.getArgumentTypes(method.desc)) {
+                locals += type.getSize();
+            }
+            for (int index = locals; index < resolved.getLocals().length; index++) {
                 Type type = resolved.getLocals()[index];
                 if (type != null) {
                     shuffled.add(ASMUtils.getDefaultValue(type));
@@ -48,7 +57,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 }
             }
             // goto the entry point
-            shuffled.add(new LabelNode(new Label()));
             shuffled.add(new JumpInsnNode(GOTO, resolved.getResolvedBlocks().getFirst().getLabel()));
             shuffle(resolved);
             shuffled.add(resolved.toInsnList());
@@ -58,7 +66,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             Type returnType = Type.getReturnType(method.desc);
             int opcode = ASMUtils.getReturnOpcode(returnType);
             shuffled.add(new LabelNode(new Label()));
-            if (opcode != Opcodes.RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
+            if (opcode != RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
             shuffled.add(new InsnNode(opcode));
 
             method.instructions = shuffled;
@@ -108,7 +116,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
         CodeBlock next = endBlock.getNext();
         if (next != null) {
-            endBlock.getInstructions().add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
+            endBlock.getInstructions().add(new JumpInsnNode(GOTO, next.getLabel()));
         }
     }
 
@@ -138,75 +146,154 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
+        // condition: next code block will available to ensure correct order
+        // make sure the last instruction is force jump or return
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
-            // TODO: the fuck opaque predications
-//            boolean generate = RandomUtils.getRandomBoolean();
-//            boolean if_equals = RandomUtils.getRandomBoolean();
-//            LabelNode label1;
-//            LabelNode label2;
-//            if ((generate && if_equals) || (!generate && !if_equals)) {
-//                label1 = next.getLabel();
-//                label2 = resolved.getRandomCodeBlock().getLabel();
-//            } else {
-//                label2 = next.getLabel();
-//                label1 = resolved.getRandomCodeBlock().getLabel();
-//            }
-//            insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
-//            insns.add(new JumpInsnNode(if_equals ? IFEQ : IFNE, label1));
-//            insns.add(new JumpInsnNode(Opcodes.GOTO, label2));
-
-
-            // balance frame stack map
-            CodeBlock magicBlock = code;
+            // generate fake jump
+            CodeBlock magicBlock = resolved.getRandomCodeBlock();
             LabelNode magic = magicBlock.getLabel();
 
-            LabelNode balancedLabel = new LabelNode(new Label());
-            CodeBlock balancedBlock = new CodeBlock(balancedLabel);
-            InsnList balanced = new InsnList();
-            balanced.add(balancedLabel);
-
-            Frame<SourceValue>[] currentFrames = code.getFrames();
-            Frame<SourceValue> currentFrame = currentFrames[currentFrames.length - 1];
-            Frame<SourceValue> magicFrame = next.getFrame(0);
-
-            int currentLocalSize = currentFrame.getLocals();
-            int magicLocalSize = magicFrame.getLocals();
-            if (currentLocalSize > magicLocalSize) {
-                INFO("currentLocalSize > magicLocalSize");
-            } else if (currentLocalSize < magicLocalSize) {
-                INFO("currentLocalSize < magicLocalSize");
-            } else {
-                INFO("currentLocalSize == magicLocalSize");
+            Frame<BasicValue> currentFrame = next.getFrame(0);
+            Frame<BasicValue> magicFrame = magicBlock.getFrame(0);
+            // if the random code block is unreachable code
+            // we should make its frame keep empty instead of "null"
+            if (magicFrame == null) {
+                magicFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
             }
+            if (currentFrame != null) {
+                // balance frame stack map
+                LabelNode balancedLabel = new LabelNode(new Label());
+                CodeBlock balancedBlock = new CodeBlock(balancedLabel);
+                InsnList balanced = new InsnList();
+                balanced.add(balancedLabel);
 
-            int currentStackSize = currentFrame.getStackSize();
-            int magicStackSize = magicFrame.getStackSize();
-            if (currentStackSize > magicStackSize) {
-//                int l = currentStackSize - magicStackSize;
-//                for (int i = 0; i < l; i++) {
-//                    SourceValue value = currentFrame.getStack(currentStackSize - 1 - i);
-//                    if (value.getSize() == 1) {
-//                        balanced.add(new InsnNode(POP));
-//                    } else {
-//                        balanced.add(new InsnNode(POP2));
-//                    }
-//                }
-//                INFO("currentStackSize > magicStackSize");
-            } else if (currentStackSize < magicStackSize) {
-                INFO("currentStackSize < magicStackSize");
+                int currentStackSize = currentFrame.getStackSize();
+                int magicStackSize = magicFrame.getStackSize();
+
+                int covered = Math.min(magicStackSize, currentStackSize);
+
+                // make sure the stack map is always the same
+                boolean clean = false;
+
+                for (int i = 0; i < covered; i++) {
+                    int currentValueSort = magicFrame.getStack(i).getType().getSort();
+                    int magicValueSort = magicFrame.getStack(i).getType().getSort();
+                    if (currentValueSort != magicValueSort) {
+                        clean = true;
+                        break;
+                    } else if (currentValueSort == Type.OBJECT) {
+                        clean = true;
+                        break;
+                    } else if (currentValueSort == Type.ARRAY) {
+                        clean = true;
+                        break;
+                    }
+                }
+                if (clean) {
+                    int stacks = 0;
+                    for (int i = 0; i < currentStackSize; i++) {
+                        stacks += currentFrame.getStack(i).getSize();
+                    }
+                    while (stacks > 0) {
+                        if (stacks > 1) {
+                            if (RandomUtils.getRandomBoolean()) {
+                                balanced.add(new InsnNode(POP));
+                                stacks--;
+                            } else {
+                                balanced.add(new InsnNode(POP2));
+                                stacks -= 2;
+                            }
+                        } else {
+                            balanced.add(new InsnNode(POP));
+                            stacks--;
+                        }
+                    }
+                    currentFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
+                    currentStackSize = currentFrame.getStackSize();
+                }
+
+                if (currentStackSize > magicStackSize) {
+                    int l = currentStackSize - magicStackSize;
+                    for (int i = 0; i < l; i++) {
+                        BasicValue value = currentFrame.getStack(currentStackSize - 1 - i);
+                        if (value.getSize() == 1) {
+                            balanced.add(new InsnNode(POP));
+                        } else {
+                            balanced.add(new InsnNode(POP2));
+                        }
+                    }
+                    INFO("currentStackSize > magicStackSize");
+                } else if (currentStackSize < magicStackSize) {
+                    int l = magicStackSize - currentStackSize;
+                    for (int i = 0; i < l; i++) {
+                        BasicValue value = magicFrame.getStack(currentStackSize + i);
+                        switch (value.getType().getSort()) {
+                            case Type.VOID:
+                                throw new RuntimeException("VOID type value in stack map???");
+                            case Type.BOOLEAN:
+                            case Type.CHAR:
+                            case Type.BYTE:
+                            case Type.SHORT:
+                            case Type.INT:
+                                balanced.add(ASMUtils.getNumberInsn(0));
+                                break;
+                            case Type.FLOAT:
+                                balanced.add(ASMUtils.getNumberInsn(0f));
+                                break;
+                            case Type.LONG:
+                                balanced.add(ASMUtils.getNumberInsn(0L));
+                                break;
+                            case Type.DOUBLE:
+                                balanced.add(ASMUtils.getNumberInsn(0d));
+                                break;
+                            case Type.OBJECT:
+                            case Type.ARRAY:
+                                balanced.add(new InsnNode(ACONST_NULL));
+                        }
+                    }
+                }
+
+
+                balanced.add(new JumpInsnNode(GOTO, magic));
+                balancedBlock.setInstructions(balanced);
+
+                LabelNode expected;
+
+                // if we processed nothing
+                // we should make a direct goto
+                if (balanced.size() != 2) {
+                    iterator.add(balancedBlock);
+                    expected = balancedBlock.getLabel();
+                } else {
+                    expected = magic;
+                }
+
+
+                // make sure that it will always jump to the correct case
+                boolean generate = RandomUtils.getRandomBoolean();
+                boolean if_equals = RandomUtils.getRandomBoolean();
+                LabelNode label1;
+                LabelNode label2;
+                if ((generate && if_equals) || (!generate && !if_equals)) {
+                    label1 = next.getLabel();
+                    label2 = expected;
+                } else {
+                    label2 = next.getLabel();
+                    label1 = expected;
+                }
+
+
+                // TODO: the fuck opaque predications
+                // =======
+                insns.add(generate ? ASMUtils.generateFalse() /* iconst_0 */ : ASMUtils.generateTrue() /* iconst_1 */);
+                // =======
+
+
+                insns.add(new JumpInsnNode(if_equals ? IFEQ : IFNE, label1));
+                insns.add(new JumpInsnNode(GOTO, label2));
             } else {
-                INFO("currentStackSize == magicStackSize");
+                return; // unreachable code
             }
-
-
-            balanced.add(new JumpInsnNode(GOTO, magic));
-            balancedBlock.setInstructions(balanced);
-            iterator.add(balancedBlock);
-
-
-            insns.add(new InsnNode(ICONST_1));
-            insns.add(new JumpInsnNode(IFEQ, balancedLabel));
-            insns.add(new JumpInsnNode(Opcodes.GOTO, next.getLabel()));
         }
     }
 

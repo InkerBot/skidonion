@@ -95,9 +95,9 @@ public class CodeBlockResolver implements Opcodes {
 
     @SuppressWarnings("unchecked")
     private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, Type[] localTypes) {
-        Frame<SourceValue>[] frames;
+        Frame<BasicValue>[] frames;
         try {
-            frames = new Analyzer<>(new SourceInterpreter()).analyze(node.name, node);
+            frames = new Analyzer<>(new BasicInterpreter()).analyze(node.name, node);
         } catch (AnalyzerException e) {
             throw new RuntimeException(e);
         }
@@ -119,7 +119,7 @@ public class CodeBlockResolver implements Opcodes {
                     int length = insnIndex - lastGroupInsnIndex;
                     Frame<?>[] subFrames = new Frame[length];
                     System.arraycopy(frames, lastGroupInsnIndex, subFrames, 0, length);
-                    block.setFrames((Frame<SourceValue>[]) subFrames);
+                    block.setFrames((Frame<BasicValue>[]) subFrames);
                     lastGroupInsnIndex = insnIndex;
 
                     blocksMap.put(start, block);
@@ -180,7 +180,7 @@ public class CodeBlockResolver implements Opcodes {
             int length = insnIndex - lastGroupInsnIndex;
             Frame<?>[] subFrames = new Frame[length];
             System.arraycopy(frames, lastGroupInsnIndex, subFrames, 0, length);
-            block.setFrames((Frame<SourceValue>[]) subFrames);
+            block.setFrames((Frame<BasicValue>[]) subFrames);
 
             blocksMap.put(start, block);
         }

@@ -93,25 +93,15 @@ public class ASMUtils implements Opcodes {
     }
 
     public static AbstractInsnNode getNumberInsn(long number) {
-        if (number >= 0 && number <= 1)
-            return new InsnNode((int) (number + 9));
-        else
-            return new LdcInsnNode(number);
+        return new LdcInsnNode(number);
     }
 
     public static AbstractInsnNode getNumberInsn(float number) {
-        if (number >= 0 && number <= 2) {
-            return new InsnNode((int) (number + 11));
-        } else {
-            return new LdcInsnNode(number);
-        }
+        return new LdcInsnNode(number);
     }
 
     public static AbstractInsnNode getNumberInsn(double number) {
-        if (number >= 0 && number <= 1)
-            return new InsnNode((int) (number + 14));
-        else
-            return new LdcInsnNode(number);
+        return new LdcInsnNode(number);
     }
 
     public static String getStringFromInsn(AbstractInsnNode insn) {
@@ -580,8 +570,6 @@ public class ASMUtils implements Opcodes {
             case DRETURN:
             case ARETURN:
             case GOTO:
-            case JSR:
-            case RET:
             case LOOKUPSWITCH:
             case TABLESWITCH:
                 return true;
