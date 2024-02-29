@@ -47,11 +47,23 @@ public abstract class Transformer implements Opcodes {
      * */
     public abstract String annotation();
 
+    protected final ClassWrapper injectClass(ClassNode classNode) {
+        ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
+        obfuscator.classes.put(cw.getName(), cw);
+        return cw;
+    }
+
     protected final void injectClasses(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
         }
+    }
+
+    protected final void injectClassAsResource(ClassNode classNode) {
+        ClassWriter cw = new ClassWriter(0);
+        classNode.accept(cw);
+        obfuscator.resources.put(classNode.name + ".class", cw.toByteArray());
     }
 
     protected final void injectClassesAsResource(Collection<ClassNode> classNodes) {
@@ -246,23 +258,4 @@ public abstract class Transformer implements Opcodes {
     }
 
 
-    protected void computeMaxLocals(MethodNode method) {
-        int maxLocals = Type.getArgumentsAndReturnSizes(method.desc) >> 2;
-
-        for (AbstractInsnNode node : method.instructions) {
-            if (node instanceof VarInsnNode) {
-                VarInsnNode varNode = (VarInsnNode) node;
-                int local = varNode.var;
-                int size = (varNode.getOpcode() == Opcodes.LLOAD || varNode.getOpcode() == Opcodes.DLOAD ||
-                        varNode.getOpcode() == Opcodes.LSTORE || varNode.getOpcode() == Opcodes.DSTORE) ? 2 : 1;
-                maxLocals = Math.max(maxLocals, local + size);
-            } else if (node instanceof IincInsnNode) {
-                IincInsnNode iincNode = (IincInsnNode) node;
-                int local = iincNode.var;
-                maxLocals = Math.max(maxLocals, local + 1);
-            }
-        }
-
-        method.maxLocals = maxLocals;
-    }
 }

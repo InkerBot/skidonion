@@ -4,40 +4,39 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
+import tech.skidonion.obfuscator.asm.InstructionModifier;
+import tech.skidonion.obfuscator.asm.accesses.AccessFlags;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.*;
+import tech.skidonion.obfuscator.utils.commons.Pair;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class InvokeWrapperObfuscation extends Transformer {
-    private final BooleanValue inject_to_other_class = new BooleanValue("inject_to_other_class", true);
     private final ModeValue package_mode = new ModeValue("package_mode", "random_existed", "root", "unique", "random_existed");
-    private final AtomicInteger counter = new AtomicInteger();
+    private final BooleanValue inject_to_other_class = new BooleanValue("inject_to_other_class", true);
     private final List<ClassNode> classes = new ArrayList<>();
     private final List<Pair<ClassNode, MethodNode>> syntheticMethods = new ArrayList<>();
 
     public InvokeWrapperObfuscation(String name) {
         super(name);
-        addSettings(inject_to_other_class, package_mode);
+        addSettings(package_mode, inject_to_other_class);
     }
 
     @Override
     public void transform() throws Exception {
+        final AtomicInteger counter = new AtomicInteger();
         getFilteredClasses().forEach(cw -> {
             removeAnnotation(cw);
             if (cw.getAccess().isInterface()) return;
 
             ClassNode node = cw.getClassNode();
-
-            node.access = AccessModifier.PUBLIC.transform(new AccessFlags(node.access)).getFlags();
+            node.access = new AccessFlags(node.access).setPublic().getFlags();
 
             ClassWrapper target;
             if (!inject_to_other_class.isEnable()) {
@@ -58,17 +57,18 @@ public class InvokeWrapperObfuscation extends Transformer {
                 String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
                 classes.add(targetNode);
-                target = new ClassWrapper(obfuscator, targetNode, false);
+                target = injectClass(targetNode);
             } else {
-                target = ((ClassWrapper) getFilteredClasses().toArray()[new Random().nextInt(getFilteredClasses().toArray().length - 1)]);
+                List<ClassWrapper> wrappers = new ArrayList<>(getClasses().values());
+                target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
             }
 
             for (MethodNode method : node.methods) {
-                method.access = AccessModifier.PUBLIC.transform(new AccessFlags(method.access)).getFlags();
+                method.access = new AccessFlags(method.access).setPublic().getFlags();
             }
 
             for (FieldNode field : node.fields) {
-                field.access = AccessModifier.PUBLIC.transform(new AccessFlags(field.access)).getFlags();
+                field.access = new AccessFlags(field.access).setPublic().getFlags();
             }
 
             for (MethodNode method : node.methods) {
@@ -78,11 +78,12 @@ public class InvokeWrapperObfuscation extends Transformer {
                 for (AbstractInsnNode instruction : method.instructions) {
                     if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
-                        ClassWrapper wrapper = obfuscator.getClassWrapper(methodInsnNode.owner);
+                        ClassWrapper wrapper = obfuscator.classes.get(methodInsnNode.owner);
                         if (wrapper == null) continue;
                         MethodNode targetMethod = wrapper.getMethod(methodInsnNode.name, methodInsnNode.desc);
                         if (targetMethod == null) continue;
-                        if (Modifier.isPrivate(targetMethod.access) || Modifier.isProtected(targetMethod.access))
+                        AccessFlags flag = new AccessFlags(targetMethod.access);
+                        if (flag.isPrivate() || flag.isProtected())
                             continue;
 
                         if (methodInsnNode.getOpcode() == INVOKESTATIC) {
@@ -105,7 +106,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                     } else if (instruction instanceof FieldInsnNode) {
                         FieldInsnNode fieldInsnNode = (FieldInsnNode) instruction;
 
-                        ClassWrapper wrapper = obfuscator.getClassWrapper(fieldInsnNode.owner);
+                        ClassWrapper wrapper = obfuscator.classes.get(fieldInsnNode.owner);
                         if (wrapper == null) continue;
                         FieldNode targetField = wrapper.getField(fieldInsnNode.name, fieldInsnNode.desc);
                         if (targetField == null) continue;
@@ -115,13 +116,10 @@ public class InvokeWrapperObfuscation extends Transformer {
                         if (fieldInsnNode.getOpcode() == GETSTATIC) {
                             String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                             MethodNode methodNode = createGetStaticMethod(fieldInsnNode, methodName);
-
                             syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
                             modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
-
                             counter.incrementAndGet();
                         } else if (fieldInsnNode.getOpcode() == PUTSTATIC) {
-
                             if (fieldInsnNode.owner.equals(node.name)) {
                                 for (FieldNode fieldNode : node.fields) {
                                     if (fieldInsnNode.name.equals(fieldNode.name)) {
@@ -135,24 +133,18 @@ public class InvokeWrapperObfuscation extends Transformer {
                                     }
                                 }
                             } else {
-
-
                                 String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                 MethodNode methodNode = createPutStaticMethod(fieldInsnNode, methodName);
-
                                 syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
                                 modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
                             }
-
                             counter.incrementAndGet();
                         } else if (fieldInsnNode.getOpcode() == GETFIELD) {
                             if (!method.name.equals("<init>")) {
                                 String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                 MethodNode methodNode = createGetFieldMethod(fieldInsnNode, methodName);
-
                                 syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
                                 modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
-
                                 counter.incrementAndGet();
                             }
                         } else if (fieldInsnNode.getOpcode() == PUTFIELD) {
@@ -168,62 +160,14 @@ public class InvokeWrapperObfuscation extends Transformer {
                         }
                     }
                 }
-
                 modifier.apply(method);
             }
-
         });
 
-        for (Pair<ClassNode, MethodNode> syntheticMethod : syntheticMethods) {
-            computeMaxLocals(syntheticMethod.getSecond());
+        for (Pair<ClassNode, MethodNode> pair : syntheticMethods) {
+            pair.getFirst().methods.add(pair.getSecond());
         }
-
-        AtomicInteger joined = new AtomicInteger();
-
-        AtomicInteger count = new AtomicInteger();
-
-        int threadCount = 8;
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-
-        if (inject_to_other_class.isEnable()) {
-            for (Pair<ClassNode, MethodNode> pair : syntheticMethods) {
-                pair.getFirst().methods.add(pair.getSecond());
-            }
-        } else {
-
-            for (ClassNode cn : classes) {
-                executor.submit(() -> {
-                    for (Pair<ClassNode, MethodNode> pair : syntheticMethods) {
-                        if (pair.getFirst().name.equals(cn.name))
-                            cn.methods.add(pair.getSecond());
-                    }
-
-                    if (!cn.methods.isEmpty()) {
-                        PhantomShield.INFO("Injecting class {}...", cn.name);
-
-                        injectClasses(Collections.singletonList(cn));
-
-                        joined.getAndIncrement();
-                        count.getAndIncrement();
-
-                    } else {
-                        count.getAndIncrement();
-                    }
-                });
-            }
-        }
-
-        executor.shutdown();
-        try {
-            boolean sb = executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            if (!sb)
-                PhantomShield.ERROR("Failed to await thread termination");
-        } catch (InterruptedException e) {
-            PhantomShield.ERROR("Executor was interrupted: {}", e.getMessage());
-        }
-
-        PhantomShield.INFO("Wrapped {} references.", count.get());
-
+        PhantomShield.INFO("Wrapped {} references.", counter.get());
     }
 
     @Override
@@ -319,54 +263,20 @@ public class InvokeWrapperObfuscation extends Transformer {
 
         return methodNode;
     }
-
-    private void visitArgs(int offset, Type[] types, MethodNode methodNode) {
+    private static void visitArgs(int offset, Type[] types, MethodNode methodNode) {
         int index = offset;
 
         for (Type type : types) {
-            int loadOpcode = getLoadOpcode(type);
+            int loadOpcode = ASMUtils.getVarOpcode(type, false);
             methodNode.visitVarInsn(loadOpcode, index);
 
             index += (type.getSize() == 2) ? 2 : 1;
         }
     }
 
-    private int getLoadOpcode(Type type) {
-        if (type == Type.INT_TYPE || type == Type.BOOLEAN_TYPE || type == Type.CHAR_TYPE || type == Type.SHORT_TYPE || type == Type.BYTE_TYPE) {
-            return ILOAD;
-        } else if (type == Type.LONG_TYPE) {
-            return LLOAD;
-        } else if (type == Type.FLOAT_TYPE) {
-            return FLOAD;
-        } else if (type == Type.DOUBLE_TYPE) {
-            return DLOAD;
-        } else {
-            return ALOAD;
-        }
+    private static void visitReturn(Type type, MethodNode methodNode) {
+        int returnOpcode = ASMUtils.getReturnOpcode(type);
+        methodNode.visitInsn(returnOpcode);
     }
 
-    private void visitReturn(Type type, MethodNode methodNode) {
-        if (type.getSort() == Type.METHOD) {
-            methodNode.visitInsn(RETURN);
-        } else if (type == Type.VOID_TYPE) {
-            methodNode.visitInsn(RETURN);
-        } else {
-            int returnOpcode = getReturnOpcode(type);
-            methodNode.visitInsn(returnOpcode);
-        }
-    }
-
-    private int getReturnOpcode(Type type) {
-        if (type == Type.INT_TYPE || type == Type.BOOLEAN_TYPE || type == Type.CHAR_TYPE || type == Type.SHORT_TYPE || type == Type.BYTE_TYPE) {
-            return IRETURN;
-        } else if (type == Type.LONG_TYPE) {
-            return LRETURN;
-        } else if (type == Type.FLOAT_TYPE) {
-            return FRETURN;
-        } else if (type == Type.DOUBLE_TYPE) {
-            return DRETURN;
-        } else {
-            return ARETURN;
-        }
-    }
 }

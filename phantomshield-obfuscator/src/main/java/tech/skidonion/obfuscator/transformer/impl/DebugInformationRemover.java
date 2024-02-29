@@ -2,7 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.Transformer;
-import tech.skidonion.obfuscator.utils.InstructionModifier;
+import tech.skidonion.obfuscator.asm.InstructionModifier;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class DebugInformationRemover extends Transformer {
 
     public DebugInformationRemover(String name) {
         super(name);
-        addSettings(remove_signatures, remove_source_file, remove_inner_class, remove_line_number, remove_local_variable,remove_kotlin_reference);
+        addSettings(remove_signatures, remove_source_file, remove_inner_class, remove_line_number, remove_local_variable, remove_kotlin_reference);
     }
 
     @Override
