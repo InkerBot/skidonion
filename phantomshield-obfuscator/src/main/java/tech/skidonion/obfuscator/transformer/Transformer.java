@@ -265,33 +265,4 @@ public abstract class Transformer implements Opcodes {
 
         method.maxLocals = maxLocals;
     }
-
-
-    protected FieldNode getField(ClassNode node, String name, String desc) {
-        for (FieldNode field : node.fields) {
-            if (field.name.equals(name) && field.desc.equals(desc)) {
-                return field;
-            }
-        }
-
-        return null;
-    }
-
-    protected MethodNode getMethod(ClassNode node, String name, String desc) {
-        for (MethodNode method : node.methods) {
-            if (method.name.equals(name) && method.desc.equals(desc)) {
-                return method;
-            }
-        }
-        return null;
-    }
-
-    protected MethodNode getMethod(ClassNode node, String name) {
-        for (MethodNode method : node.methods) {
-            if (method.name.equals(name)) {
-                return method;
-            }
-        }
-        return null;
-    }
 }

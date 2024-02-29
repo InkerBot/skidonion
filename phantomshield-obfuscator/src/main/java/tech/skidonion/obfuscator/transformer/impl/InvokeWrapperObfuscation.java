@@ -6,33 +6,27 @@ import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.Transformer;
-import tech.skidonion.obfuscator.utils.AccessFlags;
-import tech.skidonion.obfuscator.utils.AccessModifier;
-import tech.skidonion.obfuscator.utils.InstructionModifier;
-import tech.skidonion.obfuscator.utils.Pair;
+import tech.skidonion.obfuscator.utils.*;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class InvokeWrapperObfuscation extends Transformer {
-    private final Dictionary dictionary = PhantomShield.getInstance().getDictionary().copy();
-    private final BooleanValue inject_to_other_class = new BooleanValue("inject_to_other_class",true);
-    private final ModeValue package_mode = new ModeValue("package_mode","random_existed","root","unique","random_existed");
+    private final BooleanValue inject_to_other_class = new BooleanValue("inject_to_other_class", true);
+    private final ModeValue package_mode = new ModeValue("package_mode", "random_existed", "root", "unique", "random_existed");
     private final AtomicInteger counter = new AtomicInteger();
     private final List<ClassNode> classes = new ArrayList<>();
     private final List<Pair<ClassNode, MethodNode>> syntheticMethods = new ArrayList<>();
+
     public InvokeWrapperObfuscation(String name) {
         super(name);
-        addSettings(inject_to_other_class,package_mode);
+        addSettings(inject_to_other_class, package_mode);
     }
 
     @Override
@@ -46,24 +40,26 @@ public class InvokeWrapperObfuscation extends Transformer {
             node.access = AccessModifier.PUBLIC.transform(new AccessFlags(node.access)).getFlags();
 
             ClassWrapper target;
-            if(!inject_to_other_class.isEnable()){
+            if (!inject_to_other_class.isEnable()) {
                 ClassNode targetNode = new ClassNode();
 
                 String packageName = null;
 
-                if(package_mode.is("root")){
+                if (package_mode.is("root")) {
                     packageName = "";
-                }else if(package_mode.is("unique")) {
-                    packageName = dictionary.nextUniqueString() + "/";
+                } else if (package_mode.is("unique")) {
+                    packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).nextUniqueString() + "/";
                 } else if (package_mode.is("random_existed")) {
-                    packageName = ((ClassWrapper) getFilteredClasses().toArray()[new Random().nextInt(getFilteredClasses().toArray().length - 1)]).getPackage();
+                    List<ClassWrapper> wrappers = new ArrayList<>(getClasses().values());
+                    packageName = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getPackageName();
                 }
+                Dictionary classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
 
-                String name = packageName + dictionary.nextUniqueString();
+                String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
                 classes.add(targetNode);
-                target = new ClassWrapper(PhantomShield.getInstance(),targetNode,false);
-            }else {
+                target = new ClassWrapper(obfuscator, targetNode, false);
+            } else {
                 target = ((ClassWrapper) getFilteredClasses().toArray()[new Random().nextInt(getFilteredClasses().toArray().length - 1)]);
             }
 
@@ -82,16 +78,15 @@ public class InvokeWrapperObfuscation extends Transformer {
                 for (AbstractInsnNode instruction : method.instructions) {
                     if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
-                        ClassWrapper wrapper = PhantomShield.getInstance().classpath.get(methodInsnNode.owner);
+                        ClassWrapper wrapper = obfuscator.getClassWrapper(methodInsnNode.owner);
                         if (wrapper == null) continue;
-                        ClassNode owner = wrapper.getClassNode();
-                        MethodNode targetMethod = getMethod(owner, methodInsnNode.name, methodInsnNode.desc);
+                        MethodNode targetMethod = wrapper.getMethod(methodInsnNode.name, methodInsnNode.desc);
                         if (targetMethod == null) continue;
-                        if (Modifier.isPrivate(targetMethod.access) || Modifier.isProtected(targetMethod.access)) continue;
+                        if (Modifier.isPrivate(targetMethod.access) || Modifier.isProtected(targetMethod.access))
+                            continue;
 
                         if (methodInsnNode.getOpcode() == INVOKESTATIC) {
-
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                             MethodNode methodNode = createStaticMethod(methodInsnNode, methodName);
 
                             syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -99,7 +94,7 @@ public class InvokeWrapperObfuscation extends Transformer {
 
                             counter.incrementAndGet();
                         } else if (methodInsnNode.getOpcode() == INVOKEVIRTUAL) {
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                             MethodNode methodNode = createVirtualMethod(methodInsnNode, methodName);
 
                             syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -110,15 +105,15 @@ public class InvokeWrapperObfuscation extends Transformer {
                     } else if (instruction instanceof FieldInsnNode) {
                         FieldInsnNode fieldInsnNode = (FieldInsnNode) instruction;
 
-                        ClassWrapper wrapper = PhantomShield.getInstance().classpath.get(fieldInsnNode.owner);
+                        ClassWrapper wrapper = obfuscator.getClassWrapper(fieldInsnNode.owner);
                         if (wrapper == null) continue;
-                        ClassNode owner = wrapper.getClassNode();
-                        FieldNode targetField = getField(owner, fieldInsnNode.name, fieldInsnNode.desc);
+                        FieldNode targetField = wrapper.getField(fieldInsnNode.name, fieldInsnNode.desc);
                         if (targetField == null) continue;
-                        if (Modifier.isPrivate(targetField.access) || Modifier.isProtected(targetField.access)) continue;
+                        if (Modifier.isPrivate(targetField.access) || Modifier.isProtected(targetField.access))
+                            continue;
 
                         if (fieldInsnNode.getOpcode() == GETSTATIC) {
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                             MethodNode methodNode = createGetStaticMethod(fieldInsnNode, methodName);
 
                             syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -132,7 +127,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                                     if (fieldInsnNode.name.equals(fieldNode.name)) {
                                         boolean isFinal = (fieldNode.access & ACC_FINAL) != 0;
                                         if (!isFinal) {
-                                            String methodName =  inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                             MethodNode methodNode = createPutStaticMethod(fieldInsnNode, methodName);
                                             syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
                                             modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
@@ -142,7 +137,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                             } else {
 
 
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                 MethodNode methodNode = createPutStaticMethod(fieldInsnNode, methodName);
 
                                 syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -152,7 +147,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                             counter.incrementAndGet();
                         } else if (fieldInsnNode.getOpcode() == GETFIELD) {
                             if (!method.name.equals("<init>")) {
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                 MethodNode methodNode = createGetFieldMethod(fieldInsnNode, methodName);
 
                                 syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -162,7 +157,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                             }
                         } else if (fieldInsnNode.getOpcode() == PUTFIELD) {
                             if (!method.name.equals("<init>")) {
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.generateRandomMethodNameNoOverride();
+                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
                                 MethodNode methodNode = createPutFieldMethod(fieldInsnNode, methodName);
 
                                 syntheticMethods.add(new Pair<>(target.getClassNode(), methodNode));
@@ -190,11 +185,11 @@ public class InvokeWrapperObfuscation extends Transformer {
         int threadCount = 8;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        if(inject_to_other_class.isEnable()){
+        if (inject_to_other_class.isEnable()) {
             for (Pair<ClassNode, MethodNode> pair : syntheticMethods) {
                 pair.getFirst().methods.add(pair.getSecond());
             }
-        }else {
+        } else {
 
             for (ClassNode cn : classes) {
                 executor.submit(() -> {
@@ -227,7 +222,7 @@ public class InvokeWrapperObfuscation extends Transformer {
             PhantomShield.ERROR("Executor was interrupted: {}", e.getMessage());
         }
 
-        PhantomShield.INFO("Wrapped {} references.",count.get());
+        PhantomShield.INFO("Wrapped {} references.", count.get());
 
     }
 

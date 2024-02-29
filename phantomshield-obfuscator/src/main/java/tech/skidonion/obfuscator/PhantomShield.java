@@ -35,7 +35,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class PhantomShield {
-    private static PhantomShield instance;
     public static final String VERSION = "v0.0.2";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
@@ -56,14 +55,10 @@ public class PhantomShield {
             throw new RuntimeException("No input file specified.");
         if (!config.has("output"))
             throw new RuntimeException("No output file specified.");
-
-        instance = this;
     }
 
     public PhantomShield(Config config) {
         this.config = config;
-
-        instance = this;
     }
 
     @SuppressWarnings("unchecked")
@@ -455,7 +450,4 @@ public class PhantomShield {
         LOGGER.error(s, throwable);
     }
 
-    public static PhantomShield getInstance() {
-        return instance;
-    }
 }
