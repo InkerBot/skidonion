@@ -26,7 +26,6 @@ public class ConfigBuilder {
 
     // string encryption
     private boolean stringEncryptionEnable = false;
-    private boolean invokeWrapperEnable;
 
     // native obfuscation
     private boolean nativeObfuscationEnable = false;
@@ -53,10 +52,15 @@ public class ConfigBuilder {
     private boolean removeInnerClassSetting = true;
     private boolean removeLineNumberSetting = true;
     private boolean removeLocalVariableSetting = true;
+    private boolean removeKotlinReferenceSetting = true;
 
     // control flow obfuscation
     private boolean controlFlowObfuscationEnable = false;
 
+    // invoke wrapper
+    private boolean invokeWrapperEnable = false;
+    private boolean injectToOtherClassSetting = true;
+    private String packageModeSetting = "";
 
     public final Config build() {
         Config config = new Config();
@@ -177,6 +181,7 @@ public class ConfigBuilder {
             debug_information_remover.put("remove_inner_class", removeInnerClassSetting);
             debug_information_remover.put("remove_line_number", removeLineNumberSetting);
             debug_information_remover.put("remove_local_variable", removeLocalVariableSetting);
+            debug_information_remover.put("remove_kotlin_reference", removeKotlinReferenceSetting);
 
             subFiltersSettings.computeIfPresent("debug_information_remover", (k, v) -> {
                 debug_information_remover.put("filters", v);
@@ -189,7 +194,6 @@ public class ConfigBuilder {
         {
             if (!controlFlowObfuscationEnable) break control_flow_obfuscation;
             Map<String, Object> control_flow_obfuscation = new LinkedHashMap<>();
-
 
             subFiltersSettings.computeIfPresent("control_flow_obfuscation", (k, v) -> {
                 control_flow_obfuscation.put("filters", v);
@@ -204,6 +208,8 @@ public class ConfigBuilder {
             if (!invokeWrapperEnable) break invoke_wrapper_obfuscation;
             Map<String, Object> invoke_wrapper_obfuscation = new LinkedHashMap<>();
 
+            invoke_wrapper_obfuscation.put("package_mode", packageModeSetting);
+            invoke_wrapper_obfuscation.put("inject_to_other_class", injectToOtherClassSetting);
 
             subFiltersSettings.computeIfPresent("invoke_wrapper_obfuscation", (k, v) -> {
                 invoke_wrapper_obfuscation.put("filters", v);
@@ -211,7 +217,6 @@ public class ConfigBuilder {
             });
             config.add("invoke_wrapper_obfuscation", invoke_wrapper_obfuscation);
         }
-
 
         return config;
     }
@@ -423,6 +428,16 @@ public class ConfigBuilder {
 
     public ConfigBuilder setInvokeWrapperEnable(boolean invokeWrapperEnable) {
         this.invokeWrapperEnable = invokeWrapperEnable;
+        return this;
+    }
+
+    public ConfigBuilder setInjectToOtherClassSetting(boolean injectToOtherClassSetting) {
+        this.injectToOtherClassSetting = injectToOtherClassSetting;
+        return this;
+    }
+
+    public ConfigBuilder setPackageModeSetting(String packageModeSetting) {
+        this.packageModeSetting = packageModeSetting;
         return this;
     }
 }
