@@ -2,8 +2,8 @@ package tech.skidonion.obfuscator.transformer;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
@@ -243,5 +243,55 @@ public abstract class Transformer implements Opcodes {
     protected final boolean matchAnnotation(FieldWrapper fieldWrapper) {
         Map<String, String> map = getAnnotationValues(fieldWrapper);
         return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+    }
+
+
+    protected void computeMaxLocals(MethodNode method) {
+        int maxLocals = Type.getArgumentsAndReturnSizes(method.desc) >> 2;
+
+        for (AbstractInsnNode node : method.instructions) {
+            if (node instanceof VarInsnNode) {
+                VarInsnNode varNode = (VarInsnNode) node;
+                int local = varNode.var;
+                int size = (varNode.getOpcode() == Opcodes.LLOAD || varNode.getOpcode() == Opcodes.DLOAD ||
+                        varNode.getOpcode() == Opcodes.LSTORE || varNode.getOpcode() == Opcodes.DSTORE) ? 2 : 1;
+                maxLocals = Math.max(maxLocals, local + size);
+            } else if (node instanceof IincInsnNode) {
+                IincInsnNode iincNode = (IincInsnNode) node;
+                int local = iincNode.var;
+                maxLocals = Math.max(maxLocals, local + 1);
+            }
+        }
+
+        method.maxLocals = maxLocals;
+    }
+
+
+    protected FieldNode getField(ClassNode node, String name, String desc) {
+        for (FieldNode field : node.fields) {
+            if (field.name.equals(name) && field.desc.equals(desc)) {
+                return field;
+            }
+        }
+
+        return null;
+    }
+
+    protected MethodNode getMethod(ClassNode node, String name, String desc) {
+        for (MethodNode method : node.methods) {
+            if (method.name.equals(name) && method.desc.equals(desc)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    protected MethodNode getMethod(ClassNode node, String name) {
+        for (MethodNode method : node.methods) {
+            if (method.name.equals(name)) {
+                return method;
+            }
+        }
+        return null;
     }
 }

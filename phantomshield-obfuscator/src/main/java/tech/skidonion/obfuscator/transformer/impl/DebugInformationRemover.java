@@ -1,10 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.LineNumberNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.Transformer;
+import tech.skidonion.obfuscator.utils.InstructionModifier;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 
 import java.util.ArrayList;
@@ -19,10 +17,11 @@ public class DebugInformationRemover extends Transformer {
     private final BooleanValue remove_inner_class = new BooleanValue("remove_inner_class", true);
     private final BooleanValue remove_line_number = new BooleanValue("remove_line_number", true);
     private final BooleanValue remove_local_variable = new BooleanValue("remove_local_variable", true);
+    private final BooleanValue remove_kotlin_reference = new BooleanValue("remove_kotlin_reference", true);
 
     public DebugInformationRemover(String name) {
         super(name);
-        addSettings(remove_signatures, remove_source_file, remove_inner_class, remove_line_number, remove_local_variable);
+        addSettings(remove_signatures, remove_source_file, remove_inner_class, remove_line_number, remove_local_variable,remove_kotlin_reference);
     }
 
     @Override
@@ -34,7 +33,61 @@ public class DebugInformationRemover extends Transformer {
         AtomicInteger source_file = new AtomicInteger();
         AtomicInteger line_number = new AtomicInteger();
         AtomicInteger local_variable = new AtomicInteger();
+        AtomicInteger kotlin_reference = new AtomicInteger();
         getFilteredClasses().forEach(classWrapper -> {
+            remove_kotlin_reference:
+            {
+                if (!remove_kotlin_reference.isEnable()) break remove_kotlin_reference;
+                ClassNode classNode = classWrapper.getClassNode();
+                if (classNode.visibleAnnotations != null) {
+                    ListIterator<AnnotationNode> it = classNode.visibleAnnotations.listIterator();
+                    while (it.hasNext()) {
+                        AnnotationNode annotation = it.next();
+                        if (annotation.desc.equals("Lkotlin/Metadata;") || annotation.desc.equals("Lkotlin/coroutines/jvm/internal/DebugMetadata;")) {
+                            it.remove();
+                            kotlin_reference.incrementAndGet();
+                        }
+                    }
+                }
+
+                for (MethodNode method : classNode.methods) {
+                    InstructionModifier modifier = new InstructionModifier();
+                    for (AbstractInsnNode insn : method.instructions) {
+                        if (insn instanceof MethodInsnNode && ((MethodInsnNode) insn).owner.equals("kotlin/jvm/internal/Intrinsics")) {
+                            MethodInsnNode methodInsn = (MethodInsnNode) insn;
+                            if (methodInsn.name.equals("checkParameterIsNotNull")) {
+                                if (methodInsn.desc.equals("(Ljava/lang/Object;Ljava/lang/String;)V")) {
+                                    AbstractInsnNode prev = insn.getPrevious();
+                                    if (prev instanceof LdcInsnNode) {
+                                        LdcInsnNode ldcInsn = (LdcInsnNode) prev;
+                                        modifier.remove(ldcInsn);
+                                        modifier.replace(methodInsn, new InsnNode(POP));
+                                        kotlin_reference.incrementAndGet();
+                                    } else {
+                                        InsnList list = new InsnList();
+                                        list.add(new InsnNode(POP));
+                                        list.add(new InsnNode(POP));
+                                        modifier.replace(methodInsn, list);
+                                        kotlin_reference.incrementAndGet();
+                                    }
+                                } else {
+                                    modifier.replace(methodInsn, new InsnNode(POP));
+                                }
+                            } else if (methodInsn.name.equals("checkExpressionValueIsNotNull")) {
+                                AbstractInsnNode prev = insn.getPrevious();
+                                if (prev instanceof LdcInsnNode) {
+                                    LdcInsnNode ldcInsn = (LdcInsnNode) prev;
+                                    modifier.remove(ldcInsn);
+                                    modifier.replace(methodInsn, new InsnNode(POP));
+                                    kotlin_reference.incrementAndGet();
+                                }
+                            }
+                        }
+                    }
+                    modifier.apply(method);
+                }
+            }
+
             remove_signatures:
             {
                 if (!remove_signatures.isEnable()) break remove_signatures;
@@ -129,6 +182,7 @@ public class DebugInformationRemover extends Transformer {
         if (outer_method.get() != 0) INFO("Removed {} outer methods.", outer_method.get());
         if (local_variable.get() != 0) INFO("Removed {} local variables.", local_variable.get());
         if (line_number.get() != 0) INFO("Removed {} line numbers.", line_number.get());
+        if (kotlin_reference.get() != 0) INFO("Removed {} kotlin reference.", kotlin_reference.get());
     }
 
     @Override

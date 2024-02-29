@@ -117,6 +117,10 @@ public class ClassWrapper {
         methods.add(new MethodWrapper(methodNode, this));
     }
 
+    public String getPackage(){
+        return classNode.name.replace(classNode.name.split("/")[classNode.name.split("/").length - 1],"");
+    }
+
     public void addField(FieldNode fieldNode) {
         fieldNames.add(fieldNode.name);
         classNode.fields.add(fieldNode);
@@ -352,6 +356,10 @@ public class ClassWrapper {
         if (methodDictionary == null)
             methodDictionary = obfuscator.getDictionary().copy();
         return methodDictionary;
+    }
+
+    public String generateRandomMethodNameNoOverride() {
+        return this.getMethodDictionary().nextUniqueString();
     }
 
     public String generateRandomMethodName() {
