@@ -30,7 +30,7 @@ public class TestRun {
                 .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setPrintInstructionsSetting(false)
-                .setInvokeWrapperEnable(true) // InvokeWrapper
+                .setInvokeWrapperEnable(false) // InvokeWrapper
                 .addTarget("x86_64-windows")
 //                .addSubFilters("native_obfuscation",
 //                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest",

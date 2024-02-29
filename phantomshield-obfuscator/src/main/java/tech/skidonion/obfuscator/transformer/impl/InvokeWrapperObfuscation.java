@@ -51,11 +51,11 @@ public class InvokeWrapperObfuscation extends Transformer {
 
                 String packageName = null;
 
-                if(package_mode.isMode("root")){
+                if(package_mode.is("root")){
                     packageName = "";
-                }else if(package_mode.isMode("unique")) {
+                }else if(package_mode.is("unique")) {
                     packageName = dictionary.nextUniqueString() + "/";
-                } else if (package_mode.isMode("random_existed")) {
+                } else if (package_mode.is("random_existed")) {
                     packageName = ((ClassWrapper) getFilteredClasses().toArray()[new Random().nextInt(getFilteredClasses().toArray().length - 1)]).getPackage();
                 }
 
