@@ -10,7 +10,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar"))
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar")
-                .setControlFlowObfuscationEnable(true) // control flow
+                .setControlFlowObfuscationEnable(false) // control flow
                 .addSubFilters("control_flow_obfuscation",
                         "+dev/sim0n/app/test/impl/flow/**",
                         "+dev/sim0n/app/test/impl/flow/** * *(*)")
@@ -27,6 +27,7 @@ public class TestRun {
                 .setStringEncryptionEnable(false) // String
                 .setNativeObfuscationEnable(false) // Native
                 .setPrintInstructionsSetting(false)
+                .setInvokeWrapperEnable(true)
                 .addTarget("x86_64-windows")
 //                .addSubFilters("native_obfuscation",
 //                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest",

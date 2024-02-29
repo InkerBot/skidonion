@@ -26,6 +26,11 @@ public class ModeValue extends Value<String> {
         return modes;
     }
 
+    public boolean isMode(String mode){
+        return getValue().equals(mode);
+    }
+
+            // ?
     public boolean is(String mode) {
         for (String m : modes) {
             if (m.equals(mode)) {

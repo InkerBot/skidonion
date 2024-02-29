@@ -26,6 +26,7 @@ public class ConfigBuilder {
 
     // string encryption
     private boolean stringEncryptionEnable = false;
+    private boolean invokeWrapperEnable;
 
     // native obfuscation
     private boolean nativeObfuscationEnable = false;
@@ -196,6 +197,21 @@ public class ConfigBuilder {
             });
             config.add("control_flow_obfuscation", control_flow_obfuscation);
         }
+
+
+        invoke_wrapper_obfuscation:
+        {
+            if (!invokeWrapperEnable) break invoke_wrapper_obfuscation;
+            Map<String, Object> invoke_wrapper_obfuscation = new LinkedHashMap<>();
+
+
+            subFiltersSettings.computeIfPresent("invoke_wrapper_obfuscation", (k, v) -> {
+                invoke_wrapper_obfuscation.put("filters", v);
+                return v;
+            });
+            config.add("invoke_wrapper_obfuscation", invoke_wrapper_obfuscation);
+        }
+
 
         return config;
     }
@@ -402,6 +418,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setControlFlowObfuscationEnable(boolean controlFlowObfuscationEnable) {
         this.controlFlowObfuscationEnable = controlFlowObfuscationEnable;
+        return this;
+    }
+
+    public ConfigBuilder setInvokeWrapperEnable(boolean invokeWrapperEnable) {
+        this.invokeWrapperEnable = invokeWrapperEnable;
         return this;
     }
 }
