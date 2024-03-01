@@ -43,7 +43,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             shuffled.add(new LabelNode(new Label()));
 
             // initialization all variables
-            // TODO
             int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
             for (Type type : Type.getArgumentTypes(method.desc)) {
                 locals += type.getSize();
@@ -51,7 +50,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             for (int index = locals; index < resolved.getLocals().size(); index++) {
                 Type type = resolved.getLocals().get(index);
                 if (type != null) {
-                    shuffled.add(ASMUtils.getDefaultValue(type));
+                    shuffled.add(generateDefaultValue(type));
                     shuffled.add(new VarInsnNode(ASMUtils.getVarOpcode(type, true), index));
                 }
             }
@@ -60,7 +59,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             shuffled.add(new JumpInsnNode(GOTO, resolved.getResolvedBlocks().getFirst().getLabel()));
             shuffle(resolved);
             shuffled.add(resolved.toInsnList());
-
 
             // add a default return value or will loop while compute max stacks/locals
             Type returnType = Type.getReturnType(method.desc);
@@ -148,6 +146,9 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         AbstractInsnNode insn = code.getInstructions().getLast();
         // condition: next code block will available to ensure correct order
         // make sure the last instruction is force jump or return
+        // TODO: ASMUtils.isJumpOrReturnOpcode is not necessary.
+        //  we can use the return or jump opcode to make fake jump
+        //  it can be more complex to decompile/analyzer
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
             // generate fake jump
             CodeBlock magicBlock = resolved.getRandomCodeBlock();
@@ -214,42 +215,29 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
                 if (currentStackSize > magicStackSize) {
                     int l = currentStackSize - magicStackSize;
+                    int stacks = 0;
                     for (int i = 0; i < l; i++) {
-                        BasicValue value = currentFrame.getStack(currentStackSize - 1 - i);
-                        if (value.getSize() == 1) {
-                            balanced.add(new InsnNode(POP));
+                        stacks += currentFrame.getStack(currentStackSize - 1 - i).getSize();
+                    }
+                    while (stacks > 0) {
+                        if (stacks > 1) {
+                            if (RandomUtils.getRandomBoolean()) {
+                                balanced.add(new InsnNode(POP));
+                                stacks--;
+                            } else {
+                                balanced.add(new InsnNode(POP2));
+                                stacks -= 2;
+                            }
                         } else {
-                            balanced.add(new InsnNode(POP2));
+                            balanced.add(new InsnNode(POP));
+                            stacks--;
                         }
                     }
-                    INFO("currentStackSize > magicStackSize");
                 } else if (currentStackSize < magicStackSize) {
                     int l = magicStackSize - currentStackSize;
                     for (int i = 0; i < l; i++) {
                         BasicValue value = magicFrame.getStack(currentStackSize + i);
-                        switch (value.getType().getSort()) {
-                            case Type.VOID:
-                                throw new RuntimeException("VOID type value in stack map???");
-                            case Type.BOOLEAN:
-                            case Type.CHAR:
-                            case Type.BYTE:
-                            case Type.SHORT:
-                            case Type.INT:
-                                balanced.add(ASMUtils.getNumberInsn(0));
-                                break;
-                            case Type.FLOAT:
-                                balanced.add(ASMUtils.getNumberInsn(0f));
-                                break;
-                            case Type.LONG:
-                                balanced.add(ASMUtils.getNumberInsn(0L));
-                                break;
-                            case Type.DOUBLE:
-                                balanced.add(ASMUtils.getNumberInsn(0d));
-                                break;
-                            case Type.OBJECT:
-                            case Type.ARRAY:
-                                balanced.add(new InsnNode(ACONST_NULL));
-                        }
+                        balanced.add(generateDefaultValue(value.getType()));
                     }
                 }
 
@@ -297,4 +285,15 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         }
     }
 
+    private static InsnList generateDefaultValue(Type type) {
+        int sort = type.getSort();
+        InsnList insns = new InsnList();
+        if (sort == Type.ARRAY) {
+            // TODO: initialize arrays/multiple arrays correctly
+
+        } else {
+            insns.add(ASMUtils.getDefaultValue(type));
+        }
+        return insns;
+    }
 }

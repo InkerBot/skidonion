@@ -29,7 +29,6 @@ public class SimpleInterpreter extends BasicInterpreter {
         if (type == null) {
             return BasicValue.UNINITIALIZED_VALUE;
         }
-
         switch (type.getSort()) {
             case Type.VOID:
                 return null;
@@ -42,20 +41,7 @@ public class SimpleInterpreter extends BasicInterpreter {
             case Type.SHORT:
                 return SHORT_VALUE;
         }
-
         boolean isArray = type.getSort() == Type.ARRAY;
-        if (isArray) {
-            switch (type.getElementType().getSort()) {
-                case Type.BOOLEAN:
-                case Type.CHAR:
-                case Type.BYTE:
-                case Type.SHORT:
-                    return new BasicValue(type);
-                default:
-                    break;
-            }
-        }
-
         BasicValue value = super.newValue(type);
         if (BasicValue.REFERENCE_VALUE.equals(value)) {
             if (isArray) {

@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CodeBlockResolver implements Opcodes {
     public static ResolvedBlocks resolve(MethodNode method) {
-        final List<Type> localTypes = new ArrayList<>(Arrays.asList(new Type[method.maxLocals]));
+        final ArrayList<Type> localTypes = new ArrayList<>(Arrays.asList(new Type[method.maxLocals]));
         // analyze all code blocks first
         final Map<LabelNode, CodeBlock> blocksMap = resolveSimpleCodeBlocks(method, localTypes);
 
@@ -96,11 +96,9 @@ public class CodeBlockResolver implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, List<Type> localTypes) {
+    private static Map<LabelNode, CodeBlock> resolveSimpleCodeBlocks(MethodNode node, ArrayList<Type> localTypes) {
         AtomicInteger maxLocals = new AtomicInteger(node.maxLocals);
         Frame<BasicValue>[] frames;
-
-        // TODO
         try {
             frames = new Analyzer<>(new SimpleInterpreter()).analyze(node.name, node);
         } catch (AnalyzerException e) {
@@ -114,13 +112,13 @@ public class CodeBlockResolver implements Opcodes {
         CodeBlock previousBlock = null;
         CodeBlock block = null;
         InsnList insns = new InsnList();
-        int index = -1;
+        int blockIndex = -1;
         for (AbstractInsnNode insn : node.instructions) {
             if (insn instanceof LabelNode) {
                 if (block != null) {
                     block.setPrevious(previousBlock);
                     block.setInstructions(insns);
-                    block.setIndex(index);
+                    block.setIndex(blockIndex);
 
                     int length = insnIndex - lastGroupInsnIndex;
                     Frame<?>[] subFrames = new Frame[length];
@@ -138,32 +136,34 @@ public class CodeBlockResolver implements Opcodes {
 
                 if (previousBlock != null) previousBlock.setNext(block);
 
-
-                index++;
+                blockIndex++;
             } else if (insn instanceof VarInsnNode) {
-
-                // TODO
+                Frame<BasicValue> frame = frames[insnIndex];
+                BasicValue pop = frame.getStack(frame.getStackSize() - 1);
                 VarInsnNode varInsnNode = (VarInsnNode) insn;
                 switch (insn.getOpcode()) {
-                    case ISTORE:
                     case ILOAD:
-                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.INT, Type.INT_TYPE);
+                    case ALOAD:
+                        if (variablesMap.containsKey(varInsnNode.var)) {
+                            varInsnNode.var = variablesMap.get(varInsnNode.var);
+                        }
+                        break;
+                    case ISTORE:
+                    case ASTORE:
+                        if (pop != BasicValue.UNINITIALIZED_VALUE)
+                            processLocals(varInsnNode, maxLocals, localTypes, variablesMap, pop.getType());
                         break;
                     case FSTORE:
                     case FLOAD:
-                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.FLOAT, Type.FLOAT_TYPE);
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.FLOAT_TYPE);
                         break;
                     case LLOAD:
                     case LSTORE:
-                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.LONG, Type.LONG_TYPE);
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.LONG_TYPE);
                         break;
                     case DLOAD:
                     case DSTORE:
-                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.DOUBLE, Type.DOUBLE_TYPE);
-                        break;
-                    case ALOAD:
-                    case ASTORE:
-                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.OBJECT, Type.getType("Ljava/lang/Object;"));
+                        processLocals(varInsnNode, maxLocals, localTypes, variablesMap, Type.DOUBLE_TYPE);
                         break;
                     case RET:
                         throw new RuntimeException("can't resolve RET opcode");
@@ -174,7 +174,7 @@ public class CodeBlockResolver implements Opcodes {
                     insns = new InsnList();
                     block = new CodeBlock(start);
                     insns.add(start);
-                    index++;
+                    blockIndex++;
                 }
             }
             insns.add(insn);
@@ -183,7 +183,7 @@ public class CodeBlockResolver implements Opcodes {
         if (block != null) {
             block.setPrevious(previousBlock);
             block.setInstructions(insns);
-            block.setIndex(index);
+            block.setIndex(blockIndex);
 
             int length = insnIndex - lastGroupInsnIndex;
             Frame<?>[] subFrames = new Frame[length];
@@ -200,14 +200,16 @@ public class CodeBlockResolver implements Opcodes {
     /**
      * process local variables which used by a same index
      */
-    private static void processLocals(VarInsnNode varInsnNode, AtomicInteger maxLocals, List<Type> localTypes, Map<Integer, Integer> variablesMap, int sort, Type localType) {
-        // TODO
+    private static void processLocals(VarInsnNode varInsnNode, AtomicInteger maxLocals, ArrayList<Type> localTypes, Map<Integer, Integer> variablesMap, Type localType) {
+        int sort = localType.getSort();
         Type type = localTypes.get(varInsnNode.var);
         if (type == null) {
             localTypes.set(varInsnNode.var, localType);
-        } else if (type.getSort() != sort && (!variablesMap.containsKey(varInsnNode.var) || localTypes.get(variablesMap.get(varInsnNode.var)) != localType)) {
+        } else if (type.getSort() != sort && (!variablesMap.containsKey(varInsnNode.var) || !localTypes.get(variablesMap.get(varInsnNode.var)).toString().equals(localType.toString()))) {
             int size = (sort == Type.LONG || sort == Type.DOUBLE) ? 2 : 1;
             int index = maxLocals.getAndAdd(size);
+            for (int i = 1; i < size; i++)
+                localTypes.add(null);
             localTypes.add(localType);
             variablesMap.put(varInsnNode.var, index);
         }
