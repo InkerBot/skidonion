@@ -205,12 +205,12 @@ public class CodeBlockResolver implements Opcodes {
         Type type = localTypes.get(varInsnNode.var);
         if (type == null) {
             localTypes.set(varInsnNode.var, localType);
-        } else if (type.getSort() != sort && (!variablesMap.containsKey(varInsnNode.var) || !localTypes.get(variablesMap.get(varInsnNode.var)).toString().equals(localType.toString()))) {
+        } else if (!type.toString().equals(localType.toString()) && (!variablesMap.containsKey(varInsnNode.var) || !localTypes.get(variablesMap.get(varInsnNode.var)).toString().equals(localType.toString()))) {
             int size = (sort == Type.LONG || sort == Type.DOUBLE) ? 2 : 1;
             int index = maxLocals.getAndAdd(size);
+            localTypes.add(localType);
             for (int i = 1; i < size; i++)
                 localTypes.add(null);
-            localTypes.add(localType);
             variablesMap.put(varInsnNode.var, index);
         }
         if (variablesMap.containsKey(varInsnNode.var)) {
