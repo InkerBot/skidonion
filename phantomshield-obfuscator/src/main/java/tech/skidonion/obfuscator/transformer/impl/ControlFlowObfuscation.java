@@ -289,8 +289,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         int sort = type.getSort();
         InsnList insns = new InsnList();
         if (sort == Type.ARRAY) {
-            // TODO: initialize arrays/multiple arrays correctly
-
+            insns.add(new InsnNode(ICONST_0));
+            insns.add(new TypeInsnNode(NEWARRAY, type.getInternalName()));
         } else {
             insns.add(ASMUtils.getDefaultValue(type));
         }
