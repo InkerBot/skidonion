@@ -285,12 +285,31 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         }
     }
 
+    private static final Map<String, Integer> ARRAY_TYPES = new HashMap<String, Integer>() {
+        {
+            put("[I", Opcodes.T_INT);
+            put("[Z", Opcodes.T_BOOLEAN);
+            put("[C", Opcodes.T_CHAR);
+            put("[F", Opcodes.T_FLOAT);
+            put("[B", Opcodes.T_BYTE);
+            put("[D", Opcodes.T_DOUBLE);
+            put("[S", Opcodes.T_SHORT);
+            put("[J", Opcodes.T_LONG);
+        }
+    };
+
     private static InsnList generateDefaultValue(Type type) {
         int sort = type.getSort();
         InsnList insns = new InsnList();
         if (sort == Type.ARRAY) {
             insns.add(new InsnNode(ICONST_0));
-            insns.add(new TypeInsnNode(NEWARRAY, type.getInternalName()));
+            String typeInternalName = type.getInternalName();
+            Integer arrayType = ARRAY_TYPES.get(typeInternalName);
+            if (arrayType != null) {
+                insns.add(new IntInsnNode(Opcodes.NEWARRAY, arrayType));
+            } else {
+                insns.add(new TypeInsnNode(Opcodes.NEWARRAY, typeInternalName));
+            }
         } else {
             insns.add(ASMUtils.getDefaultValue(type));
         }
