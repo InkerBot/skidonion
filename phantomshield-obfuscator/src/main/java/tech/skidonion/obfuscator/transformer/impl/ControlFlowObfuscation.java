@@ -148,7 +148,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         // make sure the last instruction is force jump or return
         // TODO: ASMUtils.isJumpOrReturnOpcode is not necessary.
         //  we can use the return or jump opcode to make fake jump
-        //  it can be more complex to decompile/analyzer
+        //  it can be more complex to decompile/analyze
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
             // generate fake jump
             CodeBlock magicBlock = resolved.getRandomCodeBlock();
