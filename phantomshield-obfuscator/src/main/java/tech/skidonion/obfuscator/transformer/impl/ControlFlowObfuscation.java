@@ -178,7 +178,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 boolean clean = false;
 
                 for (int i = 0; i < covered; i++) {
-                    Type currentValueSort = magicFrame.getStack(i).getType();
+                    Type currentValueSort = currentFrame.getStack(i).getType();
                     Type magicValueSort = magicFrame.getStack(i).getType();
                     if (!currentValueSort.toString().equals(magicValueSort.toString())) {
                         clean = true;
