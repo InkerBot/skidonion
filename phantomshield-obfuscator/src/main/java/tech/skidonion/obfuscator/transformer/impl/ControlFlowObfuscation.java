@@ -156,6 +156,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
             Frame<BasicValue> currentFrame = next.getFrame(0);
             Frame<BasicValue> magicFrame = magicBlock.getFrame(0);
+
             // if the random code block is unreachable code
             // we should make its frame keep empty instead of "null"
             if (magicFrame == null) {
@@ -177,36 +178,19 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 boolean clean = false;
 
                 for (int i = 0; i < covered; i++) {
-                    int currentValueSort = magicFrame.getStack(i).getType().getSort();
-                    int magicValueSort = magicFrame.getStack(i).getType().getSort();
-                    if (currentValueSort != magicValueSort) {
-                        clean = true;
-                        break;
-                    } else if (currentValueSort == Type.OBJECT) {
-                        clean = true;
-                        break;
-                    } else if (currentValueSort == Type.ARRAY) {
+                    Type currentValueSort = magicFrame.getStack(i).getType();
+                    Type magicValueSort = magicFrame.getStack(i).getType();
+                    if (!currentValueSort.toString().equals(magicValueSort.toString())) {
                         clean = true;
                         break;
                     }
                 }
                 if (clean) {
-                    int stacks = 0;
                     for (int i = 0; i < currentStackSize; i++) {
-                        stacks += currentFrame.getStack(i).getSize();
-                    }
-                    while (stacks > 0) {
-                        if (stacks > 1) {
-                            if (RandomUtils.getRandomBoolean()) {
-                                balanced.add(new InsnNode(POP));
-                                stacks--;
-                            } else {
-                                balanced.add(new InsnNode(POP2));
-                                stacks -= 2;
-                            }
-                        } else {
+                        if (currentFrame.getStack(currentStackSize - 1 - i).getSize() == 1) {
                             balanced.add(new InsnNode(POP));
-                            stacks--;
+                        } else {
+                            balanced.add(new InsnNode(POP2));
                         }
                     }
                     currentFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
@@ -215,22 +199,11 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
                 if (currentStackSize > magicStackSize) {
                     int l = currentStackSize - magicStackSize;
-                    int stacks = 0;
                     for (int i = 0; i < l; i++) {
-                        stacks += currentFrame.getStack(currentStackSize - 1 - i).getSize();
-                    }
-                    while (stacks > 0) {
-                        if (stacks > 1) {
-                            if (RandomUtils.getRandomBoolean()) {
-                                balanced.add(new InsnNode(POP));
-                                stacks--;
-                            } else {
-                                balanced.add(new InsnNode(POP2));
-                                stacks -= 2;
-                            }
-                        } else {
+                        if (currentFrame.getStack(currentStackSize - 1 - i).getSize() == 1) {
                             balanced.add(new InsnNode(POP));
-                            stacks--;
+                        } else {
+                            balanced.add(new InsnNode(POP2));
                         }
                     }
                 } else if (currentStackSize < magicStackSize) {
@@ -302,13 +275,13 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         int sort = type.getSort();
         InsnList insns = new InsnList();
         if (sort == Type.ARRAY) {
-            insns.add(new InsnNode(ICONST_0));
             String typeInternalName = type.getInternalName();
             Integer arrayType = ARRAY_TYPES.get(typeInternalName);
             if (arrayType != null) {
+                insns.add(new InsnNode(ICONST_0));
                 insns.add(new IntInsnNode(Opcodes.NEWARRAY, arrayType));
             } else {
-                insns.add(new TypeInsnNode(Opcodes.NEWARRAY, typeInternalName));
+                insns.add(new InsnNode(ACONST_NULL));
             }
         } else {
             insns.add(ASMUtils.getDefaultValue(type));
