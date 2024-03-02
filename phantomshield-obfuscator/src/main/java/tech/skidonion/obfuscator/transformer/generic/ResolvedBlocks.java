@@ -14,13 +14,18 @@ import java.util.List;
 public class ResolvedBlocks {
     private final ArrayList<TryCatchBlock> tryCatchBlocks;
     private LinkedList<CodeBlock> resolvedBlocks;
-    private ArrayList<CodeBlock> clone;
     private final List<Type> locals;
+    private ArrayList<CodeBlock> clone;
+    private int cloneIndex;
 
     public ResolvedBlocks(Collection<TryCatchBlock> tryCatchBlocks, Collection<CodeBlock> resolvedBlocks, List<Type> locals) {
         this.tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
+        for (TryCatchBlock tryCatchBlock : this.tryCatchBlocks) {
+            tryCatchBlock.refreshClonedList();
+        }
         this.resolvedBlocks = new LinkedList<>(resolvedBlocks);
         this.clone = new ArrayList<>(resolvedBlocks);
+        this.cloneIndex = 0;
         this.locals = locals;
     }
 
@@ -35,6 +40,7 @@ public class ResolvedBlocks {
     public void setResolvedBlocks(LinkedList<CodeBlock> resolvedBlocks) {
         this.resolvedBlocks = resolvedBlocks;
         this.clone = new ArrayList<>(resolvedBlocks);
+        this.cloneIndex = 0;
     }
 
     /**
@@ -42,10 +48,15 @@ public class ResolvedBlocks {
      */
     public void refreshClonedList() {
         this.clone = new ArrayList<>(this.resolvedBlocks);
+        this.cloneIndex = 0;
     }
 
     public ArrayList<CodeBlock> getClonedList() {
         return clone;
+    }
+
+    public CodeBlock nextCloneBlock() {
+        return clone.get(cloneIndex++);
     }
 
     public LinkedList<CodeBlock> getResolvedBlocks() {

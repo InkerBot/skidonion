@@ -15,9 +15,12 @@ public class TryCatchBlock extends CodeBlock {
     private TryCatchBlock parent;
     private final List<TryCatchBlock> subTryCatches = new ArrayList<>();
     private LinkedList<CodeBlock> codes = new LinkedList<>();
+    private ArrayList<CodeBlock> clone;
     private final CodeBlock endBlock;
     private final int startIndex;
     private final int endIndex;
+
+    private int cloneIndex = 0;
 
     public TryCatchBlock(LabelNode startLabel, CodeBlock endBlock, int startIndex, int endIndex) {
         super(startLabel);
@@ -57,6 +60,22 @@ public class TryCatchBlock extends CodeBlock {
         return this.codes.getFirst().getFrames();
     }
 
+    /**
+     * update the clone array list to improve performance to get random code block
+     */
+    public void refreshClonedList() {
+        this.clone = new ArrayList<>(this.codes);
+        this.cloneIndex = 0;
+    }
+
+    public CodeBlock nextCodeBlock() {
+        return this.clone.get(cloneIndex++);
+    }
+
+    public ArrayList<CodeBlock> getClonedList() {
+        return clone;
+    }
+
     @Override
     public void setInstructions(InsnList instructions) {
         throw new UnsupportedOperationException("Try Catch Code Block can't set instructions as it's provided by its members.");
@@ -88,7 +107,6 @@ public class TryCatchBlock extends CodeBlock {
     public int getEndIndex() {
         return endIndex;
     }
-
 
     public LinkedList<CodeBlock> getCodes() {
         return codes;

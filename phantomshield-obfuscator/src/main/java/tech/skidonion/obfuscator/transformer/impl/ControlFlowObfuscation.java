@@ -121,26 +121,28 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     }
 
     private void addOpaquePredicate(ResolvedBlocks resolved, List<CodeBlock> generatedBlocks) {
+        Collections.shuffle(resolved.getClonedList());
         for (CodeBlock code : resolved.getResolvedBlocks()) {
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, generatedBlocks);
+            addOpaquePredicate(resolved, code, resolved.nextCloneBlock(), generatedBlocks);
         }
     }
 
     private void addOpaquePredicate(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock, List<CodeBlock> generatedBlocks) {
+        Collections.shuffle(tryCatchBlock.getClonedList());
         for (CodeBlock code : tryCatchBlock.getCodes()) {
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, generatedBlocks);
+            addOpaquePredicate(resolved, code, tryCatchBlock.nextCodeBlock(), generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, List<CodeBlock> generatedBlocks) {
+    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, CodeBlock magicBlock, List<CodeBlock> generatedBlocks) {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
@@ -151,7 +153,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         //  it can be more complex to decompile/analyze
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
             // generate fake jump
-            CodeBlock magicBlock = resolved.getRandomCodeBlock();
+//            CodeBlock magicBlock = resolved.getRandomCodeBlock();
             LabelNode magic = magicBlock.getLabel();
 
             Frame<BasicValue> currentFrame = next.getFrame(0);
