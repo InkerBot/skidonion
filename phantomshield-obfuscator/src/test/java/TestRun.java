@@ -23,11 +23,12 @@ public class TestRun {
     private static void control_flow(ConfigBuilder builder) {
         builder.setControlFlowObfuscationEnable(true)
 //                .addSubFilters("control_flow_obfuscation", //
-//                        "+dev/sim0n/app/test/impl/flow/**", //
-//                        "+dev/sim0n/app/test/impl/flow/** * *(*)") //
-                .addSubFilters("control_flow_obfuscation", //
-                        "+dev/sim0n/app/test/impl/crypttest/Blowfish", //
-                        "+dev/sim0n/app/test/impl/crypttest/Blowfish * *(*)"); //
+//                        "+dev/sim0n/app/test/impl/flow/WeirdLoopTest", //
+//                        "+dev/sim0n/app/test/impl/flow/WeirdLoopTest * *(*)") //
+//                .addSubFilters("control_flow_obfuscation", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * *(*)") //
+        ;
     }
 
     private static void debug_information_remover(ConfigBuilder builder) {

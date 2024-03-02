@@ -40,8 +40,12 @@ public class ResolvedBlocks {
     /**
      * update the clone array list to improve performance to get random code block
      */
-    public void updateResolvedBlocks() {
+    public void refreshClonedList() {
         this.clone = new ArrayList<>(this.resolvedBlocks);
+    }
+
+    public ArrayList<CodeBlock> getClonedList() {
+        return clone;
     }
 
     public LinkedList<CodeBlock> getResolvedBlocks() {

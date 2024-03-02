@@ -36,7 +36,9 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
 
             // add opaque predications
-            this.addOpaquePredicate(resolved);
+            List<CodeBlock> generatedBlocks = new ArrayList<>();
+            this.addOpaquePredicate(resolved, generatedBlocks);
+            resolved.getResolvedBlocks().addAll(generatedBlocks);
 
             // shuffle labels orders
             InsnList shuffled = new InsnList();
@@ -118,29 +120,27 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved) {
-        for (ListIterator<CodeBlock> iterator = resolved.getResolvedBlocks().listIterator(); iterator.hasNext(); ) {
-            CodeBlock code = iterator.next();
+    private void addOpaquePredicate(ResolvedBlocks resolved, List<CodeBlock> generatedBlocks) {
+        for (CodeBlock code : resolved.getResolvedBlocks()) {
             if (code instanceof TryCatchBlock) {
-                addOpaquePredicate(resolved, (TryCatchBlock) code);
+                addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, iterator);
+            addOpaquePredicate(resolved, code, generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock) {
-        for (ListIterator<CodeBlock> iterator = tryCatchBlock.getCodes().listIterator(); iterator.hasNext(); ) {
-            CodeBlock code = iterator.next();
+    private void addOpaquePredicate(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock, List<CodeBlock> generatedBlocks) {
+        for (CodeBlock code : tryCatchBlock.getCodes()) {
             if (code instanceof TryCatchBlock) {
-                addOpaquePredicate(resolved, (TryCatchBlock) code);
+                addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, iterator);
+            addOpaquePredicate(resolved, code, generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, ListIterator<CodeBlock> iterator) {
+    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, List<CodeBlock> generatedBlocks) {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
@@ -187,11 +187,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 }
                 if (clean) {
                     for (int i = 0; i < currentStackSize; i++) {
-                        if (currentFrame.getStack(currentStackSize - 1 - i).getSize() == 1) {
-                            balanced.add(new InsnNode(POP));
-                        } else {
-                            balanced.add(new InsnNode(POP2));
-                        }
+                        Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
+                        balanced.add(generateDummyPop(type));
                     }
                     currentFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
                     currentStackSize = currentFrame.getStackSize();
@@ -200,11 +197,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 if (currentStackSize > magicStackSize) {
                     int l = currentStackSize - magicStackSize;
                     for (int i = 0; i < l; i++) {
-                        if (currentFrame.getStack(currentStackSize - 1 - i).getSize() == 1) {
-                            balanced.add(new InsnNode(POP));
-                        } else {
-                            balanced.add(new InsnNode(POP2));
-                        }
+                        Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
+                        balanced.add(generateDummyPop(type));
                     }
                 } else if (currentStackSize < magicStackSize) {
                     int l = magicStackSize - currentStackSize;
@@ -214,7 +208,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                     }
                 }
 
-
                 balanced.add(new JumpInsnNode(GOTO, magic));
                 balancedBlock.setInstructions(balanced);
 
@@ -222,9 +215,9 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
                 // if we processed nothing
                 // we should make a direct goto
-                if (balanced.size() != 2) {
-                    iterator.add(balancedBlock);
-                    expected = balancedBlock.getLabel();
+                if (balanced.size() > 2) {
+                    generatedBlocks.add(balancedBlock);
+                    expected = balancedLabel;
                 } else {
                     expected = magic;
                 }
@@ -233,6 +226,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 // make sure that it will always jump to the correct case
                 boolean generate = RandomUtils.getRandomBoolean();
                 boolean if_equals = RandomUtils.getRandomBoolean();
+//                boolean generate = true;
+//                boolean if_equals = false;
                 LabelNode label1;
                 LabelNode label2;
                 if ((generate && if_equals) || (!generate && !if_equals)) {
@@ -247,6 +242,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 // TODO: the fuck opaque predications
                 // =======
                 insns.add(generate ? ASMUtils.generateFalse() /* iconst_0 */ : ASMUtils.generateTrue() /* iconst_1 */);
+//                insns.add(generate ? new InsnNode(ICONST_0) : new InsnNode(ICONST_1));
                 // =======
 
 
@@ -287,5 +283,33 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             insns.add(ASMUtils.getDefaultValue(type));
         }
         return insns;
+    }
+
+    private static MethodInsnNode generateDummyPop(Type type) {
+        String owner = "a" + RandomUtils.getRandomInt();
+        String name = "a" + RandomUtils.getRandomInt();
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(Z)V");
+            case Type.CHAR:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(C)V");
+            case Type.BYTE:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(B)V");
+            case Type.SHORT:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(S)V");
+            case Type.INT:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(I)V");
+            case Type.FLOAT:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(F)V");
+            case Type.LONG:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(J)V");
+            case Type.DOUBLE:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(D)V");
+            case Type.ARRAY:
+            case Type.OBJECT:
+                return new MethodInsnNode(INVOKESTATIC, owner, name, "(" + type.getDescriptor() + ")V");
+            default:
+                throw new RuntimeException("Can't generate dummy pop insn");
+        }
     }
 }
