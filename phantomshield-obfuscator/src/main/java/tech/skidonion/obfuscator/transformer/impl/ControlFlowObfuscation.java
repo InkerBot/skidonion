@@ -16,9 +16,19 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.util.*;
 
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
-
 public class ControlFlowObfuscation extends Transformer implements Opcodes {
+
+    private Context ctx;
+
+    class Context {
+        final MethodNode method;
+
+        public Context(MethodNode method) {
+            this.method = method;
+        }
+    }
+
+
     public ControlFlowObfuscation(String name) {
         super(name);
     }
@@ -27,6 +37,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     public void transform() throws Exception {
         getFilteredClasses().forEach(cw -> cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
             MethodNode method = wrapper.getMethodNode();
+            ctx = new Context(method);
             // TODO: ignore init??
             if (method.name.equals("<init>")) {
                 return;
@@ -243,8 +254,17 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
                 // TODO: the fuck opaque predications
                 // =======
-                insns.add(generate ? ASMUtils.generateFalse() /* iconst_0 */ : ASMUtils.generateTrue() /* iconst_1 */);
-//                insns.add(generate ? new InsnNode(ICONST_0) : new InsnNode(ICONST_1));
+                switch (RandomUtils.getRandomInt(0, 2)) {
+                    case 0:
+                        insns.add(generate ? ASMUtils.generateMba(ctx.method, false) : ASMUtils.generateMba(ctx.method, true));
+                        break;
+                    case 1:
+                        insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
+                        break;
+                    default:
+                        insns.add(generate ? new InsnNode(ICONST_0) : new InsnNode(ICONST_1));
+                        throw new RuntimeException("LMAO - opaque");
+                }
                 // =======
 
 
