@@ -36,7 +36,7 @@ public class Watermarking extends Addon {
 
             InsnList __ = new InsnList();
 
-            LabelNode label = new LabelNode(new Label());
+            LabelNode label = new LabelNode();
             __.add(label);
             __.add(new LineNumberNode(RandomUtils.getRandomInt(), label));
             __.add(new LineNumberNode(RandomUtils.getRandomInt(), label));

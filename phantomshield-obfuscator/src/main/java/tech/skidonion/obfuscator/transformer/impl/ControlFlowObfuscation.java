@@ -1,6 +1,5 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -9,6 +8,7 @@ import org.objectweb.asm.tree.analysis.Frame;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
+import tech.skidonion.obfuscator.transformer.generic.StackCodeBlockMap;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 import tech.skidonion.obfuscator.transformer.generic.resolver.CodeBlockResolver;
 import tech.skidonion.obfuscator.utils.ASMUtils;
@@ -42,7 +42,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
             // shuffle labels orders
             InsnList shuffled = new InsnList();
-            shuffled.add(new LabelNode(new Label()));
+            shuffled.add(new LabelNode());
 
             // initialization all variables
             int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
@@ -65,7 +65,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             // add a default return value or will loop while compute max stacks/locals
             Type returnType = Type.getReturnType(method.desc);
             int opcode = ASMUtils.getReturnOpcode(returnType);
-            shuffled.add(new LabelNode(new Label()));
+            shuffled.add(new LabelNode());
             if (opcode != RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
             shuffled.add(new InsnNode(opcode));
 
@@ -127,7 +127,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, resolved.nextCloneBlock(), generatedBlocks);
+            addOpaquePredicate(resolved, code, resolved.getStackCodeBlockMap(), generatedBlocks);
         }
     }
 
@@ -138,11 +138,11 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, tryCatchBlock.nextCodeBlock(), generatedBlocks);
+            addOpaquePredicate(resolved, code, tryCatchBlock.getStackCodeBlockMap(), generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, CodeBlock magicBlock, List<CodeBlock> generatedBlocks) {
+    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, StackCodeBlockMap stacks, List<CodeBlock> generatedBlocks) {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
@@ -153,10 +153,20 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         //  it can be more complex to decompile/analyze
         if (next != null && insn != null && !ASMUtils.isJumpOrReturnOpcode(insn.getOpcode())) {
             // generate fake jump
-//            CodeBlock magicBlock = resolved.getRandomCodeBlock();
+            Frame<BasicValue> currentFrame = next.getFrame(0);
+            Type[] types = new Type[currentFrame.getStackSize()];
+            for (int i = 0; i < currentFrame.getStackSize(); i++) {
+                types[i] = currentFrame.getStack(i).getType();
+            }
+
+            List<CodeBlock> stackLabels = stacks.get(new StackCodeBlockMap.Stack(types));
+            if (stackLabels == null) {
+                insns.add(new JumpInsnNode(GOTO, next.getLabel()));
+                return;
+            }
+            CodeBlock magicBlock = stackLabels.get(RandomUtils.getRandomInt(stackLabels.size()));
             LabelNode magic = magicBlock.getLabel();
 
-            Frame<BasicValue> currentFrame = next.getFrame(0);
             Frame<BasicValue> magicFrame = magicBlock.getFrame(0);
 
             // if the random code block is unreachable code
@@ -166,7 +176,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             }
             if (currentFrame != null) {
                 // balance frame stack map
-                LabelNode balancedLabel = new LabelNode(new Label());
+                LabelNode balancedLabel = new LabelNode();
                 CodeBlock balancedBlock = new CodeBlock(balancedLabel);
                 InsnList balanced = new InsnList();
                 balanced.add(balancedLabel);

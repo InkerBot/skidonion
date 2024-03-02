@@ -19,8 +19,9 @@ public class TryCatchBlock extends CodeBlock {
     private final CodeBlock endBlock;
     private final int startIndex;
     private final int endIndex;
-
     private int cloneIndex = 0;
+    private final StackCodeBlockMap stackCodeBlockMap = new StackCodeBlockMap();
+
 
     public TryCatchBlock(LabelNode startLabel, CodeBlock endBlock, int startIndex, int endIndex) {
         super(startLabel);
@@ -42,8 +43,7 @@ public class TryCatchBlock extends CodeBlock {
     private boolean isSameEndBlockBetweenParent() {
         if (parent != null) {
             if (parent.endBlock == endBlock ||
-                    parent.endBlock.getLabel() == endBlock.getLabel() ||
-                    parent.endBlock.getLabel().getLabel() == endBlock.getLabel().getLabel())
+                    parent.endBlock.getLabel() == endBlock.getLabel())
                 return true;
             return parent.isSameEndBlockBetweenParent();
         }
@@ -127,4 +127,9 @@ public class TryCatchBlock extends CodeBlock {
     public void addTryCatchBlock(TryCatchBlock tryCatchBlock) {
         this.subTryCatches.add(tryCatchBlock);
     }
+
+    public StackCodeBlockMap getStackCodeBlockMap() {
+        return stackCodeBlockMap;
+    }
+
 }

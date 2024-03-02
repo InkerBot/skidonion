@@ -1,6 +1,5 @@
 package tech.skidonion.obfuscator.transformer.generic.resolver;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -8,6 +7,7 @@ import org.objectweb.asm.tree.analysis.*;
 import tech.skidonion.obfuscator.asm.SimpleInterpreter;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
+import tech.skidonion.obfuscator.transformer.generic.StackCodeBlockMap;
 import tech.skidonion.obfuscator.transformer.generic.TryCatchBlock;
 
 import java.util.*;
@@ -26,8 +26,43 @@ public class CodeBlockResolver implements Opcodes {
         for (TryCatchBlockNode node : method.tryCatchBlocks) {
             buildTryCatchTree(tryCatchList, resolvedBlocks, resultBlocks, blocksMap, node);
         }
+        ResolvedBlocks resolved = new ResolvedBlocks(tryCatchList, resultBlocks, localTypes);
+        computeStackMap(resolved);
+        return resolved;
+    }
 
-        return new ResolvedBlocks(tryCatchList, resultBlocks, localTypes);
+    private static void computeStackMap(ResolvedBlocks resolved) {
+        StackCodeBlockMap stackMethodMap = resolved.getStackCodeBlockMap();
+        for (CodeBlock block : resolved.getResolvedBlocks()) {
+            if (block instanceof TryCatchBlock) {
+                computeStackMap((TryCatchBlock) block);
+                return;
+            }
+            computeStackMap(stackMethodMap, block);
+        }
+    }
+
+    private static void computeStackMap(TryCatchBlock tryCatchBlock) {
+        StackCodeBlockMap stackMethodMap = tryCatchBlock.getStackCodeBlockMap();
+        for (CodeBlock block : tryCatchBlock.getCodes()) {
+            if (block instanceof TryCatchBlock) {
+                computeStackMap((TryCatchBlock) block);
+                return;
+            }
+            computeStackMap(stackMethodMap, block);
+        }
+    }
+
+    private static void computeStackMap(StackCodeBlockMap stackMethodMap, CodeBlock block) {
+        Frame<BasicValue> frame = block.getFrame(0);
+        if (frame != null) {
+            Type[] types = new Type[frame.getStackSize()];
+            for (int i = 0; i < frame.getStackSize(); i++) {
+                types[i] = frame.getStack(i).getType();
+            }
+            StackCodeBlockMap.Stack stack = new StackCodeBlockMap.Stack(types);
+            stackMethodMap.add(stack, block);
+        }
     }
 
     private static void buildTryCatchTree(
@@ -170,7 +205,7 @@ public class CodeBlockResolver implements Opcodes {
                 }
             } else {
                 if (start == null) {
-                    start = new LabelNode(new Label());
+                    start = new LabelNode();
                     insns = new InsnList();
                     block = new CodeBlock(start);
                     insns.add(start);

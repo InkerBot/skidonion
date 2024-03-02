@@ -15,20 +15,20 @@ public class IndyPreprocessor implements Preprocessor {
 
     private static void processIndy(NativeObfuscation obfuscation, ClassNode classNode, MethodNode methodNode,
                                     InvokeDynamicInsnNode invokeDynamicInsnNode) {
-        LabelNode bootstrapStart = new LabelNode(new Label());
-        LabelNode bootstrapEnd = new LabelNode(new Label());
-        LabelNode bsmeStart = new LabelNode(new Label());
-        LabelNode invokeStart = new LabelNode(new Label());
+        LabelNode bootstrapStart = new LabelNode();
+        LabelNode bootstrapEnd = new LabelNode();
+        LabelNode bsmeStart = new LabelNode();
+        LabelNode invokeStart = new LabelNode();
 
 
-        LabelNode isCachedCallSiteStart = new LabelNode(new Label());
+        LabelNode isCachedCallSiteStart = new LabelNode();
         InsnList checkIsCallSiteCachedInstructions = new InsnList();
         checkIsCallSiteCachedInstructions.add(isCachedCallSiteStart);
         checkIsCallSiteCachedInstructions.add(PreprocessorUtils.GET_CALLSITE.get());
         checkIsCallSiteCachedInstructions.add(new JumpInsnNode(Opcodes.IFNULL, bootstrapStart));
         checkIsCallSiteCachedInstructions.add(new JumpInsnNode(Opcodes.GOTO, invokeStart));
 
-        LabelNode prepareArgumentsStart = new LabelNode(new Label());
+        LabelNode prepareArgumentsStart = new LabelNode();
         InsnList prepareArgumentsInstructions = new InsnList();
         prepareArgumentsInstructions.add(prepareArgumentsStart);
         Type[] arguments = Type.getArgumentTypes(invokeDynamicInsnNode.desc);
@@ -190,7 +190,7 @@ public class IndyPreprocessor implements Preprocessor {
         bsmeInstructions.add(bsmeStart); // 1
         bsmeInstructions.add(new InsnNode(Opcodes.DUP));
         bsmeInstructions.add(new TypeInsnNode(Opcodes.INSTANCEOF, "java/lang/BootstrapMethodError"));
-        LabelNode throwLabel = new LabelNode(new Label());
+        LabelNode throwLabel = new LabelNode();
         bsmeInstructions.add(new JumpInsnNode(Opcodes.IFNE, throwLabel));
         bsmeInstructions.add(new TypeInsnNode(Opcodes.NEW, "java/lang/BootstrapMethodError")); // 2
         bsmeInstructions.add(new InsnNode(Opcodes.DUP)); // 3

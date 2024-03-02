@@ -2,8 +2,6 @@ package tech.skidonion.obfuscator.transformer.generic;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.SourceValue;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.util.ArrayList;
@@ -16,6 +14,7 @@ public class ResolvedBlocks {
     private LinkedList<CodeBlock> resolvedBlocks;
     private final List<Type> locals;
     private ArrayList<CodeBlock> clone;
+    private final StackCodeBlockMap stackCodeBlockMap = new StackCodeBlockMap();
     private int cloneIndex;
 
     public ResolvedBlocks(Collection<TryCatchBlock> tryCatchBlocks, Collection<CodeBlock> resolvedBlocks, List<Type> locals) {
@@ -73,5 +72,9 @@ public class ResolvedBlocks {
 
     public List<Type> getLocals() {
         return locals;
+    }
+
+    public StackCodeBlockMap getStackCodeBlockMap() {
+        return stackCodeBlockMap;
     }
 }
