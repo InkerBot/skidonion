@@ -5,6 +5,7 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
@@ -118,7 +119,7 @@ public class NativeObfuscation extends Transformer {
                         .filter(MethodProcessor::shouldProcess)
                         .forEach(methodNode -> PreprocessorRunner.preprocess(this, cw.getClassNode(), methodNode));
 
-                ClassWriter computedWriter = new ClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                CustomClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                 cw.getClassNode().accept(computedWriter);
 
                 ClassReader computedReader = new ClassReader(computedWriter.toByteArray());
@@ -199,7 +200,7 @@ public class NativeObfuscation extends Transformer {
                 mainSourceBuilder.addHeader(hiddenClassFileName + ".hpp");
                 mainSourceBuilder.registerDefine(stringPool.get(hiddenClass.name), hiddenClassFileName);
 
-                ClassWriter classWriter = new ClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                CustomClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                 hiddenClass.accept(classWriter);
                 byte[] rawData = classWriter.toByteArray();
                 List<Byte> data = new ArrayList<>(rawData.length);
