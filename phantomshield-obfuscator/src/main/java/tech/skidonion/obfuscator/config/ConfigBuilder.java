@@ -12,6 +12,7 @@ public class ConfigBuilder {
     private String cppCompilerSetting;
     private String cppCompilerArgumentsSetting;
     private String cppCompilerOutputSetting;
+    private boolean cppCompilerIsAarch64 = false;
     private long randomSeedSetting;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private String inputMappingsFileSetting;
@@ -92,6 +93,9 @@ public class ConfigBuilder {
             config.add("cpp_compiler_output", cppCompilerOutputSetting);
         }
 
+        if (cppCompilerIsAarch64) {
+            config.add("cpp_compiler_is_aarch64", true);
+        }
 
         if (!targetsSettings.isEmpty()) {
             config.add("targets", targetsSettings);
@@ -438,6 +442,16 @@ public class ConfigBuilder {
 
     public ConfigBuilder setPackageModeSetting(String packageModeSetting) {
         this.packageModeSetting = packageModeSetting;
+        return this;
+    }
+
+    public ConfigBuilder setCppCompilerIsAarch64(boolean cppCompilerIsAarch64) {
+        this.cppCompilerIsAarch64 = cppCompilerIsAarch64;
+        return this;
+    }
+
+    public ConfigBuilder setRemoveKotlinReferenceSetting(boolean removeKotlinReferenceSetting) {
+        this.removeKotlinReferenceSetting = removeKotlinReferenceSetting;
         return this;
     }
 }

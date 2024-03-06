@@ -35,53 +35,57 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     @Override
     public void transform() throws Exception {
-        getFilteredClasses().forEach(cw -> cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
-            MethodNode method = wrapper.getMethodNode();
-            ctx = new Context(method);
-            // TODO: ignore init??
-            if (method.name.equals("<init>")) {
-                return;
-            }
-            // delete the fuck shit
-            method.localVariables = null;
-            ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
-
-            // add opaque predications
-            List<CodeBlock> generatedBlocks = new ArrayList<>();
-            this.addOpaquePredicate(resolved, generatedBlocks);
-            resolved.getResolvedBlocks().addAll(generatedBlocks);
-
-            // shuffle labels orders
-            InsnList shuffled = new InsnList();
-            shuffled.add(new LabelNode());
-
-            // initialization all variables
-            int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
-            for (Type type : Type.getArgumentTypes(method.desc)) {
-                locals += type.getSize();
-            }
-            for (int index = locals; index < resolved.getLocals().size(); index++) {
-                Type type = resolved.getLocals().get(index);
-                if (type != null) {
-                    shuffled.add(generateDefaultValue(type));
-                    shuffled.add(new VarInsnNode(ASMUtils.getVarOpcode(type, true), index));
+        getFilteredClasses().forEach(cw -> {
+            removeAnnotation(cw);
+            cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
+                removeAnnotation(wrapper);
+                MethodNode method = wrapper.getMethodNode();
+                ctx = new Context(method);
+                // TODO: ignore init??
+                if (method.name.equals("<init>")) {
+                    return;
                 }
-            }
+                // delete the fuck shit
+                method.localVariables = null;
+                ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
 
-            // goto the entry point
-            shuffled.add(new JumpInsnNode(GOTO, resolved.getResolvedBlocks().getFirst().getLabel()));
-            shuffle(resolved);
-            shuffled.add(resolved.toInsnList());
+                // add opaque predications
+                List<CodeBlock> generatedBlocks = new ArrayList<>();
+                this.addOpaquePredicate(resolved, generatedBlocks);
+                resolved.getResolvedBlocks().addAll(generatedBlocks);
 
-            // add a default return value or will loop while compute max stacks/locals
-            Type returnType = Type.getReturnType(method.desc);
-            int opcode = ASMUtils.getReturnOpcode(returnType);
-            shuffled.add(new LabelNode());
-            if (opcode != RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
-            shuffled.add(new InsnNode(opcode));
+                // shuffle labels orders
+                InsnList shuffled = new InsnList();
+                shuffled.add(new LabelNode());
 
-            method.instructions = shuffled;
-        }));
+                // initialization all variables
+                int locals = (ASMUtils.getFlag(method.access, ACC_STATIC) ? 0 : 1);
+                for (Type type : Type.getArgumentTypes(method.desc)) {
+                    locals += type.getSize();
+                }
+                for (int index = locals; index < resolved.getLocals().size(); index++) {
+                    Type type = resolved.getLocals().get(index);
+                    if (type != null) {
+                        shuffled.add(generateDefaultValue(type));
+                        shuffled.add(new VarInsnNode(ASMUtils.getVarOpcode(type, true), index));
+                    }
+                }
+
+                // goto the entry point
+                shuffled.add(new JumpInsnNode(GOTO, resolved.getResolvedBlocks().getFirst().getLabel()));
+                shuffle(resolved);
+                shuffled.add(resolved.toInsnList());
+
+                // add a default return value or will loop while compute max stacks/locals
+                Type returnType = Type.getReturnType(method.desc);
+                int opcode = ASMUtils.getReturnOpcode(returnType);
+                shuffled.add(new LabelNode());
+                if (opcode != RETURN) shuffled.add(ASMUtils.getDefaultValue(returnType));
+                shuffled.add(new InsnNode(opcode));
+
+                method.instructions = shuffled;
+            });
+        });
     }
 
     @Override
@@ -90,7 +94,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     @Override
     public String annotation() {
-        return null;
+        return Type.getDescriptor(tech.skidonion.obfuscator.annotations.ControlFlowObfuscation.class);
     }
 
     private void shuffle(ResolvedBlocks resolved) {
@@ -264,7 +268,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
                 // TODO: the fuck opaque predications
                 // =======
-                switch (RandomUtils.getRandomInt(0, 2)) {
+                switch (RandomUtils.getRandomInt(2)) {
                     case 0:
                         insns.add(generate ? ASMUtils.generateMba(ctx.method, false) : ASMUtils.generateMba(ctx.method, true));
                         break;

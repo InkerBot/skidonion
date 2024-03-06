@@ -37,9 +37,10 @@ public class ClassSourceBuilder implements AutoCloseable {
         hppWriter = Files.newBufferedWriter(hppFile, StandardCharsets.UTF_8);
     }
 
-    public void addHeader(int strings, int classes, int methods, int fields, int callsites) throws IOException {
+    public void addHeader(int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
         cppWriter.append("#include \"../native_jvm.hpp\"\n");
         cppWriter.append("#include \"../string_pool.hpp\"\n");
+        if (virtualize) cppWriter.append("#include \"../VirtualizerSDK.h\"\n");
         cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
         cppWriter.append("\n");
         cppWriter.append("// ").append(StringUtils.escapeCommentString(className)).append("\n");
@@ -85,7 +86,8 @@ public class ClassSourceBuilder implements AutoCloseable {
         cppWriter.append("\n");
     }
 
-    public void registerMethods(NodeCache<String> strings, NodeCache<String> classes, String nativeMethods, List<HiddenCppMethod> hiddenMethods) throws IOException {
+    public void registerMethods(NodeCache<String> strings, NodeCache<String> classes, String
+            nativeMethods, List<HiddenCppMethod> hiddenMethods) throws IOException {
         cppWriter.append("    void __ngen_register_methods(JNIEnv *env, jclass clazz) {\n");
         cppWriter.append("        string_pool = string_pool::get_pool();\n\n");
 

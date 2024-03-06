@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
+import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -80,7 +81,8 @@ public class NativeObfuscation extends Transformer {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
-        obfuscator.getCompiler().setOutputDir(cppDir.toFile());
+        CppCompiler compiler = obfuscator.getCompiler();
+        compiler.setOutputDir(cppDir.toFile());
 
         FileUtils.copyResource("sources/jni.h", cppDir);
         FileUtils.copyResource("sources/jni_md.h", cppDir);
@@ -88,9 +90,9 @@ public class NativeObfuscation extends Transformer {
         FileUtils.copyResource("sources/native_jvm.hpp", cppDir);
         FileUtils.copyResource("sources/native_jvm_output.hpp", cppDir);
         FileUtils.copyResource("sources/string_pool.hpp", cppDir);
-        obfuscator.getCompiler().addCppFile(cppDir.resolve("native_jvm.cpp").toAbsolutePath().toString());
-        obfuscator.getCompiler().addCppFile(cppDir.resolve("string_pool.cpp").toAbsolutePath().toString());
-        obfuscator.getCompiler().addCppFile(cppDir.resolve("native_jvm_output.cpp").toAbsolutePath().toString());
+        compiler.addCppFile(cppDir.resolve("native_jvm.cpp").toAbsolutePath().toString());
+        compiler.addCppFile(cppDir.resolve("string_pool.cpp").toAbsolutePath().toString());
+        compiler.addCppFile(cppDir.resolve("native_jvm_output.cpp").toAbsolutePath().toString());
 
 //        CMakeFilesBuilder cMakeBuilder = new CMakeFilesBuilder(projectName);
 //        cMakeBuilder.addMainFile("native_jvm.hpp");
@@ -107,7 +109,18 @@ public class NativeObfuscation extends Transformer {
         Integer[] classIndexReference = new Integer[]{0};
 
         getFilteredClasses().forEach(cw -> {
-            removeAnnotation(cw);
+            String clinitVirtualization = "NONE";
+            {
+                Map<String, Object> map = getAnnotationValues(cw);
+                removeAnnotation(cw);
+                if (map != null) {
+                    Object virtualize = map.get("virtualize");
+                    if (virtualize instanceof String[]) {
+                        clinitVirtualization = ((String[]) virtualize)[1];
+                        compiler.getVirtualizeMacroCount().getAndIncrement();
+                    }
+                }
+            }
             try {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
@@ -140,22 +153,32 @@ public class NativeObfuscation extends Transformer {
                 cachedFields.clear();
                 cachedCallSitesIndex = new AtomicInteger();
 
-
                 try (ClassSourceBuilder cppBuilder =
                              new ClassSourceBuilder(cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
-                    obfuscator.getCompiler().addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
+                    compiler.addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
                     StringBuilder instructions = new StringBuilder();
 
-
+                    boolean shouldVirtualize = false;
                     for (int i = 0; i < cw.getMethods().size(); i++) {
                         MethodWrapper method = cw.getMethods().get(i);
 
                         if (!MethodProcessor.shouldProcess(method.getMethodNode()) || !match(method)) {
                             continue;
                         }
-                        removeAnnotation(method);
-
                         MethodContext context = new MethodContext(this, method, i, cw, currentClassId);
+                        Map<String, Object> map = getAnnotationValues(method);
+                        removeAnnotation(method);
+                        if (map != null) {
+                            Object virtualize = map.get("virtualize");
+                            if (virtualize instanceof String[]) {
+                                shouldVirtualize = true;
+                                context.virtualization = ((String[]) virtualize)[1];
+                                compiler.getVirtualizeMacroCount().getAndIncrement();
+                            }
+                        }
+                        if ("<clinit>".equals(method.getName())) {
+                            context.virtualization = clinitVirtualization;
+                        }
                         methodProcessor.processMethod(context);
                         instructions.append(context.output.toString().replace("\n", "\n    "));
 
@@ -171,7 +194,7 @@ public class NativeObfuscation extends Transformer {
                     }
 
 
-                    cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get());
+                    cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
                     cppBuilder.addInstructions(instructions.toString());
                     cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods);
 
@@ -221,7 +244,7 @@ public class NativeObfuscation extends Transformer {
 
                 Path cppPath = cppOutput.resolve(hiddenClassFileName + ".cpp");
                 try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
-                    obfuscator.getCompiler().addCppFile(cppPath.toAbsolutePath().toString());
+                    compiler.addCppFile(cppPath.toAbsolutePath().toString());
                     cppWriter.append("#include \"").append(hiddenClassFileName).append(".hpp\"\n\n");
                     cppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
                     cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
@@ -242,8 +265,22 @@ public class NativeObfuscation extends Transformer {
         Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId)
                 .getBytes(StandardCharsets.UTF_8));
 
+        if (compiler.getVirtualizeMacroCount().get() > 0) {
+            FileUtils.copyResource("sources/VirtualizerSDK.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_BorlandC_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_BorlandC_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_GNU_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_ICL_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_LCC_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_VC_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_GNU_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_ICL_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_LCC_inline.h", cppDir);
+            FileUtils.copyResource("sources/VirtualizerSDK_VC_inline.h", cppDir);
+        }
 
-        obfuscator.getCompiler().compile(StringUtils.createMap("loader_path", nativeDir));
+        compiler.compile(StringUtils.createStringMap("loader_path", nativeDir));
 
         if (!print_instructions.isEnable()) {
             FileUtils.clearDirectory(cppDir);

@@ -27,7 +27,7 @@ public class FileUtils {
 
         while (true) {
             i++;
-            String newName = existing.getAbsolutePath() + ".BACKUP-" + String.valueOf(i);
+            String newName = existing.getAbsolutePath() + ".BACKUP-" + i;
             File backUpName = new File(newName);
             if (!backUpName.exists()) {
                 existing.renameTo(backUpName);

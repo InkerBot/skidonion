@@ -391,8 +391,7 @@ public class ASMUtils implements Opcodes {
     }
 
 
-    public static Map<String, String> getAnnotationValues(ClassWrapper clazz, String desc) {
-        Map<String, String> map = new HashMap<>();
+    public static Map<String, Object> getAnnotationValues(ClassWrapper clazz, String desc) {
         if (clazz.getClassNode().invisibleAnnotations != null) {
             for (AnnotationNode annotation : clazz.getClassNode().invisibleAnnotations) {
                 if (annotation.desc.equals(desc)) {
@@ -418,8 +417,7 @@ public class ASMUtils implements Opcodes {
         return null;
     }
 
-    public static Map<String, String> getAnnotationValues(MethodWrapper method, String desc) {
-        Map<String, String> map = new HashMap<>();
+    public static Map<String, Object> getAnnotationValues(MethodWrapper method, String desc) {
         if (method.getMethodNode().invisibleAnnotations != null) {
             for (AnnotationNode annotation : method.getMethodNode().invisibleAnnotations) {
                 if (annotation.desc.equals(desc)) {
@@ -492,8 +490,7 @@ public class ASMUtils implements Opcodes {
     }
 
 
-    public static Map<String, String> getAnnotationValues(FieldWrapper field, String desc) {
-        Map<String, String> map = new HashMap<>();
+    public static Map<String, Object> getAnnotationValues(FieldWrapper field, String desc) {
         if (field.getFieldNode().invisibleAnnotations != null) {
             for (AnnotationNode annotation : field.getFieldNode().invisibleAnnotations) {
                 if (annotation.desc.equals(desc)) {

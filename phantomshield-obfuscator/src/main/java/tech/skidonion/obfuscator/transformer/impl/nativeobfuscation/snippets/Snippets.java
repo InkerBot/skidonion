@@ -37,7 +37,7 @@ public class Snippets {
     }
 
     public String getSnippet(String key) {
-        return getSnippet(key, StringUtils.createMap());
+        return getSnippet(key, StringUtils.createStringMap());
     }
 
     public String getSnippet(String key, Map<String, String> tokens) {

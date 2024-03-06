@@ -1,11 +1,13 @@
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
+import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 
 import java.io.File;
 
 public class TestRun {
     public static void main(String[] args) {
+//        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
 //        debug_information_remover(builder);
@@ -13,8 +15,8 @@ public class TestRun {
 //        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
-        control_flow(builder);
-//        native_obfuscation(builder);
+//        control_flow(builder);
+        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);
@@ -55,12 +57,16 @@ public class TestRun {
     }
 
     private static void native_obfuscation(ConfigBuilder builder) {
-        builder.setNativeObfuscationEnable(false) //
+        builder.setNativeObfuscationEnable(true) //
                 .setPrintInstructionsSetting(false) //
-                .addTarget("x86_64-windows") //
-                .addSubFilters("native_obfuscation", //
-                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
-                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)");
+//                .addTarget("x86_64-windows") //
+//                .addTarget("x86_64-linux-gnu") //
+                .addTarget("x86_64-macos") //
+                .addTarget("aarch64-macos") //
+//                .addSubFilters("native_obfuscation", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
+        ;
     }
 
     private static void invoke_wrapper(ConfigBuilder builder) {
@@ -71,8 +77,10 @@ public class TestRun {
 
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
-                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar")) //
-                .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")) //
+//                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar")) //
+//                .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")) //
+                .setInputJar(new File("test\\input\\dummy.jar")) //
+                .setOutputJar(new File("test\\output\\dummy.jar")) //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar");
     }

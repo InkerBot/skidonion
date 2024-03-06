@@ -40,7 +40,7 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
             tryCatch.append(context.getSnippets().getSnippet("TRYCATCH_START"));
             tryCatch.append(" goto ").append(tryCatchLabelName).append("; }");
         } else {
-            tryCatch.append(context.getSnippets().getSnippet("TRYCATCH_EMPTY", StringUtils.createMap(
+            tryCatch.append(context.getSnippets().getSnippet("TRYCATCH_EMPTY", StringUtils.createStringMap(
                     "rettype", MethodProcessor.CPP_TYPES[context.ret.getSort()]
             )));
         }

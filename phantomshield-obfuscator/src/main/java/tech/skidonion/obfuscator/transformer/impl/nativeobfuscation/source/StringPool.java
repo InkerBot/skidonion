@@ -87,7 +87,7 @@ public class StringPool {
                 .collect(Collectors.joining(", ")));
 
         String template = FileUtils.readResource("sources/string_pool.cpp");
-        return StringUtils.dynamicFormat(template, StringUtils.createMap(
+        return StringUtils.dynamicFormat(template, StringUtils.createStringMap(
                 "size", bytes.size() + "LL",
                 "value", result
         ));

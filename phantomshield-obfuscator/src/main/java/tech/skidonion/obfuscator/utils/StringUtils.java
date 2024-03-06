@@ -248,11 +248,20 @@ public class StringUtils {
         return result.toString();
     }
 
-    public static Map<String, String> createMap(Object... parts) {
+    public static Map<String, String> createStringMap(Object... parts) {
         HashMap<String, String> tokens = new HashMap<>();
         for (int i = 0; i < parts.length; i += 2) {
             tokens.put(parts[i].toString(), parts[i + 1].toString());
         }
         return tokens;
     }
+
+    public static Map<String, Object> createMap(Object... parts) {
+        HashMap<String, Object> tokens = new HashMap<>();
+        for (int i = 0; i < parts.length; i += 2) {
+            tokens.put(parts[i].toString(), parts[i + 1]);
+        }
+        return tokens;
+    }
+
 }

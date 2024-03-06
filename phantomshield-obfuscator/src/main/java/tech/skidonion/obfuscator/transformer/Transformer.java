@@ -206,19 +206,19 @@ public abstract class Transformer implements Opcodes {
         return ASMUtils.hasAnnotation(fieldWrapper, annotation());
     }
 
-    protected final Map<String, String> getAnnotationValues(ClassWrapper classWrapper) {
+    protected final Map<String, Object> getAnnotationValues(ClassWrapper classWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(classWrapper, annotation());
     }
 
-    protected final Map<String, String> getAnnotationValues(MethodWrapper methodWrapper) {
+    protected final Map<String, Object> getAnnotationValues(MethodWrapper methodWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(methodWrapper, annotation());
     }
 
-    protected final Map<String, String> getAnnotationValues(FieldWrapper fieldWrapper) {
+    protected final Map<String, Object> getAnnotationValues(FieldWrapper fieldWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(fieldWrapper, annotation());
@@ -243,18 +243,18 @@ public abstract class Transformer implements Opcodes {
     }
 
     protected final boolean matchAnnotation(ClassWrapper classWrapper) {
-        Map<String, String> map = getAnnotationValues(classWrapper);
-        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+        Map<String, Object> map = getAnnotationValues(classWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
 
     protected final boolean matchAnnotation(MethodWrapper methodWrapper) {
-        Map<String, String> map = getAnnotationValues(methodWrapper);
-        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+        Map<String, Object> map = getAnnotationValues(methodWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
 
     protected final boolean matchAnnotation(FieldWrapper fieldWrapper) {
-        Map<String, String> map = getAnnotationValues(fieldWrapper);
-        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true"));
+        Map<String, Object> map = getAnnotationValues(fieldWrapper);
+        return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
 
 

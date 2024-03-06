@@ -118,7 +118,7 @@ public class MethodProcessor {
             throw new RuntimeException(String.format("Could not find special method processor for %s", method.name));
         }
 
-        output.append("// ").append(StringUtils.escapeCommentString(method.name)).append(StringUtils.escapeCommentString(method.desc)).append("\n");
+//        output.append("// ").append(StringUtils.escapeCommentString(method.name)).append(StringUtils.escapeCommentString(method.desc)).append("\n");
 
         String methodName = specialMethodProcessor.preProcess(context);
         methodName = "__ngen_" + methodName.replace('/', '_');
@@ -158,6 +158,8 @@ public class MethodProcessor {
         }
 
         output.append(") {").append("\n");
+
+        context.injectHeader();
 
         if (context.proxyMethod != null) {
             output.append("    env->DeleteLocalRef(ignored_hidden);\n");
@@ -240,7 +242,7 @@ public class MethodProcessor {
         for (int i = 0; i < context.argTypes.size(); ++i) {
             Type current = context.argTypes.get(i);
             output.append("    ").append(obfuscator.getSnippets().getSnippet(
-                    "LOCAL_LOAD_ARG_" + current.getSort(), StringUtils.createMap(
+                    "LOCAL_LOAD_ARG_" + current.getSort(), StringUtils.createStringMap(
                             "index", localIndex,
                             "arg", argNames.get(i)
                     ))).append("\n");
@@ -261,6 +263,8 @@ public class MethodProcessor {
 //            context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
         }
 
+        context.injectTail();
+
         output.append(String.format("    return (%s) 0;\n", CPP_TYPES[context.ret.getSort()]));
 
         boolean hasAddedNewBlocks = true;
@@ -277,20 +281,20 @@ public class MethodProcessor {
                 output.append("    ").append(context.catches.get(catchBlock)).append(": ");
                 CatchesBlock.CatchBlock currentCatchBlock = catchBlock.getCatches().get(0);
                 if (currentCatchBlock.getClazz() == null) {
-                    output.append(context.getSnippets().getSnippet("TRYCATCH_ANY_L", StringUtils.createMap(
+                    output.append(context.getSnippets().getSnippet("TRYCATCH_ANY_L", StringUtils.createStringMap(
                             "handler_block", context.getLabelPool().getName(currentCatchBlock.getHandler().getLabel())
                     )));
                     output.append("\n");
                     continue;
                 }
-                output.append(context.getSnippets().getSnippet("TRYCATCH_CHECK_STACK", StringUtils.createMap(
+                output.append(context.getSnippets().getSnippet("TRYCATCH_CHECK_STACK", StringUtils.createStringMap(
                         "exception_class_ptr", context.getCachedClasses().getPointer(currentCatchBlock.getClazz()),
                         "handler_block", context.getLabelPool().getName(currentCatchBlock.getHandler().getLabel())
                 )));
                 output.append("\n");
                 if (catchBlock.getCatches().size() == 1) {
                     output.append("    ");
-                    output.append(context.getSnippets().getSnippet("TRYCATCH_END_STACK", StringUtils.createMap(
+                    output.append(context.getSnippets().getSnippet("TRYCATCH_END_STACK", StringUtils.createStringMap(
                             "rettype", CPP_TYPES[context.ret.getSort()]
                     )));
                     output.append("\n");
@@ -302,7 +306,7 @@ public class MethodProcessor {
                     hasAddedNewBlocks = true;
                 }
                 output.append("    ");
-                output.append(context.getSnippets().getSnippet("TRYCATCH_ANY_L", StringUtils.createMap(
+                output.append(context.getSnippets().getSnippet("TRYCATCH_ANY_L", StringUtils.createStringMap(
                         "handler_block", context.catches.get(nextCatchesBlock)
                 )));
                 output.append("\n");

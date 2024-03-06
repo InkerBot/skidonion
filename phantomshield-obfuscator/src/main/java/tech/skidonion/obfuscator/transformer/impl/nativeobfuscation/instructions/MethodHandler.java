@@ -164,7 +164,7 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
 
         for (int i = 0; i < argOffsets.size(); i++) {
             argsBuilder.append(", ").append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[i].getSort(),
-                    StringUtils.createMap("index", argOffsets.get(i))));
+                    StringUtils.createStringMap("index", argOffsets.get(i))));
         }
 
         props.put("objectstackindex", String.valueOf(stackOffset - objectOffset));

@@ -14,6 +14,8 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.Strin
 
 import java.util.*;
 
+import static tech.skidonion.obfuscator.annotations.NativeObfuscation.VirtualMachine.NONE;
+
 public class MethodContext {
 
     public NativeObfuscation obfuscator;
@@ -37,12 +39,10 @@ public class MethodContext {
 
     public HiddenMethodsPool.HiddenMethod proxyMethod;
     public MethodNode nativeMethod;
-
     public int stackPointer;
-
     private final LabelPool labelPool = new LabelPool();
-
     public String cppNativeMethodName;
+    public String virtualization = "NONE";
 
 
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
@@ -90,5 +90,20 @@ public class MethodContext {
 
     public LabelPool getLabelPool() {
         return labelPool;
+    }
+
+    public void injectHeader() {
+        if (!"NONE".equals(virtualization)) {
+            output.append("    VIRTUALIZER_" + virtualization + "_START\n");
+            output.append("volatile bool __dummy = true;\n");
+            output.append("if(__dummy){\n");
+        }
+    }
+
+    public void injectTail() {
+        if (!"NONE".equals(virtualization)) {
+            output.append("}\n");
+            output.append("    VIRTUALIZER_" + virtualization + "_END\n");
+        }
     }
 }

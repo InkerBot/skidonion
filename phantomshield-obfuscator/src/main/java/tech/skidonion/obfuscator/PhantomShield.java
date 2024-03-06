@@ -97,6 +97,9 @@ public class PhantomShield {
             List<String> targets = config.getList("targets");
             targets.forEach(element -> compiler.addTarget(element));
         }
+        if (config.has("cpp_compiler_is_aarch64")) {
+            compiler.setAarch64(config.getBoolean("cpp_compiler_is_aarch64"));
+        }
 
         loadClassPath();
         loadInput();
