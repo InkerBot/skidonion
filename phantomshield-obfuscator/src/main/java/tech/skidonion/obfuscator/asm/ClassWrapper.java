@@ -313,7 +313,7 @@ public class ClassWrapper {
 
     public byte[] toByteArray() {
         // Construct byte writer
-        ClassWriter writer = new CustomClassWriter(ClassWriter.COMPUTE_MAXS, obfuscator);
+        ClassWriter writer = new CustomClassWriter(ClassWriter.COMPUTE_FRAMES, obfuscator);
 
         try {
             writer.newUTF8("PHANTOMSHIELD" + PhantomShield.VERSION);

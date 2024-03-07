@@ -48,7 +48,7 @@ public class TestRun {
                 .setPrefixNameSetting("狼牙") //
                 .setPrintMappingsSetting(false) //
                 .setPrintMappingsFileSetting("mappings.json") //
-                .setInputMappingsFileSetting("mappings.json") //
+//                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF");
     }
 
@@ -77,10 +77,10 @@ public class TestRun {
 
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
-//                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar")) //
-//                .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")) //
-                .setInputJar(new File("test\\input\\dummy.jar")) //
-                .setOutputJar(new File("test\\output\\dummy.jar")) //
+                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar")) //
+                .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")) //
+//                .setInputJar(new File("test\\input\\dummy.jar")) //
+//                .setOutputJar(new File("test\\output\\dummy.jar")) //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar");
     }
