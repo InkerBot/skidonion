@@ -139,25 +139,25 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
         Collections.shuffle(resolved.getClonedList());
         for (CodeBlock code : resolved.getResolvedBlocks()) {
             if (code instanceof TryCatchBlock) {
-                addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
+                addOpaquePredicate((TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, resolved.getStackCodeBlockMap(), generatedBlocks);
+            addOpaquePredicate(code, resolved.getStackCodeBlockMap(), generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, TryCatchBlock tryCatchBlock, List<CodeBlock> generatedBlocks) {
+    private void addOpaquePredicate(TryCatchBlock tryCatchBlock, List<CodeBlock> generatedBlocks) {
         Collections.shuffle(tryCatchBlock.getClonedList());
         for (CodeBlock code : tryCatchBlock.getCodes()) {
             if (code instanceof TryCatchBlock) {
-                addOpaquePredicate(resolved, (TryCatchBlock) code, generatedBlocks);
+                addOpaquePredicate((TryCatchBlock) code, generatedBlocks);
                 continue;
             }
-            addOpaquePredicate(resolved, code, tryCatchBlock.getStackCodeBlockMap(), generatedBlocks);
+            addOpaquePredicate(code, tryCatchBlock.getStackCodeBlockMap(), generatedBlocks);
         }
     }
 
-    private void addOpaquePredicate(ResolvedBlocks resolved, CodeBlock code, StackCodeBlockMap stacks, List<CodeBlock> generatedBlocks) {
+    private void addOpaquePredicate(CodeBlock code, StackCodeBlockMap stacks, List<CodeBlock> generatedBlocks) {
         InsnList insns = code.getInstructions();
         CodeBlock next = code.getNext();
         AbstractInsnNode insn = code.getInstructions().getLast();
@@ -189,104 +189,101 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             if (magicFrame == null) {
                 magicFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
             }
-            if (currentFrame != null) {
-                // balance frame stack map
-                LabelNode balancedLabel = new LabelNode();
-                CodeBlock balancedBlock = new CodeBlock(balancedLabel);
-                InsnList balanced = new InsnList();
-                balanced.add(balancedLabel);
 
-                int currentStackSize = currentFrame.getStackSize();
-                int magicStackSize = magicFrame.getStackSize();
+            // balance frame stack map
+            LabelNode balancedLabel = new LabelNode();
+            CodeBlock balancedBlock = new CodeBlock(balancedLabel);
+            InsnList balanced = new InsnList();
+            balanced.add(balancedLabel);
 
-                int covered = Math.min(magicStackSize, currentStackSize);
+            int currentStackSize = currentFrame.getStackSize();
+            int magicStackSize = magicFrame.getStackSize();
 
-                // make sure the stack map is always the same
-                boolean clean = false;
+            int covered = Math.min(magicStackSize, currentStackSize);
 
-                for (int i = 0; i < covered; i++) {
-                    Type currentValueSort = currentFrame.getStack(i).getType();
-                    Type magicValueSort = magicFrame.getStack(i).getType();
-                    if (!currentValueSort.toString().equals(magicValueSort.toString())) {
-                        clean = true;
-                        break;
-                    }
+            // make sure the stack map is always the same
+            boolean clean = false;
+
+            for (int i = 0; i < covered; i++) {
+                Type currentValueSort = currentFrame.getStack(i).getType();
+                Type magicValueSort = magicFrame.getStack(i).getType();
+                if (!currentValueSort.toString().equals(magicValueSort.toString())) {
+                    clean = true;
+                    break;
                 }
-                if (clean) {
-                    for (int i = 0; i < currentStackSize; i++) {
-                        Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
-                        balanced.add(generateDummyPop(type));
-                    }
-                    currentFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
-                    currentStackSize = currentFrame.getStackSize();
+            }
+            if (clean) {
+                for (int i = 0; i < currentStackSize; i++) {
+                    Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
+                    balanced.add(generateDummyPop(type));
                 }
+                currentFrame = new Frame<>(currentFrame.getLocals(), currentFrame.getMaxStackSize());
+                currentStackSize = currentFrame.getStackSize();
+            }
 
-                if (currentStackSize > magicStackSize) {
-                    int l = currentStackSize - magicStackSize;
-                    for (int i = 0; i < l; i++) {
-                        Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
-                        balanced.add(generateDummyPop(type));
-                    }
-                } else if (currentStackSize < magicStackSize) {
-                    int l = magicStackSize - currentStackSize;
-                    for (int i = 0; i < l; i++) {
-                        BasicValue value = magicFrame.getStack(currentStackSize + i);
-                        balanced.add(generateDefaultValue(value.getType()));
-                    }
+            if (currentStackSize > magicStackSize) {
+                int l = currentStackSize - magicStackSize;
+                for (int i = 0; i < l; i++) {
+                    Type type = currentFrame.getStack(currentStackSize - 1 - i).getType();
+                    balanced.add(generateDummyPop(type));
                 }
-
-                balanced.add(new JumpInsnNode(GOTO, magic));
-                balancedBlock.setInstructions(balanced);
-
-                LabelNode expected;
-
-                // if we processed nothing
-                // we should make a direct goto
-                if (balanced.size() > 2) {
-                    generatedBlocks.add(balancedBlock);
-                    expected = balancedLabel;
-                } else {
-                    expected = magic;
+            } else if (currentStackSize < magicStackSize) {
+                int l = magicStackSize - currentStackSize;
+                for (int i = 0; i < l; i++) {
+                    BasicValue value = magicFrame.getStack(currentStackSize + i);
+                    balanced.add(generateDefaultValue(value.getType()));
                 }
+            }
+
+            balanced.add(new JumpInsnNode(GOTO, magic));
+            balancedBlock.setInstructions(balanced);
+
+            LabelNode expected;
+
+            // if we processed nothing
+            // we should make a direct goto
+            if (balanced.size() > 2) {
+                generatedBlocks.add(balancedBlock);
+                expected = balancedLabel;
+            } else {
+                expected = magic;
+            }
 
 
-                // make sure that it will always jump to the correct case
-                boolean generate = RandomUtils.getRandomBoolean();
-                boolean if_equals = RandomUtils.getRandomBoolean();
+            // make sure that it will always jump to the correct case
+            boolean generate = RandomUtils.getRandomBoolean();
+            boolean if_equals = RandomUtils.getRandomBoolean();
 //                boolean generate = true;
 //                boolean if_equals = false;
-                LabelNode label1;
-                LabelNode label2;
-                if ((generate && if_equals) || (!generate && !if_equals)) {
-                    label1 = next.getLabel();
-                    label2 = expected;
-                } else {
-                    label2 = next.getLabel();
-                    label1 = expected;
-                }
-
-
-                // TODO: the fuck opaque predications
-                // =======
-                switch (RandomUtils.getRandomInt(2)) {
-                    case 0:
-                        insns.add(generate ? ASMUtils.generateMba(ctx.method, false) : ASMUtils.generateMba(ctx.method, true));
-                        break;
-                    case 1:
-                        insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
-                        break;
-                    default:
-                        insns.add(generate ? new InsnNode(ICONST_0) : new InsnNode(ICONST_1));
-                        throw new RuntimeException("LMAO - opaque");
-                }
-                // =======
-
-
-                insns.add(new JumpInsnNode(if_equals ? IFEQ : IFNE, label1));
-                insns.add(new JumpInsnNode(GOTO, label2));
+            LabelNode label1;
+            LabelNode label2;
+            if ((generate && if_equals) || (!generate && !if_equals)) {
+                label1 = next.getLabel();
+                label2 = expected;
             } else {
-                return; // unreachable code
+                label2 = next.getLabel();
+                label1 = expected;
             }
+
+
+            // TODO: the fuck opaque predications
+            // =======
+            switch (RandomUtils.getRandomInt(2)) {
+                case 0:
+                    insns.add(generate ? ASMUtils.generateMba(ctx.method, false) : ASMUtils.generateMba(ctx.method, true));
+                    break;
+                case 1:
+                    insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
+                    break;
+                default:
+                    insns.add(generate ? new InsnNode(ICONST_0) : new InsnNode(ICONST_1));
+                    throw new RuntimeException("LMAO - opaque");
+            }
+            // =======
+
+
+            insns.add(new JumpInsnNode(if_equals ? IFEQ : IFNE, label1));
+            insns.add(new JumpInsnNode(GOTO, label2));
         }
     }
 
