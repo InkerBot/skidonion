@@ -1,11 +1,11 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FieldInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 public class FieldHandler extends GenericInstructionHandler<FieldInsnNode> {

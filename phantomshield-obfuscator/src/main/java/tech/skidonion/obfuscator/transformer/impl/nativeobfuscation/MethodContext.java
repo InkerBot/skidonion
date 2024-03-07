@@ -14,8 +14,6 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.Strin
 
 import java.util.*;
 
-import static tech.skidonion.obfuscator.annotations.NativeObfuscation.VirtualMachine.NONE;
-
 public class MethodContext {
 
     public NativeObfuscation obfuscator;

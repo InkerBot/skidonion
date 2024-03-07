@@ -1,8 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.JumpInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 public class JumpHandler extends GenericInstructionHandler<JumpInsnNode> {

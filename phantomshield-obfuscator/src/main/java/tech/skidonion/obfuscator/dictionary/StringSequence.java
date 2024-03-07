@@ -1,7 +1,7 @@
 package tech.skidonion.obfuscator.dictionary;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class StringSequence {
     private final String[] sequence;

@@ -1,8 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MultiANewArrayInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;

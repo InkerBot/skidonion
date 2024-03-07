@@ -1,6 +1,8 @@
 package tech.skidonion.obfuscator.filter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static tech.skidonion.obfuscator.utils.StringUtils.convertClassNameToPath;
 import static tech.skidonion.obfuscator.utils.StringUtils.toDescriptor;

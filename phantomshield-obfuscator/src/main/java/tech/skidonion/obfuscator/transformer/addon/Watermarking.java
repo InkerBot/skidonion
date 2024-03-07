@@ -1,6 +1,5 @@
 package tech.skidonion.obfuscator.transformer.addon;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.asm.ClassWrapper;

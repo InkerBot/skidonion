@@ -2,7 +2,6 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.ASMUtils;

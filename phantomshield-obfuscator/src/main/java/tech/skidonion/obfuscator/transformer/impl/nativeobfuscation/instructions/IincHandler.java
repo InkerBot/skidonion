@@ -1,7 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.tree.IincInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 
 public class IincHandler extends GenericInstructionHandler<IincInsnNode> {
 

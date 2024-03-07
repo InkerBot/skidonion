@@ -1,10 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import tech.skidonion.obfuscator.asm.remapper.ClassRemapper;
-import tech.skidonion.obfuscator.asm.remapper.MemberRemapper;
-import tech.skidonion.obfuscator.asm.remapper.Remapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
@@ -12,14 +8,11 @@ import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringArrayValue;
 import tech.skidonion.obfuscator.value.impls.StringValue;
 
-import java.io.*;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
-import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class Renamer extends Transformer {

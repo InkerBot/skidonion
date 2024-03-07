@@ -1,9 +1,9 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.util.ArrayList;

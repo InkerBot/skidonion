@@ -1,13 +1,13 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.*;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.ClInitSpecialMethodProcessor;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.DefaultSpecialMethodProcessor;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.SpecialMethodProcessor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.*;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.ClInitSpecialMethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.DefaultSpecialMethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.special.SpecialMethodProcessor;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 

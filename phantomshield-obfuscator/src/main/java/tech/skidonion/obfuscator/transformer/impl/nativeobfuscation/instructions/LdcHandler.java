@@ -1,9 +1,9 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LdcInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 
 public class LdcHandler extends GenericInstructionHandler<LdcInsnNode> {
 

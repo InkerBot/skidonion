@@ -1,10 +1,10 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.CatchesBlock;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.TryCatchBlockNode;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.util.*;

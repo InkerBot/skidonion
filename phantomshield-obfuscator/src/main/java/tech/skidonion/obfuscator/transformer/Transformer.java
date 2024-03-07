@@ -2,8 +2,7 @@ package tech.skidonion.obfuscator.transformer;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;

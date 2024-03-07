@@ -1,9 +1,9 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.TypeInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 public class TypeHandler extends GenericInstructionHandler<TypeInsnNode> {

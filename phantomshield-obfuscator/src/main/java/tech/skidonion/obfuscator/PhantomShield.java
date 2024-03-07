@@ -13,7 +13,6 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
-import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;

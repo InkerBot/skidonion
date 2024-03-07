@@ -8,13 +8,15 @@ import tech.skidonion.obfuscator.asm.InstructionModifier;
 import tech.skidonion.obfuscator.asm.accesses.AccessFlags;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.Transformer;
-import tech.skidonion.obfuscator.utils.*;
+import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.commons.Pair;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ModeValue;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class InvokeWrapperObfuscation extends Transformer {

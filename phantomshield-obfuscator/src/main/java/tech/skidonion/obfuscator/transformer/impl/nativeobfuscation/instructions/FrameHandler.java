@@ -1,11 +1,11 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.LabelNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 import java.util.Arrays;

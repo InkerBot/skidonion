@@ -1,8 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 public class LookupSwitchHandler extends GenericInstructionHandler<LookupSwitchInsnNode> {

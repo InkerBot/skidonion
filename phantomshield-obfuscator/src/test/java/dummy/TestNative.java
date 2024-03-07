@@ -2,7 +2,7 @@ package dummy;
 
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 
-import static tech.skidonion.obfuscator.annotations.NativeObfuscation.VirtualMachine.*;
+import static tech.skidonion.obfuscator.annotations.NativeObfuscation.VirtualMachine.TIGER_RED;
 
 public class TestNative {
     @NativeObfuscation(virtualize = TIGER_RED)

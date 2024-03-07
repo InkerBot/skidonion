@@ -1,7 +1,5 @@
 import tech.skidonion.obfuscator.PhantomShield;
-import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
-import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 
 import java.io.File;
 

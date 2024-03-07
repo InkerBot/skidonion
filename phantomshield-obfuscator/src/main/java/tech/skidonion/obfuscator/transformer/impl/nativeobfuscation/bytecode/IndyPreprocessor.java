@@ -1,7 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode;
 
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;

@@ -1,12 +1,15 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions;
 
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorUtils;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorUtils;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;

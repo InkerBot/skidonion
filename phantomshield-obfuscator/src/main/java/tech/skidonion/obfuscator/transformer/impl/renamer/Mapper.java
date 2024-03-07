@@ -17,7 +17,6 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.*;
-import java.sql.Array;
 import java.util.*;
 import java.util.stream.IntStream;
 

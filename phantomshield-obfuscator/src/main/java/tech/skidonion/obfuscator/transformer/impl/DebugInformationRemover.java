@@ -1,8 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.tree.*;
-import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.asm.InstructionModifier;
+import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 
 import java.util.ArrayList;
