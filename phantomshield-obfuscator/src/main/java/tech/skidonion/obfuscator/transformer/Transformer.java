@@ -48,26 +48,26 @@ public abstract class Transformer implements Opcodes {
      * */
     public abstract String annotation();
 
-    protected final ClassWrapper injectClass(ClassNode classNode) {
+    public final ClassWrapper injectClass(ClassNode classNode) {
         ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
         obfuscator.classes.put(cw.getName(), cw);
         return cw;
     }
 
-    protected final void injectClasses(Collection<ClassNode> classNodes) {
+    public final void injectClasses(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
         }
     }
 
-    protected final void injectClassAsResource(ClassNode classNode) {
+    public final void injectClassAsResource(ClassNode classNode) {
         ClassWriter cw = new ClassWriter(0);
         classNode.accept(cw);
         obfuscator.resources.put(classNode.name + ".class", cw.toByteArray());
     }
 
-    protected final void injectClassesAsResource(Collection<ClassNode> classNodes) {
+    public final void injectClassesAsResource(Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWriter cw = new ClassWriter(0);
             classNode.accept(cw);
@@ -75,7 +75,7 @@ public abstract class Transformer implements Opcodes {
         }
     }
 
-    protected final void injectResources(Map<String, byte[]> resources) {
+    public final void injectResources(Map<String, byte[]> resources) {
         obfuscator.resources.putAll(resources);
     }
 
@@ -109,12 +109,13 @@ public abstract class Transformer implements Opcodes {
         this.filter = filter;
     }
 
-    protected boolean match(String expression) {
+    public boolean match(String expression) {
         if (filter == null) return true;
         return filter.match(expression);
     }
 
-    protected boolean match(MethodWrapper method) {
+
+    public boolean match(MethodWrapper method) {
         Set<String> internals = this.internal.get(method.getOwner().getOriginalName());
         if (internals != null && (internals.contains("*") || internals.contains(method.getOriginalName() + method.getOriginalDescription())))
             return true;
@@ -123,7 +124,7 @@ public abstract class Transformer implements Opcodes {
         return filter.match(method);
     }
 
-    protected boolean match(FieldWrapper field) {
+    public boolean match(FieldWrapper field) {
         Set<String> internals = this.internal.get(field.getOwner().getOriginalName());
         if (internals != null && (internals.contains("*") || internals.contains(field.getOriginalName() + "." + field.getOriginalDescription())))
             return true;
@@ -132,7 +133,7 @@ public abstract class Transformer implements Opcodes {
         return filter.match(field);
     }
 
-    protected boolean match(ClassWrapper clazz) {
+    public boolean match(ClassWrapper clazz) {
         if (this.internal.containsKey(clazz.getOriginalName())) return true;
         if (hasAnnotation(clazz)) return matchAnnotation(clazz);
         if (filter == null) return true;
@@ -159,7 +160,7 @@ public abstract class Transformer implements Opcodes {
         });
     }
 
-    protected final Stream<ClassWrapper> getFilteredClasses() {
+    public final Stream<ClassWrapper> getFilteredClasses() {
         return getClassWrappers().stream().filter(this::match);
     }
 
@@ -190,71 +191,71 @@ public abstract class Transformer implements Opcodes {
     }
 
 
-    protected final boolean hasAnnotation(ClassWrapper classWrapper) {
+    public final boolean hasAnnotation(ClassWrapper classWrapper) {
         if (annotation() == null)
             return false;
         return ASMUtils.hasAnnotation(classWrapper, annotation());
     }
 
-    protected final boolean hasAnnotation(MethodWrapper methodWrapper) {
+    public final boolean hasAnnotation(MethodWrapper methodWrapper) {
         if (annotation() == null)
             return false;
         return ASMUtils.hasAnnotation(methodWrapper, annotation());
     }
 
-    protected final boolean hasAnnotation(FieldWrapper fieldWrapper) {
+    public final boolean hasAnnotation(FieldWrapper fieldWrapper) {
         if (annotation() == null)
             return false;
         return ASMUtils.hasAnnotation(fieldWrapper, annotation());
     }
 
-    protected final Map<String, Object> getAnnotationValues(ClassWrapper classWrapper) {
+    public final Map<String, Object> getAnnotationValues(ClassWrapper classWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(classWrapper, annotation());
     }
 
-    protected final Map<String, Object> getAnnotationValues(MethodWrapper methodWrapper) {
+    public final Map<String, Object> getAnnotationValues(MethodWrapper methodWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(methodWrapper, annotation());
     }
 
-    protected final Map<String, Object> getAnnotationValues(FieldWrapper fieldWrapper) {
+    public final Map<String, Object> getAnnotationValues(FieldWrapper fieldWrapper) {
         if (annotation() == null)
             return null;
         return ASMUtils.getAnnotationValues(fieldWrapper, annotation());
     }
 
-    protected final void removeAnnotation(ClassWrapper classWrapper) {
+    public final void removeAnnotation(ClassWrapper classWrapper) {
         if (annotation() == null)
             return;
         ASMUtils.removeAnnotation(classWrapper, annotation());
     }
 
-    protected final void removeAnnotation(FieldWrapper fieldWrapper) {
+    public final void removeAnnotation(FieldWrapper fieldWrapper) {
         if (annotation() == null)
             return;
         ASMUtils.removeAnnotation(fieldWrapper, annotation());
     }
 
-    protected final void removeAnnotation(MethodWrapper methodWrapper) {
+    public final void removeAnnotation(MethodWrapper methodWrapper) {
         if (annotation() == null)
             return;
         ASMUtils.removeAnnotation(methodWrapper, annotation());
     }
 
-    protected final boolean matchAnnotation(ClassWrapper classWrapper) {
+    public final boolean matchAnnotation(ClassWrapper classWrapper) {
         Map<String, Object> map = getAnnotationValues(classWrapper);
         return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
 
-    protected final boolean matchAnnotation(MethodWrapper methodWrapper) {
+    public final boolean matchAnnotation(MethodWrapper methodWrapper) {
         Map<String, Object> map = getAnnotationValues(methodWrapper);
         return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
 
-    protected final boolean matchAnnotation(FieldWrapper fieldWrapper) {
+    public final boolean matchAnnotation(FieldWrapper fieldWrapper) {
         Map<String, Object> map = getAnnotationValues(fieldWrapper);
         return Boolean.parseBoolean(Objects.requireNonNull(map).getOrDefault("obfuscated", "true").toString());
     }
