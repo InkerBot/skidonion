@@ -17,6 +17,7 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.*;
+import java.sql.Array;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -135,7 +136,7 @@ public class Mapper {
 
         // Apply mappings
         Remapper simpleRemapper = new MemberRemapper(mappings);
-        new ArrayList<>(classes).forEach(classWrapper -> {
+        new ArrayList<>(obfuscator.classes.values()).forEach(classWrapper -> {
             ClassNode classNode = classWrapper.getClassNode();
 
             ClassNode copy = new ClassNode();
