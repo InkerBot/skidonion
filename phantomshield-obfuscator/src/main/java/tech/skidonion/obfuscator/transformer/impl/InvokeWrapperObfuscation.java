@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class InvokeWrapperObfuscation extends Transformer {
     private final ModeValue package_mode = new ModeValue("package_mode", "random_existed", "root", "unique", "random_existed");
     private final BooleanValue inject_to_other_class = new BooleanValue("inject_to_other_class", true);
-    private final List<ClassNode> classes = new ArrayList<>();
     private final List<Pair<ClassNode, MethodNode>> syntheticMethods = new ArrayList<>();
 
     public InvokeWrapperObfuscation(String name) {
@@ -49,17 +48,16 @@ public class InvokeWrapperObfuscation extends Transformer {
                 } else if (package_mode.is("unique")) {
                     packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).nextUniqueString() + "/";
                 } else if (package_mode.is("random_existed")) {
-                    List<ClassWrapper> wrappers = new ArrayList<>(getClasses().values());
+                    List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
                     packageName = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getPackageName();
                 }
                 Dictionary classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
 
                 String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
-                classes.add(targetNode);
                 target = injectClass(targetNode);
             } else {
-                List<ClassWrapper> wrappers = new ArrayList<>(getClasses().values());
+                List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
                 target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
             }
 
