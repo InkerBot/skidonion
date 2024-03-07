@@ -80,7 +80,8 @@ public class StringEncryption extends Transformer {
 
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName, List<FieldNode> dummys) {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
-        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
+        Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");
+//        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) {
             insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
@@ -185,7 +186,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(ASMUtils.getStringInst(new String(keyBytes, StandardCharsets.ISO_8859_1)));
         decryptInsts.add(new LdcInsnNode("ISO_8859_1"));
         decryptInsts.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(String.class), "getBytes", "(Ljava/lang/String;)[B"));
-        decryptInsts.add(new VarInsnNode(ASTORE,  startIndex + 1));
+        decryptInsts.add(new VarInsnNode(ASTORE, startIndex + 1));
 
         decryptInsts.add(new InsnNode(ICONST_0));
         decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 2));

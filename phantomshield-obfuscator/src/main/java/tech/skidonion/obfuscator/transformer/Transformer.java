@@ -23,6 +23,7 @@ public abstract class Transformer implements Opcodes {
     private boolean enabled;
     private Filter filter;
     private final List<Value<?>> settings = new ArrayList<>();
+    private final Map<String, Set<String>> internal = new HashMap<>();
 
     public Transformer(String name) {
         this(name, false);
@@ -114,51 +115,52 @@ public abstract class Transformer implements Opcodes {
     }
 
     protected boolean match(MethodWrapper method) {
+        Set<String> internals = this.internal.get(method.getOwner().getOriginalName());
+        if (internals != null && (internals.contains("*") || internals.contains(method.getOriginalName() + method.getOriginalDescription())))
+            return true;
         if (hasAnnotation(method)) return matchAnnotation(method);
         if (filter == null) return true;
         return filter.match(method);
     }
 
     protected boolean match(FieldWrapper field) {
+        Set<String> internals = this.internal.get(field.getOwner().getOriginalName());
+        if (internals != null && (internals.contains("*") || internals.contains(field.getOriginalName() + "." + field.getOriginalDescription())))
+            return true;
         if (hasAnnotation(field)) return matchAnnotation(field);
         if (filter == null) return true;
         return filter.match(field);
     }
 
     protected boolean match(ClassWrapper clazz) {
+        if (this.internal.containsKey(clazz.getOriginalName())) return true;
         if (hasAnnotation(clazz)) return matchAnnotation(clazz);
         if (filter == null) return true;
         return filter.match(clazz);
     }
 
+    public void addInternalInclusion(String owner, String descriptor) {
+        this.internal.compute(owner, (key, value) -> {
+            if (value == null) {
+                value = new HashSet<>();
+            }
+            value.add(descriptor);
+            return value;
+        });
+    }
+
+    public void addInternalInclusions(String owner, String... descriptor) {
+        this.internal.compute(owner, (key, value) -> {
+            if (value == null) {
+                value = new HashSet<>();
+            }
+            value.addAll(Arrays.asList(descriptor));
+            return value;
+        });
+    }
+
     protected final Stream<ClassWrapper> getFilteredClasses() {
         return getClassWrappers().stream().filter(this::match);
-    }
-
-    public final void include(String expression) {
-        if (filter == null) return;
-        if (Objects.requireNonNull(expression).startsWith("-"))
-            throw new RuntimeException("Expression Must be a Include Type");
-        else if (!expression.startsWith("+")) expression += "+";
-        filter.accept(expression);
-    }
-
-    public final void include(ClassWrapper cw) {
-        if (filter == null) return;
-        StringBuilder sb = new StringBuilder("+");
-
-        if (cw.getOriginalAnnotations() != null)
-            for (AnnotationNode s : cw.getOriginalAnnotations())
-                sb.append('@').append(s.desc, 1, s.desc.length() - 1).append(' ');
-        if (cw.getOriginalName() != null) sb.append(cw.getOriginalName());
-        if (cw.getOriginalSuperName() != null) sb.append(" extends ").append(cw.getOriginalSuperName());
-        if (cw.getOriginalInterfaces() != null)
-            for (String s : cw.getOriginalInterfaces()) sb.append(" implements ").append(s);
-        filter.accept(sb.toString());
-        sb.append(" * *");
-        filter.accept(sb.toString());
-        sb.append("(*)");
-        filter.accept(sb.toString());
     }
 
     protected final Map<String, ClassWrapper> getClasses() {

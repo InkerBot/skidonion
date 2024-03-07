@@ -13,6 +13,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
+import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
@@ -44,6 +45,7 @@ public class PhantomShield {
     public final Map<String, Dictionary> classesDictionaries = new HashMap<>();
     public final Map<String, Dictionary> packageDictionaries = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
+    private final TransformerRegister register = new TransformerRegister();
     private long seed;
     private final Config config;
     private Dictionary dictionary;
@@ -112,7 +114,6 @@ public class PhantomShield {
             return;
         }
 
-        TransformerRegister register = new TransformerRegister();
         register.parseConfig(config);
         register.process(this);
 
@@ -403,6 +404,10 @@ public class PhantomShield {
 
     public Dictionary getDictionary() {
         return dictionary;
+    }
+
+    public TransformerRegister getRegister() {
+        return register;
     }
 
     public long getSeed() {
