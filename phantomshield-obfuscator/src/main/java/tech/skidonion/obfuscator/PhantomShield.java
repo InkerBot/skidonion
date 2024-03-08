@@ -13,6 +13,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
+import tech.skidonion.obfuscator.plugin.PluginManager;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
@@ -49,6 +50,7 @@ public class PhantomShield {
     private final Config config;
     private Dictionary dictionary;
     private CppCompiler compiler;
+    private PluginManager pluginManager;
 
     public PhantomShield(File file) throws IOException {
         this(Config.readConfig(file));
@@ -66,6 +68,9 @@ public class PhantomShield {
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2024 fl0wowp4rty", "All rights reserved");
+
+        pluginManager = new PluginManager();
+        pluginManager.init();
 
         if (config.has("dictionary")) {
             Object value = config.get("dictionary");
@@ -409,6 +414,10 @@ public class PhantomShield {
         return register;
     }
 
+    public PluginManager getPluginManager() {
+        return pluginManager;
+    }
+
     public long getSeed() {
         return seed;
     }
@@ -444,6 +453,7 @@ public class PhantomShield {
     public static void ERROR(String s) {
         LOGGER.error(s);
     }
+
 
     public static void ERROR(String s, Object o) {
         LOGGER.error(s, o);

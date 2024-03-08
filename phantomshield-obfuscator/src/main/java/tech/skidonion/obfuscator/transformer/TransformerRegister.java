@@ -18,12 +18,14 @@ public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 
     public TransformerRegister() {
+        this.register(new PluginTransformer("plugin_pre_transform",true));
         this.register(new DebugInformationRemover("debug_information_remover"));
         this.register(new MemberShuffler("member_shuffler"));
         this.register(new Renamer("renamer"));
         this.register(new StringEncryption("string_encryption"));
         this.register(new InvokeWrapperObfuscation("invoke_wrapper_obfuscation"));
         this.register(new ControlFlowObfuscation("control_flow_obfuscation"));
+        this.register(new PluginTransformer("plugin_post_transform",false));
         this.register(new NativeObfuscation("native_obfuscation"));
     }
 
