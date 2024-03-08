@@ -18,6 +18,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class InvokeWrapperObfuscation extends Transformer {
     private final ModeValue package_mode = new ModeValue("package_mode", "random_existed", "root", "unique", "random_existed");
@@ -57,10 +58,13 @@ public class InvokeWrapperObfuscation extends Transformer {
 
                 String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
-                target = injectClass(targetNode);
+                target = new ClassWrapper(obfuscator,targetNode,false);
             } else {
                 List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
                 target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
+                while (target.getAccess().isInterface()){
+                    target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
+                }
             }
 
             for (MethodNode method : node.methods) {
@@ -167,6 +171,8 @@ public class InvokeWrapperObfuscation extends Transformer {
         for (Pair<ClassNode, MethodNode> pair : syntheticMethods) {
             pair.getFirst().methods.add(pair.getSecond());
         }
+
+
         PhantomShield.INFO("Wrapped {} references.", counter.get());
     }
 
