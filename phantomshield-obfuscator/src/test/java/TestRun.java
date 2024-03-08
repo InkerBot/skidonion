@@ -12,9 +12,9 @@ public class TestRun {
 //        shuffler(builder);
 //        renamer(builder);
 //        string_encryption(builder);
-//        invoke_wrapper(builder);
+        invoke_wrapper(builder);
 //        control_flow(builder);
-        native_obfuscation(builder);
+//        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);
@@ -69,7 +69,7 @@ public class TestRun {
 
     private static void invoke_wrapper(ConfigBuilder builder) {
         builder.setInvokeWrapperEnable(true) //
-                .setInjectToOtherClassSetting(true) //
+                .setInjectToOtherClassSetting(false) //
                 .setPackageModeSetting("random_existed");
     }
 
