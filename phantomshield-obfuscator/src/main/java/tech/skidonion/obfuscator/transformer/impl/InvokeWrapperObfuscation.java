@@ -33,7 +33,7 @@ public class InvokeWrapperObfuscation extends Transformer {
     @Override
     public void transform() throws Exception {
         final AtomicInteger counter = new AtomicInteger();
-        getFilteredClasses().forEach(cw -> {
+        new ArrayList<>(getClassWrappers()).stream().filter(this::match).forEach(cw -> {
             removeAnnotation(cw);
             if (cw.getAccess().isInterface()) return;
 
@@ -58,13 +58,10 @@ public class InvokeWrapperObfuscation extends Transformer {
 
                 String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
-                target = new ClassWrapper(obfuscator,targetNode,false);
+                target = injectClass(targetNode);
             } else {
                 List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
                 target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
-                while (target.getAccess().isInterface()){
-                    target = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
-                }
             }
 
             for (MethodNode method : node.methods) {
@@ -269,6 +266,7 @@ public class InvokeWrapperObfuscation extends Transformer {
 
         return methodNode;
     }
+
     private static void visitArgs(int offset, Type[] types, MethodNode methodNode) {
         int index = offset;
 
