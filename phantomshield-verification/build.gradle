@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+}
+
+sourceCompatibility = targetCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+jar {
+    archiveFileName.set('phantomshield-verification.bin');
+}
+
+task copyToObfuscator(type: Copy) {
+    from 'build/libs/phantomshield-verification.bin'
+    into '../phantomshield-obfuscator/src/main/resources/binaries/'
+}
+jar.finalizedBy(copyToObfuscator)
