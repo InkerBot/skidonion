@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
 import org.objectweb.asm.tree.ClassNode;
+import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 public class ClassSourceBuilder implements AutoCloseable {
 
+    private final CppCompiler compiler;
     private final Path cppFile;
     private final Path hppFile;
     private final BufferedWriter cppWriter;
@@ -26,7 +28,8 @@ public class ClassSourceBuilder implements AutoCloseable {
 
     private final StringPool stringPool;
 
-    public ClassSourceBuilder(Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
+    public ClassSourceBuilder(CppCompiler compiler, Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
+        this.compiler = compiler;
         this.className = className;
         this.stringPool = stringPool;
         filename = String.format("%s_%d", StringUtils.escapeCppNameString(className.replace('/', '_')), classIndex);
@@ -40,7 +43,13 @@ public class ClassSourceBuilder implements AutoCloseable {
     public void addHeader(int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
         cppWriter.append("#include \"../native_jvm.hpp\"\n");
         cppWriter.append("#include \"../string_pool.hpp\"\n");
-        if (virtualize) cppWriter.append("#include \"../VirtualizerSDK.h\"\n");
+        if (virtualize) {
+            if (compiler.isAdvancedModuleEnable()) {
+                cppWriter.append("#include \"../ThemidaSDK.h\"\n");
+            } else {
+                cppWriter.append("#include \"../VirtualizerSDK.h\"\n");
+            }
+        }
         cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
         cppWriter.append("\n");
         cppWriter.append("// ").append(StringUtils.escapeCommentString(className)).append("\n");

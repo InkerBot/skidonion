@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public abstract class Transformer implements Opcodes {
-    protected PhantomShield obfuscator;
+    public PhantomShield obfuscator;
     private final boolean forceEnabled;
     private final String name;
     private boolean enabled;

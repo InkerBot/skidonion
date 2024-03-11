@@ -22,6 +22,7 @@ public class CppCompiler {
     private String compiler;
     private String extraCommandLine;
     private File outputDir;
+    private int isOnlyIntelPE = -1;
     private boolean isAarch64 = false;
     private String defaultOutput = "x64-windows.dll";
     private final AtomicInteger virtualizeMacroCount = new AtomicInteger();
@@ -34,6 +35,8 @@ public class CppCompiler {
 
     public void init(PhantomShield obfuscator) {
         this.obfuscator = obfuscator;
+        this.outputDir = new File(obfuscator.getConfig().getString("output")).getParentFile();
+
         File compilerFile = new File(compiler);
         if (!compilerFile.exists()) {
             ERROR("compiler is not found");
@@ -51,10 +54,6 @@ public class CppCompiler {
     public void addCppFile(String file) {
         cppFiles.add(file);
     }
-
-    /*
-    ${compiler_path} ${extra_command_line} -o ${output} ${inputs}
-     */
 
     public void compile(Map<String, String> properties) {
         if (outputDir == null)
@@ -123,6 +122,24 @@ public class CppCompiler {
         }
     }
 
+    public boolean isAdvancedModuleEnable() {
+        if (isOnlyIntelPE == -1) {
+            if (!supportCrossCompile) {
+                isOnlyIntelPE = 0;
+                return false;
+            }
+            isOnlyIntelPE = 1;
+            for (String target : this.targets) {
+                CompileInfo info = buildCompileInfo(target);
+                if (info.getOs() != OS.WINDOWS || (info.getArch() != ARCH.X64 && info.getArch() != ARCH.X86)) {
+                    isOnlyIntelPE = 0;
+                    return false;
+                }
+            }
+        }
+        return isOnlyIntelPE == 1;
+    }
+
     private int startProcess(String[] commands, File printFile) {
         try {
             Process process = new ProcessBuilder(commands)
@@ -143,13 +160,24 @@ public class CppCompiler {
         File newer = new File(outputDir + "\\build\\_" + output);
         INFO("virtualizing: " + output + " [" + logfile_virtualize + "]");
         String arch;
-        if ((compileInfo != null && compileInfo.getArch() == ARCH.ARM64) || isAarch64) {
-            arch = "bin/VirtualizerArm64.exe";
+        File config;
+        if (isAdvancedModuleEnable()) {
+            config = new File("bin/config.tmd").getAbsoluteFile();
+            if (compileInfo != null && compileInfo.getArch() == ARCH.X64) {
+                arch = "bin/Themida64.exe";
+            } else {
+                arch = "bin/Themida.exe";
+            }
         } else {
-            arch = "bin/Virtualizer.exe";
+            config = new File("bin/config.cv").getAbsoluteFile();
+            if ((compileInfo != null && compileInfo.getArch() == ARCH.ARM64) || isAarch64) {
+                arch = "bin/VirtualizerArm64.exe";
+            } else {
+                arch = "bin/Virtualizer.exe";
+            }
         }
         int virtualize = startProcess(new String[]{arch,
-                        "/protect", "\"" + new File("bin/config.cv").getAbsoluteFile() + "\"",
+                        "/protect", "\"" + config + "\"",
                         "/inputfile", "\"" + origin.getAbsoluteFile() + "\"",
                         "/outputfile", "\"" + newer.getAbsoluteFile() + "\""
                 },

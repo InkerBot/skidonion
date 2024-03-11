@@ -17,7 +17,6 @@ import java.util.*;
 public class MethodContext {
 
     public NativeObfuscation obfuscator;
-
     public final MethodWrapper method;
     public final ClassWrapper clazz;
     public final int methodIndex;
@@ -42,6 +41,8 @@ public class MethodContext {
     public String cppNativeMethodName;
     public String virtualization = "NONE";
 
+    public final String prefixVM;
+
 
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
                          int classIndex) {
@@ -50,6 +51,7 @@ public class MethodContext {
         this.methodIndex = methodIndex;
         this.clazz = clazz;
         this.classIndex = classIndex;
+        this.prefixVM = obfuscator.obfuscator.getCompiler().isAdvancedModuleEnable() ? "VM" : "VIRTUALIZER";
 
         this.output = new StringBuilder();
         this.nativeMethods = new StringBuilder();
@@ -92,7 +94,7 @@ public class MethodContext {
 
     public void injectHeader() {
         if (!"NONE".equals(virtualization)) {
-            output.append("    VIRTUALIZER_" + virtualization + "_START\n");
+            output.append(prefixVM).append("_").append(virtualization).append("_START\n");
             output.append("volatile bool __dummy = true;\n");
             output.append("if(__dummy){\n");
         }
@@ -101,7 +103,7 @@ public class MethodContext {
     public void injectTail() {
         if (!"NONE".equals(virtualization)) {
             output.append("}\n");
-            output.append("    VIRTUALIZER_" + virtualization + "_END\n");
+            output.append(prefixVM).append("_").append(virtualization).append("_END\n");
         }
     }
 }

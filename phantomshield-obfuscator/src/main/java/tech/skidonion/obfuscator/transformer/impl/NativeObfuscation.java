@@ -160,7 +160,7 @@ public class NativeObfuscation extends Transformer {
                 cachedCallSitesIndex = new AtomicInteger();
 
                 try (ClassSourceBuilder cppBuilder =
-                             new ClassSourceBuilder(cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
+                             new ClassSourceBuilder(compiler, cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
                     compiler.addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
                     StringBuilder instructions = new StringBuilder();
 
@@ -183,6 +183,7 @@ public class NativeObfuscation extends Transformer {
                             }
                         }
                         if ("<clinit>".equals(method.getName())) {
+                            shouldVirtualize = true;
                             context.virtualization = clinitVirtualization;
                         }
                         methodProcessor.processMethod(context);
@@ -272,18 +273,28 @@ public class NativeObfuscation extends Transformer {
                 .getBytes(StandardCharsets.UTF_8));
 
         if (compiler.getVirtualizeMacroCount().get() > 0) {
-            FileUtils.copyResource("sources/VirtualizerSDK.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_BorlandC_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_BorlandC_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_GNU_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_ICL_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_LCC_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_VC_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_GNU_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_ICL_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_LCC_inline.h", cppDir);
-            FileUtils.copyResource("sources/VirtualizerSDK_VC_inline.h", cppDir);
+            if (compiler.isAdvancedModuleEnable()) {
+                FileUtils.copyResource("sources/ThemidaSDK.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs_BorlandC_inline.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs_GNU_inline.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs_ICL_inline.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs_LCC_inline.h", cppDir);
+                FileUtils.copyResource("sources/SecureEngineCustomVMs_VC_inline.h", cppDir);
+            } else {
+                FileUtils.copyResource("sources/VirtualizerSDK.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_BorlandC_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_BorlandC_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_GNU_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_ICL_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_LCC_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_CustomVMs_VC_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_GNU_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_ICL_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_LCC_inline.h", cppDir);
+                FileUtils.copyResource("sources/VirtualizerSDK_VC_inline.h", cppDir);
+            }
         }
 
         compiler.compile(StringUtils.createStringMap("loader_path", nativeDir));
