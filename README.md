@@ -4,7 +4,7 @@
 ## 构建
 运行 `Build All` 即可
 
-如果你想完整体验幻影盾X的`native obfuscation`请下载 [phantom-shield-x-runtime.zip](https://imflowow.lanzoum.com/iHUQi1qix3ah) 并将该压缩包解压到 `\bin`目录
+如果你想完整体验幻影盾X的`native obfuscation`请下载 [phantom-shield-x-runtime.zip](https://imflowow.lanzoum.com/izALu1r0pydg) 并将该压缩包解压到 `\bin`目录
 
 # 测试
 运行 `TestRun` 运行参数
