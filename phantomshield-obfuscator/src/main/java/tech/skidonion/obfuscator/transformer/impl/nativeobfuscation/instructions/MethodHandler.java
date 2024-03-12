@@ -6,11 +6,13 @@ import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
+import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorUtils;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.InlineHandler;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -40,6 +42,12 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
 
     @Override
     protected void process(MethodContext context, MethodInsnNode node) {
+        if (node.owner.equals(Type.getInternalName(Inline.class))) {
+            InlineHandler.process(context, node);
+            instructionName = null;
+            return;
+        }
+
         if (PreprocessorUtils.isLookupLocal(node)) {
             context.output.append("if (lookup == nullptr) { lookup = utils::get_lookup(env, clazz); ")
                     .append(trimmedTryCatchBlock).append(" } cstack").append(context.stackPointer).append(".l = lookup;");

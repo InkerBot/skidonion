@@ -33,6 +33,9 @@ public class ConfigBuilder {
     private String loaderPackageSetting = "skidonion/??????";
     private boolean printInstructionsSetting = false;
     private boolean hiddenStackTraceSetting = true;
+    private boolean verificationEnableSetting = false;
+    private boolean useInternalUserInterfaceSetting = true;
+    private String verificationSecretKeySetting = "";
 
     // renamer
     private boolean renamerEnable = false;
@@ -122,6 +125,13 @@ public class ConfigBuilder {
             native_obfuscation.put("loader_package", loaderPackageSetting);
             native_obfuscation.put("print_instructions", printInstructionsSetting);
             native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
+
+            Map<String, Object> verification = new LinkedHashMap<>();
+            verification.put("verification_enable", verificationEnableSetting);
+            verification.put("use_internal_user_interface", useInternalUserInterfaceSetting);
+            verification.put("verification_secret_key", verificationSecretKeySetting);
+
+            native_obfuscation.put("verification", verification);
 
             // 添加 过滤器
             subFiltersSettings.computeIfPresent("native_obfuscation", (k, v) -> {
@@ -452,6 +462,21 @@ public class ConfigBuilder {
 
     public ConfigBuilder setRemoveKotlinReferenceSetting(boolean removeKotlinReferenceSetting) {
         this.removeKotlinReferenceSetting = removeKotlinReferenceSetting;
+        return this;
+    }
+
+    public ConfigBuilder setVerificationEnableSetting(boolean verificationEnableSetting) {
+        this.verificationEnableSetting = verificationEnableSetting;
+        return this;
+    }
+
+    public ConfigBuilder setUseInternalUserInterfaceSetting(boolean useInternalUserInterfaceSetting) {
+        this.useInternalUserInterfaceSetting = useInternalUserInterfaceSetting;
+        return this;
+    }
+
+    public ConfigBuilder setVerificationSecretKeySetting(String verificationSecretKeySetting) {
+        this.verificationSecretKeySetting = verificationSecretKeySetting;
         return this;
     }
 }

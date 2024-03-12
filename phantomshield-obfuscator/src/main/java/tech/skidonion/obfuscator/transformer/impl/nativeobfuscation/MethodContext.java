@@ -43,6 +43,8 @@ public class MethodContext {
 
     public final String prefixVM;
 
+    public boolean shouldVirtualize = false;
+
 
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
                          int classIndex) {

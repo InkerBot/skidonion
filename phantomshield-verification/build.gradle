@@ -7,6 +7,11 @@ plugins {
 sourceCompatibility = targetCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
+dependencies {
+    implementation project(":phantomshield-annotations")
+    implementation project(":phantomshield-inline")
+}
+
 jar {
     archiveFileName.set('phantomshield-verification.bin');
 }

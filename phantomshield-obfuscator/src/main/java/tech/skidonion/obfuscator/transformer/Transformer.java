@@ -50,6 +50,7 @@ public abstract class Transformer implements Opcodes {
     public final ClassWrapper injectClass(ClassNode classNode) {
         ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
         obfuscator.classes.put(cw.getName(), cw);
+        obfuscator.classpath.put(cw.getName(), cw);
         return cw;
     }
 
@@ -57,6 +58,7 @@ public abstract class Transformer implements Opcodes {
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
+            obfuscator.classpath.put(cw.getName(), cw);
         }
     }
 

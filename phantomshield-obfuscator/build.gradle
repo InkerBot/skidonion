@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation project(':phantomshield-annotations')
+    implementation project(':phantomshield-inline')
 
     implementation 'info.picocli:picocli:4.6.3'
 

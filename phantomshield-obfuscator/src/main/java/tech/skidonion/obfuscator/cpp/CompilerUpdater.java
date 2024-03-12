@@ -26,25 +26,25 @@ public class CompilerUpdater {
 
     public static void updateCompiler() {
         INFO("-----------------------");
-        INFO("checking compiler for updates...");
+        INFO("Checking compiler for updates...");
         File versionFile = new File(VERSION);
         String version = null;
         if (versionFile.exists()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(VERSION));) {
                 version = reader.readLine();
             } catch (IOException e) {
-                ERROR("error reading compiler version", e);
+                ERROR("Error reading compiler version", e);
             }
         }
-        INFO("requesting compiler version index...");
+        INFO("Requesting compiler version index...");
         JsonObject json = (JsonObject) JsonParser.parseString(HttpUtils.get("https://ziglang.org/download/index.json", null));
 
         JsonObject latest = json.get("master").getAsJsonObject();
         if (version != null) INFO("current version is " + version);
         String latestVersion = latest.get("version").getAsString();
-        INFO("latest version is " + latestVersion);
+        INFO("Latest version is " + latestVersion);
         if (latestVersion.equals(version)) {
-            INFO("compiler is up to date...");
+            INFO("Compiler is up to date...");
         } else {
             JsonObject windows = latest.get("x86_64-windows").getAsJsonObject();
             FileUtils.clearDirectory(Paths.get("bin/compiler"));
@@ -55,13 +55,13 @@ public class CompilerUpdater {
                         .setUrl(windows.get("tarball").getAsString())
                         .setOutput(temp)
                         .setCallback(progress -> {
-                            INFO(String.format("download progress: %.0f%%", progress * 100.0f));
+                            INFO(String.format("Download progress: %.0f%%", progress * 100.0f));
                         })
                         .setOnFailure(() -> {
-                            ERROR("error downloading compiler");
+                            ERROR("Error downloading compiler");
                         })
                         .setOnSuccess(() -> {
-                            INFO("download complete");
+                            INFO("Download complete");
                             decompressZig(temp.toPath(), Paths.get("bin/compiler"));
                         });
                 Future<DownloadResult> future = builder.start();
@@ -70,17 +70,17 @@ public class CompilerUpdater {
                 try (FileWriter writer = new FileWriter(versionFile)) {
                     writer.write(latestVersion);
                 } catch (IOException e) {
-                    ERROR("error writing compiler version", e);
+                    ERROR("Error writing compiler version", e);
                 }
             } catch (IOException | ExecutionException | InterruptedException e) {
-                ERROR("error downloading compiler", e);
+                ERROR("Error downloading compiler", e);
             }
         }
         INFO("-----------------------");
     }
 
     private static void decompressZig(Path input, Path dir) {
-        INFO("decompressing...");
+        INFO("Decompressing...");
         try (ZipFile zip = new ZipFile(input.toFile());) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {
@@ -99,9 +99,9 @@ public class CompilerUpdater {
                 }
             }
         } catch (IOException e) {
-            ERROR("error decompressing compiler", e);
+            ERROR("Error decompressing compiler", e);
         }
-        INFO("decompression complete");
+        INFO("Decompression complete");
     }
 
 }

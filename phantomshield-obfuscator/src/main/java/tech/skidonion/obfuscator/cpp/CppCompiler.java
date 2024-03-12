@@ -69,8 +69,9 @@ public class CppCompiler {
             }
             List<Future<Integer>> futures = new ArrayList<>();
             for (final String target : targets) {
-                final File logfile_compile = new File("logs", "compile-" + target + "-" + timestamp + ".log");
-                INFO("compiling with target: " + target + " [" + logfile_compile + "]");
+                final File logfile_compile = new File("logs/" + target + "/" + timestamp + ".log");
+                if (!logfile_compile.getParentFile().exists()) logfile_compile.getParentFile().mkdirs();
+                INFO("Compiling with target: " + target + " [" + logfile_compile + "]");
                 futures.add(PhantomShield.EXECUTOR.submit(() -> {
                     CompileInfo compileInfo = buildCompileInfo(target);
 
@@ -78,8 +79,9 @@ public class CppCompiler {
                     int strip = 0;
                     int virtualize = 0;
                     if (compileValue == 0 && compileInfo.getOs() == OS.MAC) {
-                        final File logfile_strip = new File("logs", "strip-" + target + "-" + timestamp + ".log");
-                        INFO("stripping debug information: " + target + " [" + logfile_strip + "]");
+                        final File logfile_strip = new File("logs/strip/" + target + "/" + timestamp + ".log");
+                        if (!logfile_strip.getParentFile().exists()) logfile_strip.getParentFile().mkdirs();
+                        INFO("Stripping debug information: " + target + " [" + logfile_strip + "]");
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
                     if (virtualizeMacroCount.get() > 0) {
@@ -96,9 +98,9 @@ public class CppCompiler {
                 }
             });
         } else {
-            final File logfile = new File("logs/compile-" + timestamp + ".log");
+            final File logfile = new File("logs/compile/" + timestamp + ".log");
             if (!logfile.getParentFile().exists()) logfile.getParentFile().mkdirs();
-            INFO("compiling with target [" + logfile + "]");
+            INFO("Compiling with target [" + logfile + "]");
             try {
                 PhantomShield.EXECUTOR.submit(() -> {
                     int compileValue = startProcess(makeCompileCommandLine(null, null), logfile);
@@ -155,10 +157,11 @@ public class CppCompiler {
 
     private int virtualize(String timestamp, CompileInfo compileInfo) {
         String output = compileInfo != null ? compileInfo.output : defaultOutput;
-        File logfile_virtualize = new File("logs", "virtualize-" + output + "-" + timestamp + ".log");
+        File logfile_virtualize = new File("logs/virtualize/" + output + "/" + timestamp + ".log");
+        if (!logfile_virtualize.getParentFile().exists()) logfile_virtualize.getParentFile().mkdirs();
         File origin = new File(outputDir + "\\build\\" + output);
         File newer = new File(outputDir + "\\build\\_" + output);
-        INFO("virtualizing: " + output + " [" + logfile_virtualize + "]");
+        INFO("Virtualizing: " + output + " [" + logfile_virtualize + "]");
         String arch;
         File config;
         if (isAdvancedModuleEnable()) {
@@ -188,28 +191,28 @@ public class CppCompiler {
                 newer.renameTo(origin);
                 break;
             case 1:
-                ERROR("project file does not exist or invalid.");
+                ERROR("Project file does not exist or invalid.");
                 break;
             case 2:
-                ERROR("file to protect cannot be opened.");
+                ERROR("File to protect cannot be opened.");
                 break;
             case 3:
-                ERROR("file do not have any blocks to protect.");
+                ERROR("File do not have any blocks to protect.");
                 break;
             case 4:
-                ERROR("error in inserted block.");
+                ERROR("Error in inserted block.");
                 break;
             case 5:
-                ERROR("fatal error while protecting file.");
+                ERROR("Fatal error while protecting file.");
                 break;
             case 6:
-                ERROR("cannot write protected file to disk.");
+                ERROR("Cannot write protected file to disk.");
                 break;
             case 7:
                 ERROR(output + " isn't compatible.");
                 break;
             default:
-                ERROR("unknown error");
+                ERROR("Unknown error");
                 break;
         }
         return virtualize;

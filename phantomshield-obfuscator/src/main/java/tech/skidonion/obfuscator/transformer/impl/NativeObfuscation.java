@@ -6,11 +6,13 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -22,13 +24,18 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.Cache
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.MainSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
+import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.FileUtils;
+import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
+import tech.skidonion.obfuscator.value.impls.StringValue;
+import tech.skidonion.obfuscator.value.impls.SubValue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,10 +43,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -52,9 +56,14 @@ public class NativeObfuscation extends Transformer {
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
 
+    private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
+    private final BooleanValue use_internal_user_interface = new BooleanValue("user_internal_user_interface", true);
+    private final StringValue verification_secret_key = new StringValue("verification_secret_key", "");
+    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_secret_key);
+
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, loader_package, hidden_stack_trace);
+        addSettings(print_instructions, loader_package, hidden_stack_trace, verification);
     }
 
     private Snippets snippets;
@@ -109,6 +118,8 @@ public class NativeObfuscation extends Transformer {
 //        cMakeBuilder.addMainFile("string_pool.cpp");
 
         MainSourceBuilder mainSourceBuilder = new MainSourceBuilder();
+
+        InlineSourceBuilder inlineSourceBuilder = new InlineSourceBuilder(this, compiler);
 
         hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/___");
 
@@ -183,10 +194,13 @@ public class NativeObfuscation extends Transformer {
                             }
                         }
                         if ("<clinit>".equals(method.getName())) {
-                            shouldVirtualize = true;
-                            context.virtualization = clinitVirtualization;
+                            if (!"NONE".equals(clinitVirtualization)) {
+                                shouldVirtualize = true;
+                                context.virtualization = clinitVirtualization;
+                            }
                         }
                         methodProcessor.processMethod(context);
+                        shouldVirtualize |= context.shouldVirtualize;
                         instructions.append(context.output.toString().replace("\n", "\n    "));
 
                         nativeMethods.append(context.nativeMethods);
@@ -269,8 +283,12 @@ public class NativeObfuscation extends Transformer {
 
         Files.write(cppDir.resolve("string_pool.cpp"), stringPool.build().getBytes(StandardCharsets.UTF_8));
 
-        Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId)
-                .getBytes(StandardCharsets.UTF_8));
+        Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId).getBytes(StandardCharsets.UTF_8));
+
+        Files.write(cppDir.resolve("native_jvm_inline.cpp"), inlineSourceBuilder.buildCpp().getBytes(StandardCharsets.UTF_8));
+        Files.write(cppDir.resolve("native_jvm_inline.hpp"), inlineSourceBuilder.buildHpp().getBytes(StandardCharsets.UTF_8));
+
+        compiler.addCppFile(cppDir.resolve("native_jvm_inline.cpp").toAbsolutePath().toString());
 
         if (compiler.getVirtualizeMacroCount().get() > 0) {
             if (compiler.isAdvancedModuleEnable()) {
@@ -318,7 +336,7 @@ public class NativeObfuscation extends Transformer {
         loaderClass = classNodes.get(0);
         loaderClass.sourceFile = "synthetic";
 
-        ClassNode resultLoaderClass = new ClassNode(Opcodes.ASM9);
+        ClassNode resultLoaderClass = new ClassNode();
         String originalLoaderClassName = loaderClass.name;
         loaderClass.accept(new ClassRemapper(resultLoaderClass, new Remapper() {
             @Override
@@ -327,6 +345,71 @@ public class NativeObfuscation extends Transformer {
             }
         }));
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
+
+        final ClassNode wrapper = new ClassNode();
+        wrapper.version = V1_8;
+        wrapper.access = ACC_PUBLIC;
+        wrapper.superName = "java/lang/Object";
+        wrapper.name = "skidonion/InlineWrapper" + RandomUtils.getRandomInt();
+//        ClassWrapper inline = injectClass(wrapper);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
+        AtomicInteger inlineIndex = new AtomicInteger();
+        addInternalInclusion(wrapper.name, "*");
+        getClassWrappers().forEach(classWrapper -> {
+            final boolean classMatch = match(classWrapper);
+            classWrapper.getMethods().forEach(methodWrapper -> {
+                final boolean methodMatch = match(methodWrapper);
+                if (!classMatch || !methodMatch) {
+                    for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
+                        AbstractInsnNode instruction = iterator.next();
+                        if (instruction instanceof MethodInsnNode) {
+                            MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
+                            if (methodInsnNode.getOpcode() == INVOKESTATIC && methodInsnNode.owner.equals(Type.getInternalName(Inline.class))) {
+                                MethodNode inlineMethod = new MethodNode();
+                                inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
+                                inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
+                                if (methodInsnNode.name.startsWith("_advanced_")) {
+                                    iterator.previous();
+                                    AbstractInsnNode previous = iterator.previous();
+                                    int constant;
+                                    try {
+                                        constant = ASMUtils.getIntegerFromInsn(previous);
+                                    } catch (Exception exception) {
+                                        throw new RuntimeException("Advanced Inline Method need a const argument...");
+                                    }
+                                    iterator.remove();
+                                    iterator.next();
+                                    inlineMethod.desc = "()I";
+                                    inlineMethod.instructions.add(new LdcInsnNode(constant));
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
+                                    inlineMethod.instructions.add(new InsnNode(IRETURN));
+                                } else {
+                                    inlineMethod.desc = methodInsnNode.desc;
+                                    Type[] arguments = Type.getArgumentTypes(methodInsnNode.desc);
+                                    for (int i = 0; i < arguments.length; i++) {
+                                        Type argument = arguments[i];
+                                        inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
+                                    }
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
+                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(methodInsnNode.desc))));
+                                }
+                                iterator.remove();
+                                inline.addMethod(inlineMethod);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        if (!inline.getMethods().isEmpty()) {
+            obfuscator.classes.put(inline.getName(), inline);
+            obfuscator.classpath.put(inline.getName(), inline);
+            Mapper mapper = new Mapper(obfuscator, Collections.singleton(inline));
+            mapper.setRandomPackage(true);
+            mapper.generateMappings();
+            mapper.apply();
+        }
     }
 
     @Override
@@ -370,4 +453,7 @@ public class NativeObfuscation extends Transformer {
         return hiddenMethodsPool;
     }
 
+    public boolean isVerificationEnable() {
+        return verification_enable.isEnable();
+    }
 }

@@ -43,6 +43,7 @@ public class ClassSourceBuilder implements AutoCloseable {
     public void addHeader(int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
         cppWriter.append("#include \"../native_jvm.hpp\"\n");
         cppWriter.append("#include \"../string_pool.hpp\"\n");
+        cppWriter.append("#include \"../native_jvm_inline.hpp\"\n");
         if (virtualize) {
             if (compiler.isAdvancedModuleEnable()) {
                 cppWriter.append("#include \"../ThemidaSDK.h\"\n");

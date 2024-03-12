@@ -15,8 +15,7 @@ class MachineIDUtilsTest {
             Object[] array = new Object[3];
             array[0] = -1;
             array[1] = ThreadLocalRandom.current().nextInt();
-//            MachineIDUtils.generate(array);
-            array[2] = "ff01000001ff";
+            MachineIDUtils.generate(array);
             MachineIDUtils.check(array);
             System.out.println((((long) array[0] >> 32) ^ (int) array[1]) & 0b1);
         }

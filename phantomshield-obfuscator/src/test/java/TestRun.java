@@ -56,14 +56,17 @@ public class TestRun {
 
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
-                .setPrintInstructionsSetting(false) //
+                .setPrintInstructionsSetting(true) //
                 .addTarget("x86_64-windows") //
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-//                .addSubFilters("native_obfuscation", //
-//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
-//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
+                .setVerificationEnableSetting(true)//
+                .setVerificationSecretKeySetting("")//
+                .setUseInternalUserInterfaceSetting(true)//
+                .addSubFilters("native_obfuscation", //
+                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
+                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
         ;
     }
 
