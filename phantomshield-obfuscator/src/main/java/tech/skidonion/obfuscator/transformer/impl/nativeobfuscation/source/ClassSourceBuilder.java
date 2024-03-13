@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ClassSourceBuilder implements AutoCloseable {
 
@@ -43,7 +40,11 @@ public class ClassSourceBuilder implements AutoCloseable {
         hppWriter = Files.newBufferedWriter(hppFile, StandardCharsets.UTF_8);
     }
 
-    public void addHeader(int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
+    public void addHeader(Set<String> headers, int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
+        for (String header : headers) {
+            cppWriter.append("#include ").append(header).append("\n");
+        }
+
         cppWriter.append("#include \"../native_jvm.hpp\"\n");
         cppWriter.append("#include \"../string_pool.hpp\"\n");
         cppWriter.append("#include \"../native_jvm_inline.hpp\"\n");

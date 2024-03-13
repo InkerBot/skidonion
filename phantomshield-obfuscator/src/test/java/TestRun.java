@@ -64,9 +64,9 @@ public class TestRun {
                 .setVerificationEnableSetting(true)//
                 .setVerificationSecretKeySetting("")//
                 .setUseInternalUserInterfaceSetting(true)//
-                .addSubFilters("native_obfuscation", //
-                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
-                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
+//                .addSubFilters("native_obfuscation", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
+//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
         ;
     }
 

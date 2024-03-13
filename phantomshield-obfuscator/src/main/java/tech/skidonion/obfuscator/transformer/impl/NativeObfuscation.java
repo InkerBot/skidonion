@@ -175,6 +175,8 @@ public class NativeObfuscation extends Transformer {
                     compiler.addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
                     StringBuilder instructions = new StringBuilder();
 
+                    Set<String> headers = new HashSet<>();
+
                     boolean shouldVirtualize = false;
                     for (int i = 0; i < cw.getMethods().size(); i++) {
                         MethodWrapper method = cw.getMethods().get(i);
@@ -201,6 +203,9 @@ public class NativeObfuscation extends Transformer {
                         }
                         methodProcessor.processMethod(context);
                         shouldVirtualize |= context.shouldVirtualize;
+
+                        headers.addAll(context.headers);
+
                         instructions.append(context.output.toString().replace("\n", "\n    "));
 
                         nativeMethods.append(context.nativeMethods);
@@ -216,7 +221,7 @@ public class NativeObfuscation extends Transformer {
 
                     shouldVirtualize |= isVerificationEnable();
 
-                    cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
+                    cppBuilder.addHeader(headers, cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
                     cppBuilder.addInstructions(instructions.toString());
                     cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize);
 

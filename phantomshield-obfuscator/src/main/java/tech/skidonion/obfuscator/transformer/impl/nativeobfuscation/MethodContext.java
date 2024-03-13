@@ -45,6 +45,8 @@ public class MethodContext {
 
     public boolean shouldVirtualize = false;
 
+    public Set<String> headers = new HashSet<>();
+
 
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,
                          int classIndex) {

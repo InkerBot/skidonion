@@ -13,16 +13,22 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProces
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorUtils;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.InlineHandler;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.InlineRegister;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
+
+    private final Set<String> inlines = new HashSet<>();
+    private final InlineRegister inlineProcessor = new InlineRegister();
+
+    public MethodHandler() {
+        inlines.addAll(inlineProcessor.init());
+    }
 
     private static Type simplifyType(Type type) {
         switch (type.getSort()) {
@@ -48,7 +54,12 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             return;
         }
 
-
+        String desc = node.owner + "." + node.name + node.desc;
+        if (inlines.contains(desc)) {
+            inlineProcessor.process(desc, context, node);
+            instructionName = null;
+            return;
+        }
 
         if (PreprocessorUtils.isLookupLocal(node)) {
             context.output.append("if (lookup == nullptr) { lookup = utils::get_lookup(env, clazz); ")

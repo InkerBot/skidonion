@@ -1,3 +1,4 @@
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.inline.Inline;
 
 public class Main {
@@ -9,5 +10,6 @@ public class Main {
         Inline._verification_checkHardwareID(objects);
         System.out.println((((long) objects[0] >> 32) ^ (int) objects[1]) & 0b1);
         System.out.println(Inline._advanced_checkProtection(114514));
+        System.out.println(System.currentTimeMillis());
     }
 }
