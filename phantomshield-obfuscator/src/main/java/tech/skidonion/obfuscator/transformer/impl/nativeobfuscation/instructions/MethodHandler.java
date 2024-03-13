@@ -48,6 +48,8 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             return;
         }
 
+
+
         if (PreprocessorUtils.isLookupLocal(node)) {
             context.output.append("if (lookup == nullptr) { lookup = utils::get_lookup(env, clazz); ")
                     .append(trimmedTryCatchBlock).append(" } cstack").append(context.stackPointer).append(".l = lookup;");

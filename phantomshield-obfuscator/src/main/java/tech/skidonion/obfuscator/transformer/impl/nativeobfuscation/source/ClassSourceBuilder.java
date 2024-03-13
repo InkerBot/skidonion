@@ -27,11 +27,14 @@ public class ClassSourceBuilder implements AutoCloseable {
     private final String filename;
 
     private final StringPool stringPool;
+    private final String prefixVM;
 
     public ClassSourceBuilder(CppCompiler compiler, Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
         this.compiler = compiler;
         this.className = className;
         this.stringPool = stringPool;
+
+        this.prefixVM = compiler.isAdvancedModuleEnable() ? "VM" : "VIRTUALIZER";
         filename = String.format("%s_%d", StringUtils.escapeCppNameString(className.replace('/', '_')), classIndex);
 
         cppFile = cppOutputDir.resolve(filename.concat(".cpp"));
@@ -97,8 +100,12 @@ public class ClassSourceBuilder implements AutoCloseable {
     }
 
     public void registerMethods(NodeCache<String> strings, NodeCache<String> classes, String
-            nativeMethods, List<HiddenCppMethod> hiddenMethods) throws IOException {
+            nativeMethods, List<HiddenCppMethod> hiddenMethods, boolean virtualize) throws IOException {
         cppWriter.append("    void __ngen_register_methods(JNIEnv *env, jclass clazz) {\n");
+        if (virtualize) {
+            compiler.getVirtualizeMacroCount().addAndGet(3);
+            cppWriter.append(vmStart());
+        }
         cppWriter.append("        string_pool = string_pool::get_pool();\n\n");
 
         for (Map.Entry<String, Integer> string : strings.getCache().entrySet()) {
@@ -149,6 +156,8 @@ public class ClassSourceBuilder implements AutoCloseable {
             }
         }
 
+        if (virtualize) cppWriter.append(vmEnd());
+
         cppWriter.append("    }\n");
         cppWriter.append("}");
 
@@ -170,6 +179,14 @@ public class ClassSourceBuilder implements AutoCloseable {
 
     public Path getCppFile() {
         return cppFile;
+    }
+
+    protected String vmStart() {
+        return prefixVM + "_TIGER_RED_START\n";
+    }
+
+    protected String vmEnd() {
+        return prefixVM + "_TIGER_RED_END\n";
     }
 
     @Override

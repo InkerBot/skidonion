@@ -254,13 +254,15 @@ public class MethodProcessor {
 
         context.stackPointer = 0;
 
-        for (int instruction = 0; instruction < method.instructions.size(); ++instruction) {
-            AbstractInsnNode node = method.instructions.get(instruction);
+        AbstractInsnNode node = method.instructions.getFirst();
+        while (node != null) {
 //            context.output.append("    // ").append(StringUtils.escapeCommentString(handlers[node.getType()]
 //                    .insnToString(context, node))).append("; Stack: ").append(context.stackPointer).append("\n");
             handlers[node.getType()].accept(context, node);
             context.stackPointer = handlers[node.getType()].getNewStackPointer(node, context.stackPointer);
 //            context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
+
+            node = node.getNext();
         }
 
         context.injectTail();
