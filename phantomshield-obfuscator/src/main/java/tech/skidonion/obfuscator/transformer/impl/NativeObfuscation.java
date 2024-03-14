@@ -12,7 +12,6 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
-import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -121,7 +120,7 @@ public class NativeObfuscation extends Transformer {
         hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/___");
 
         Integer[] classIndexReference = new Integer[]{0};
-
+        AtomicInteger internalIndex = new AtomicInteger();
         getFilteredClasses().forEach(cw -> {
             String clinitVirtualization = "NONE";
             {
@@ -138,8 +137,11 @@ public class NativeObfuscation extends Transformer {
             try {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
+                String displayName = cw.getOriginalName();
+                if (displayName.startsWith("tech/skidonion/verification/"))
+                    displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
 
-                PhantomShield.INFO("Converting to JNI: {}", cw.getOriginalName());
+                PhantomShield.INFO("Converting to JNI: {}", displayName);
 
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)

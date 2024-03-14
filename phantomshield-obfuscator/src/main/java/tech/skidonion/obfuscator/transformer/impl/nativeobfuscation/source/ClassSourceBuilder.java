@@ -120,7 +120,7 @@ public class ClassSourceBuilder implements AutoCloseable {
             cppWriter.append("if (env->ExceptionCheck())return;\n");
             cppWriter.append("jclass auth_class = (jclass) env->NewGlobalRef(_auth_class);\n");
             cppWriter.append("env->DeleteLocalRef(_auth_class);\n");
-            cppWriter.append("jmethodID show_verification_id = env->GetMethodID(auth_class, \"");
+            cppWriter.append("jmethodID show_verification_id = env->GetStaticMethodID(auth_class, \"");
             MethodWrapper show_verification = obfuscation.injectedWrapperMethods.get("tech/skidonion/verification/Main.showVerification()I");
             cppWriter.append(show_verification.getName());
             cppWriter.append("\", \"");
