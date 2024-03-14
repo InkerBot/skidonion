@@ -56,7 +56,7 @@ public class TestRun {
 
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
-                .setPrintInstructionsSetting(true) //
+                .setPrintInstructionsSetting(false) //
                 .addTarget("x86_64-windows") //
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //

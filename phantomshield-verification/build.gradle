@@ -10,6 +10,7 @@ sourceCompatibility = targetCompatibility = '1.8'
 dependencies {
     implementation project(":phantomshield-annotations")
     implementation project(":phantomshield-inline")
+    implementation project(":phantomshield-internals")
 }
 
 jar {

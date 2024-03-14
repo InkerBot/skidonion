@@ -54,12 +54,15 @@ public abstract class Transformer implements Opcodes {
         return cw;
     }
 
-    public final void injectClasses(Collection<ClassNode> classNodes) {
+    public final List<ClassWrapper> injectClasses(Collection<ClassNode> classNodes) {
+        List<ClassWrapper> val = new ArrayList<>();
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
             obfuscator.classes.put(cw.getName(), cw);
             obfuscator.classpath.put(cw.getName(), cw);
+            val.add(cw);
         }
+        return val;
     }
 
     public final void injectClassAsResource(ClassNode classNode) {

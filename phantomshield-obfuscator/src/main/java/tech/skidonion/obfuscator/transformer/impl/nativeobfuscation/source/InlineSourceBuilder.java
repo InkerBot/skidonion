@@ -42,6 +42,11 @@ public class InlineSourceBuilder {
             cpp.append("#include ").append(header).append("\n");
         }
         cpp.append("namespace native_jvm::inlines {\n");
+
+        if (obfuscation.isVerificationEnable()) {
+            cpp.append("bool licenced = 0;\n");
+        }
+
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
             String method = abstractInlineMethodBuilder.buildCpp();
             if (method != null) cpp.append(method);
@@ -56,6 +61,9 @@ public class InlineSourceBuilder {
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("namespace native_jvm::inlines {\n");
+        if (obfuscation.isVerificationEnable()) {
+            hpp.append("extern bool licenced;\n");
+        }
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
             String method = abstractInlineMethodBuilder.buildHpp();
             if (method != null) hpp.append(method);

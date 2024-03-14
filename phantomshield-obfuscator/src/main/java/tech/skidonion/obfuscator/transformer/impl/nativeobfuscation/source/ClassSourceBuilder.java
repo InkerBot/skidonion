@@ -1,7 +1,9 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
 import org.objectweb.asm.tree.ClassNode;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -14,7 +16,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class ClassSourceBuilder implements AutoCloseable {
-
+    private final NativeObfuscation obfuscation;
     private final CppCompiler compiler;
     private final Path cppFile;
     private final Path hppFile;
@@ -26,8 +28,9 @@ public class ClassSourceBuilder implements AutoCloseable {
     private final StringPool stringPool;
     private final String prefixVM;
 
-    public ClassSourceBuilder(CppCompiler compiler, Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
-        this.compiler = compiler;
+    public ClassSourceBuilder(NativeObfuscation obfuscation, Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
+        this.obfuscation = obfuscation;
+        this.compiler = obfuscation.obfuscator.getCompiler();
         this.className = className;
         this.stringPool = stringPool;
 
@@ -101,12 +104,34 @@ public class ClassSourceBuilder implements AutoCloseable {
     }
 
     public void registerMethods(NodeCache<String> strings, NodeCache<String> classes, String
-            nativeMethods, List<HiddenCppMethod> hiddenMethods, boolean virtualize) throws IOException {
+            nativeMethods, List<HiddenCppMethod> hiddenMethods, boolean virtualize, boolean internal) throws IOException {
+
         cppWriter.append("    void __ngen_register_methods(JNIEnv *env, jclass clazz) {\n");
         if (virtualize) {
             compiler.getVirtualizeMacroCount().addAndGet(3);
             cppWriter.append(vmStart());
         }
+
+        if (obfuscation.isVerificationEnable() && !internal) {
+            cppWriter.append("if(!inlines::licenced){\n");
+            cppWriter.append("jclass _auth_class = env->FindClass(\"");
+            cppWriter.append(obfuscation.obfuscator.getClassWrapper("tech/skidonion/verification/Main").getName());//
+            cppWriter.append("\");\n");
+            cppWriter.append("if (env->ExceptionCheck())return;\n");
+            cppWriter.append("jclass auth_class = (jclass) env->NewGlobalRef(_auth_class);\n");
+            cppWriter.append("env->DeleteLocalRef(_auth_class);\n");
+            cppWriter.append("jmethodID show_verification_id = env->GetMethodID(auth_class, \"");
+            MethodWrapper show_verification = obfuscation.injectedWrapperMethods.get("tech/skidonion/verification/Main.showVerification()I");
+            cppWriter.append(show_verification.getName());
+            cppWriter.append("\", \"");
+            cppWriter.append(show_verification.getDescription());
+            cppWriter.append("\");\n");
+            cppWriter.append("if (env->ExceptionCheck())return;\n");
+            cppWriter.append("inlines::licenced = env->CallStaticIntMethod(auth_class ,show_verification_id);\n");
+            cppWriter.append("if(!inlines::licenced)exit(0);\n");
+            cppWriter.append("}\n");
+        }
+
         cppWriter.append("        string_pool = string_pool::get_pool();\n\n");
 
         for (Map.Entry<String, Integer> string : strings.getCache().entrySet()) {

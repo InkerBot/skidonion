@@ -87,7 +87,7 @@ public class Mapper {
 
                 String newName;
                 if (random_package) {
-                    List<ClassWrapper> wrappers = new ArrayList<>(classes);
+                    List<ClassWrapper> wrappers = new ArrayList<>(obfuscator.classes.values());
                     String randomPackage = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getPackageName();
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(randomPackage, packageName -> obfuscator.getDictionary().copy());
                     newName = randomPackage;
@@ -124,8 +124,7 @@ public class Mapper {
         });
     }
 
-    public void apply()
-    {
+    public void apply() {
         mappings.putAll(classMappings);
         mappings.putAll(methodMappings);
         mappings.putAll(fieldMappings);
