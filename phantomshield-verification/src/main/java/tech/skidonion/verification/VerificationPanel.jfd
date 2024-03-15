@@ -1,0 +1,108 @@
+JFDML JFormDesigner: "8.2.1.0.348" Java: "17.0.10" encoding: "UTF-8"
+
+new FormModel {
+	"i18n.bundlePackage": "tech.skidonion.verification"
+	"i18n.bundleName": "lang"
+	"i18n.keyPrefix": "VerificationPanel"
+	"i18n.autoExternalize": true
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class java.awt.GridBagLayout ) {
+			"$columnSpecs": "0:1.0, 0, 0, 0:1.0, 0:1.0, 0:1.0, 0:1.0, 0:1.0, 0, 0:1.0, 0:1.0, 0:1.0"
+			"$rowSpecs": "0:1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0:1.0, 0"
+			"$alignLeft": true
+			"$alignTop": true
+			"$hGap": 5
+			"$vGap": 5
+		} ) {
+			name: "this"
+			"font": new java.awt.Font( "Microsoft YaHei", 0, 20 )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "usernameLabel"
+				"text": new FormMessage( null, "VerificationPanel.usernameLabel.text" )
+				"font": &Font0 new java.awt.Font( "Microsoft YaHei UI", 0, 18 )
+				"horizontalAlignment": 4
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 3
+				"gridy": 3
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "usernameField"
+				"font": new java.awt.Font( "Microsoft YaHei UI", 0, 18 )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 4
+				"gridy": 3
+				"gridwidth": 5
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "passwordLabel"
+				"text": new FormMessage( null, "VerificationPanel.passwordLabel.text" )
+				"font": #Font0
+				"horizontalAlignment": 4
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 3
+				"gridy": 6
+			} )
+			add( new FormComponent( "javax.swing.JPasswordField" ) {
+				name: "passwordField"
+				"font": new java.awt.Font( "Microsoft YaHei UI", 0, 18 )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 4
+				"gridy": 6
+				"gridwidth": 5
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "loginButton"
+				"text": new FormMessage( null, "VerificationPanel.loginButton.text" )
+				"font": &Font1 new java.awt.Font( "Microsoft YaHei UI", 0, 20 )
+				addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "login", true ) )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 5
+				"gridy": 9
+				"gridwidth": 2
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "registerLabel"
+				"text": new FormMessage( null, "VerificationPanel.registerLabel.text" )
+				"horizontalAlignment": 0
+				"font": new java.awt.Font( "Microsoft YaHei UI", 0, 18 )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "registerLabelMouseClicked", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseEntered", "registerLabelMouseEntered", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseExited", "registerLabelMouseExited", true ) )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 7
+				"gridy": 10
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "termsLabel"
+				"text": new FormMessage( null, "VerificationPanel.termsLabel.text" )
+				"horizontalAlignment": 0
+				"font": #Font1
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseEntered", "termsLabelMouseEntered", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseExited", "termsLabelMouseExited", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "termsLabelMouseClicked", true ) )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 4
+				"gridy": 12
+				"gridwidth": 2
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "privacyLabel"
+				"text": new FormMessage( null, "VerificationPanel.privacyLabel.text" )
+				"horizontalAlignment": 0
+				"font": #Font1
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseEntered", "privacyLabelMouseEntered", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseExited", "privacyLabelMouseExited", true ) )
+				addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "privacyLabelMouseClicked", true ) )
+			}, new FormLayoutConstraints( class com.jformdesigner.runtime.GridBagConstraintsEx ) {
+				"gridx": 6
+				"gridy": 12
+				"gridwidth": 2
+			} )
+		}, new FormLayoutConstraints( null ) {
+			"location": new java.awt.Point( 15, 5 )
+			"size": new java.awt.Dimension( 740, 450 )
+		} )
+	}
+}
+

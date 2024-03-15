@@ -138,8 +138,8 @@ public class NativeObfuscation extends Transformer {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
                 String displayName = cw.getOriginalName();
-                if (displayName.startsWith("tech/skidonion/verification/"))
-                    displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
+                boolean isInternal = displayName.startsWith("tech/skidonion/verification/");
+                if (isInternal) displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
 
                 PhantomShield.INFO("Converting to JNI: {}", displayName);
 
@@ -222,7 +222,7 @@ public class NativeObfuscation extends Transformer {
 
                     cppBuilder.addHeader(headers, cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
                     cppBuilder.addInstructions(instructions.toString());
-                    cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, cw.getOriginalName().startsWith("tech/skidonion/verification/"));
+                    cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
 
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getHppFilename());
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getCppFilename());

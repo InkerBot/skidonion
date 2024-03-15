@@ -7,10 +7,21 @@ plugins {
 sourceCompatibility = targetCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation project(":phantomshield-annotations")
     implementation project(":phantomshield-inline")
     implementation project(":phantomshield-internals")
+
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 jar {
