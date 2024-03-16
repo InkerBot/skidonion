@@ -12,7 +12,6 @@
 package tech.skidonion.verification.crypto.math.ed25519;
 
 import tech.skidonion.verification.crypto.Utils;
-import net.i2p.crypto.eddsa.math.*;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.verification.crypto.math.Field;
 import tech.skidonion.verification.crypto.math.FieldElement;
