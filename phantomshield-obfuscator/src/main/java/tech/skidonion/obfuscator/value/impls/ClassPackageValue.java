@@ -9,7 +9,9 @@ public class ClassPackageValue extends StringValue {
 
     @Override
     public String getValue() {
-        String path = super.getValue().replace(".", "/");
+        String origin = super.getValue();
+        if (origin.isEmpty()) return origin;
+        String path = origin.replace(".", "/");
         StringBuilder sb = new StringBuilder(path);
         if (!path.endsWith("/")) sb.append('/');
         for (int index = 0; (index = sb.indexOf("?", index)) != -1; ) {
