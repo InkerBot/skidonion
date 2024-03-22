@@ -35,7 +35,8 @@ public class ConfigBuilder {
     private boolean hiddenStackTraceSetting = true;
     private boolean verificationEnableSetting = false;
     private boolean useInternalUserInterfaceSetting = true;
-    private String verificationSecretKeySetting = "";
+    private String verificationServerSetting = "https://skidonion.tech/";
+    private String verificationTokenSetting = "";
 
     // renamer
     private boolean renamerEnable = false;
@@ -129,7 +130,8 @@ public class ConfigBuilder {
             Map<String, Object> verification = new LinkedHashMap<>();
             verification.put("verification_enable", verificationEnableSetting);
             verification.put("use_internal_user_interface", useInternalUserInterfaceSetting);
-            verification.put("verification_secret_key", verificationSecretKeySetting);
+            verification.put("verification_server", verificationServerSetting);
+            verification.put("verification_token", verificationTokenSetting);
 
             native_obfuscation.put("verification", verification);
 
@@ -475,8 +477,8 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setVerificationSecretKeySetting(String verificationSecretKeySetting) {
-        this.verificationSecretKeySetting = verificationSecretKeySetting;
+    public ConfigBuilder setVerificationTokenSetting(String verificationTokenSetting) {
+        this.verificationTokenSetting = verificationTokenSetting;
         return this;
     }
 }

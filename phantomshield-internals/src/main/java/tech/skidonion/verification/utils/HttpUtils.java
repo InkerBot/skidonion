@@ -229,7 +229,7 @@ public class HttpUtils {
             conn.setReadTimeout(15000);
             conn.setConnectTimeout(15000);
             conn.setRequestMethod(method);
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            conn.setRequestProperty("User-Agent", "Μozilla/5.0 (Windows NT 10.0; Win64; x64)");
             conn.setRequestProperty("Accept-Charset", "utf-8");
             conn.setRequestProperty("Content-Type", mediaType);
             // 添加请求头

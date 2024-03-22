@@ -265,8 +265,6 @@ public class MethodProcessor {
             node = node.getNext();
         }
 
-        context.injectTail();
-
         output.append(String.format("    return (%s) 0;\n", CPP_TYPES[context.ret.getSort()]));
 
         boolean hasAddedNewBlocks = true;
@@ -314,7 +312,9 @@ public class MethodProcessor {
                 output.append("\n");
             }
         }
+        context.injectTail();
 
+        output.append(String.format("return (%s) 0;\n", CPP_TYPES[context.ret.getSort()]));
         output.append("}\n\n");
 
         method.localVariables.clear();

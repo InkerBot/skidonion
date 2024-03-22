@@ -54,8 +54,9 @@ public class NativeObfuscation extends Transformer {
 
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("user_internal_user_interface", true);
-    private final StringValue verification_secret_key = new StringValue("verification_secret_key", "");
-    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_secret_key);
+    private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
+    private final StringValue verification_secret_key = new StringValue("verification_token", "");
+    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_secret_key);
 
     public NativeObfuscation(String name) {
         super(name, false);
@@ -446,7 +447,8 @@ public class NativeObfuscation extends Transformer {
 
         if (!injected.isEmpty()) {
             Mapper mapper = new Mapper(obfuscator, injected);
-            mapper.setRandomPackage(true);
+            mapper.setRepackage(true);
+            mapper.setRepakageName("/");
             mapper.generateMappings();
             mapper.apply();
         }
