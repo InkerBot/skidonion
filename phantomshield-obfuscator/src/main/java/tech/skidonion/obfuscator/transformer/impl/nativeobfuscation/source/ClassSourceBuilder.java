@@ -112,7 +112,7 @@ public class ClassSourceBuilder implements AutoCloseable {
             cppWriter.append(vmStart());
         }
 
-        if (obfuscation.isVerificationEnable() && !internal) {
+        if (obfuscation.isVerificationEnable() && !internal && obfuscation.isUseInternalVerificationInterface()) {
             cppWriter.append("if(!inlines::licenced){\n");
             cppWriter.append("jclass _auth_class = env->FindClass(\"");
             cppWriter.append(obfuscation.obfuscator.getClassWrapper("tech/skidonion/verification/Main").getName());//

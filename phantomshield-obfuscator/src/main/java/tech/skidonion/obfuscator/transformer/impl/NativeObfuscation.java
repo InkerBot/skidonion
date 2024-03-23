@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
+import com.google.gson.JsonObject;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -12,6 +13,7 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -21,6 +23,8 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.Pre
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtils$OnHttpResultDump;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtilsDump;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
@@ -45,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class NativeObfuscation extends Transformer {
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
@@ -55,8 +60,9 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("user_internal_user_interface", true);
     private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
-    private final StringValue verification_secret_key = new StringValue("verification_token", "");
-    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_secret_key);
+    private final StringValue verification_software_id = new StringValue("verification_software_id", "-1");
+    private final StringValue verification_token = new StringValue("verification_token", "");
+    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_software_id, verification_token);
 
     public NativeObfuscation(String name) {
         super(name, false);
@@ -142,7 +148,7 @@ public class NativeObfuscation extends Transformer {
                 boolean isInternal = displayName.startsWith("tech/skidonion/verification/");
                 if (isInternal) displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
 
-                PhantomShield.INFO("Converting to JNI: {}", displayName);
+                INFO("Converting to JNI: {}", displayName);
 
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)
@@ -353,8 +359,30 @@ public class NativeObfuscation extends Transformer {
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
 
         List<ClassWrapper> injected = new LinkedList<>();
+        long verifySoftwareId;
+        String verifyPublicKey;
         if (isVerificationEnable()) {
+            JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(Wrapper.getUserId()), this.verification_token.getValue(), this.verification_software_id.getValue());
+            if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
+                ERROR("Can't request software information");
+                return;
+            }
+            verifySoftwareId = softwareInformation.getAsJsonPrimitive("id").getAsLong();
+            verifyPublicKey = softwareInformation.getAsJsonPrimitive("public_key").getAsString();
+            INFO("Software Name: {}", softwareInformation.getAsJsonPrimitive("software_name").getAsString());
             List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(HttpUtilsDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
             for (ClassWrapper cw : classes) {
                 String origin = cw.getOriginalName();
                 addInternalInclusion(origin, "*");
@@ -364,6 +392,9 @@ public class NativeObfuscation extends Transformer {
             }
             injected.addAll(classes);
             injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
+        } else {
+            verifySoftwareId = -1L;
+            verifyPublicKey = "";
         }
 
 
@@ -371,7 +402,7 @@ public class NativeObfuscation extends Transformer {
         wrapper.version = V1_8;
         wrapper.access = ACC_PUBLIC;
         wrapper.superName = "java/lang/Object";
-        wrapper.name = "skidonion/InlineWrapper" + RandomUtils.getRandomInt();
+        wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
         ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
         AtomicInteger inlineIndex = new AtomicInteger();
@@ -432,6 +463,27 @@ public class NativeObfuscation extends Transformer {
                                 iterator.remove();
                                 inline.addMethod(inlineMethod);
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                break;
+                            }
+                            case "tech/skidonion/verification/utils/Internals.verificationServer()Ljava/lang/String;": {
+                                iterator.remove();
+                                iterator.add(new LdcInsnNode(this.verification_server.getValue()));
+                                break;
+                            }
+                            case "tech/skidonion/verification/utils/Internals.publicKey()Ljava/lang/String;": {
+                                iterator.remove();
+                                iterator.add(new LdcInsnNode(verifyPublicKey));
+                                break;
+                            }
+                            case "tech/skidonion/verification/utils/Internals.softwareId()J": {
+                                iterator.remove();
+                                iterator.add(new LdcInsnNode(verifySoftwareId));
+                                break;
+                            }
+                            case "tech/skidonion/obfuscator/inline/Wrapper.":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
+                                iterator.remove();
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
                                 break;
                             }
                         }
@@ -498,4 +550,9 @@ public class NativeObfuscation extends Transformer {
     public boolean isVerificationEnable() {
         return verification_enable.isEnable();
     }
+
+    public boolean isUseInternalVerificationInterface() {
+        return use_internal_user_interface.isEnable();
+    }
+
 }

@@ -4,6 +4,8 @@
 
 package tech.skidonion.verification;
 
+import tech.skidonion.verification.utils.Internals;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -56,7 +58,7 @@ public class VerificationPanel extends JPanel {
 
     private void termsLabelMouseClicked(MouseEvent e) {
         try {
-            Desktop.getDesktop().browse(URI.create("https://www.skidonion.tech/resources/end-user-license-agreement.html"));
+            Desktop.getDesktop().browse(URI.create("https://skidonion.tech/resources/end-user-license-agreement.html"));
         } catch (Exception ignore) {
         }
     }
@@ -71,7 +73,7 @@ public class VerificationPanel extends JPanel {
 
     private void privacyLabelMouseClicked(MouseEvent e) {
         try {
-            Desktop.getDesktop().browse(URI.create("https://www.skidonion.tech/resources/privacy-policy.html"));
+            Desktop.getDesktop().browse(URI.create("https://skidonion.tech/resources/privacy-policy.html"));
         } catch (Exception ignore) {
         }
     }
@@ -86,7 +88,7 @@ public class VerificationPanel extends JPanel {
 
     private void registerLabelMouseClicked(MouseEvent e) {
         try {
-            Desktop.getDesktop().browse(URI.create("https://www.skidonion.tech/#/register"));
+            Desktop.getDesktop().browse(URI.create(Internals.verificationServer() + "#/register"));
         } catch (Exception ignore) {
         }
     }

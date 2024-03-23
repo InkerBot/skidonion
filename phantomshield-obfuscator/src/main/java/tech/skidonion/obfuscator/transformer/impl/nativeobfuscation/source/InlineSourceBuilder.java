@@ -43,7 +43,7 @@ public class InlineSourceBuilder {
         }
         cpp.append("namespace native_jvm::inlines {\n");
 
-        if (obfuscation.isVerificationEnable()) {
+        if (obfuscation.isVerificationEnable() && obfuscation.isUseInternalVerificationInterface()) {
             cpp.append("bool licenced = 0;\n");
         }
 
@@ -61,7 +61,7 @@ public class InlineSourceBuilder {
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("namespace native_jvm::inlines {\n");
-        if (obfuscation.isVerificationEnable()) {
+        if (obfuscation.isVerificationEnable() && obfuscation.isUseInternalVerificationInterface()) {
             hpp.append("extern bool licenced;\n");
         }
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
