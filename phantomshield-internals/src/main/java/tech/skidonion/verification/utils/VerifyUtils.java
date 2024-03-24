@@ -8,6 +8,7 @@ import tech.skidonion.verification.crypto.EdDSAPublicKey;
 import tech.skidonion.verification.json.Json;
 import tech.skidonion.verification.json.JsonArray;
 import tech.skidonion.verification.json.JsonObject;
+import tech.skidonion.verification.json.JsonValue;
 import tech.skidonion.verification.time.Packet;
 
 import java.lang.reflect.Array;
@@ -116,6 +117,7 @@ public class VerifyUtils {
                         JsonObject role = roles.get(i).asObject();
                         EXPIRED_DATE.put(role.getString("rank_name", String.valueOf(i)), LocalDateTime.parse(role.getString("expired_date", "1970-1-1T00:00:00")));
                     }
+                    requestInformation();
                     ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
                     service.scheduleWithFixedDelay(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
                 }
@@ -127,14 +129,70 @@ public class VerifyUtils {
         return r & 0xFFFF00FF | (result & 0xFF) << 8;
     }
 
-    public static void heartbeat() {
+    public static void requestInformation() {
         Map<String, String> headers = genericHeader();
         Map<String, String> params = new HashMap<>();
+        JsonObject p = Json.object();
+        p.add("t", System.currentTimeMillis());
+        p.add("+", Json.NULL);
+
+        byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] dst = new byte[src.length];
+        CRYPTO.encrypt(dst, src, src.length);
+
+        params.put("data", Base64.encode(dst));
+
         String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
         if (res != null) {
             JsonObject json = Json.parse(res).asObject();
-            System.out.println(json);
+            byte code = (byte) json.getInt("code", -1);
+            if (code == 0) {
+                System.out.println(json);
+                JsonObject entity = json.get("entity").asObject();
+                String data = entity.getString("data", "==");
+                src = Base64.decode(data);
+                dst = new byte[src.length];
+                CRYPTO.decrypt(dst, src, src.length);
+                JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
+
+
+            } else {
+                System.exit(0);
+            }
+        }
+    }
+
+    public static void heartbeat() {
+        Map<String, String> headers = genericHeader();
+        Map<String, String> params = new HashMap<>();
+        JsonObject p = Json.object();
+        p.add("t", System.currentTimeMillis());
+        p.add("_", Json.NULL);
+
+        byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] dst = new byte[src.length];
+        CRYPTO.encrypt(dst, src, src.length);
+
+        params.put("data", Base64.encode(dst));
+
+        String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+        if (res != null) {
+            JsonObject json = Json.parse(res).asObject();
+            byte code = (byte) json.getInt("code", -1);
+            if (code == 0) {
+                JsonObject entity = json.get("entity").asObject();
+                String data = entity.getString("data", "==");
+                src = Base64.decode(data);
+                dst = new byte[src.length];
+                CRYPTO.decrypt(dst, src, src.length);
+                JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
+
+
+
+            } else {
+                System.exit(0);
+            }
         }
     }
 

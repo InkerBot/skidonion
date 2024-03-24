@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class VerifyUtilsTest {
     @Test
+    void getIP() {
+        System.out.println(HttpUtils.post("https://who.nie.netease.com/", null));
+    }
+
+    @Test
     void testLogin() {
         System.out.println(VerifyUtils.login("imfl0wow", "fyx.flix1324") >> 8 & 0xFF);
 
@@ -14,6 +19,5 @@ class VerifyUtilsTest {
         System.out.println(VerifyUtils.getExpiredDate("授权验证用户组"));
 
         VerifyUtils.heartbeat();
-
     }
 }
