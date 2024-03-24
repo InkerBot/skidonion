@@ -6,9 +6,11 @@ import tech.skidonion.verification.crypto.ChaCha20;
 import tech.skidonion.verification.crypto.EdDSAEngine;
 import tech.skidonion.verification.crypto.EdDSAPublicKey;
 import tech.skidonion.verification.json.Json;
+import tech.skidonion.verification.json.JsonArray;
 import tech.skidonion.verification.json.JsonObject;
 import tech.skidonion.verification.time.Packet;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,10 +20,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 public class VerifyUtils {
     private static final Random RANDOM = new SecureRandom();
@@ -29,10 +32,10 @@ public class VerifyUtils {
     private static ChaCha20 CRYPTO;
     private static String VERIFY_TOKEN;
     private static byte[] KEY;
-
     private final static Map<Integer, List<byte[]>> CLOUD_CONSTANT_MAP = new HashMap<>();
     private static String USERNAME;
     private static long USER_ID;
+    private static String MAGIC_KEY;
     private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
 
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
@@ -64,7 +67,7 @@ public class VerifyUtils {
                     JsonObject data = entity.get("data").asObject();
                     String signature = entity.getString("signature", "");
                     USER_ID = data.getLong("uid", -1);
-                    if (USER_ID < 0) {
+                    if (USER_ID <= 0) {
                         result = -1;
                         throw new RuntimeException();
                     }
@@ -77,8 +80,7 @@ public class VerifyUtils {
                     long t0 = System.currentTimeMillis();
                     ntpPacket.setTransmitTimestamp(new Packet.Timestamp(t0));
                     byte[] ntpRawPacket = ntpPacket.asByteArray();
-                    DatagramPacket packet = new DatagramPacket(ntpRawPacket,
-                            ntpRawPacket.length, InetAddress.getByName("time.windows.com"), 123);
+                    DatagramPacket packet = new DatagramPacket(ntpRawPacket, ntpRawPacket.length, InetAddress.getByName("time.windows.com"), 123);
                     socket.send(packet);
                     socket.receive(packet);
                     long t3 = System.currentTimeMillis();
@@ -97,9 +99,25 @@ public class VerifyUtils {
                     }
                     EdDSAEngine verify = new EdDSAEngine();
                     verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
-                    System.out.println(data.toString());
-                    System.out.println(verify.verify(data.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature)));
+                    if (!verify.verify(data.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
+                        result = -1;
+                        return r & 0xFFFF00FF | (result & 0xFF) << 8;
+                    }
+                    NONCE = Base64.decode(data.getString("n", "=="));
+                    BigInteger s = new BigInteger(1, Base64.decode(data.getString("p", "=="))).modPow(privateKey, m);
+                    byte[] src = s.toByteArray();
+                    byte[] key = new byte[32];
+                    System.arraycopy(src, src.length - 32, key, 0, 32);
+                    KEY = key;
+                    CRYPTO = new ChaCha20(KEY, NONCE, 0);
 
+                    JsonArray roles = data.get("roles").asArray();
+                    for (int i = 0; i < roles.size(); i++) {
+                        JsonObject role = roles.get(i).asObject();
+                        EXPIRED_DATE.put(role.getString("rank_name", String.valueOf(i)), LocalDateTime.parse(role.getString("expired_date", "1970-1-1T00:00:00")));
+                    }
+                    ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+                    service.scheduleWithFixedDelay(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
                 }
             }
         } catch (Exception e) {
@@ -110,26 +128,51 @@ public class VerifyUtils {
     }
 
     public static void heartbeat() {
+        Map<String, String> headers = genericHeader();
+        Map<String, String> params = new HashMap<>();
+        String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+        if (res != null) {
+            JsonObject json = Json.parse(res).asObject();
+            System.out.println(json);
+
+        }
     }
 
-    public static String getCloudConstant(int index) {
-        return "";
+    /*
+        "xxxx用户组".hashcode();
+     */
+    public static Optional<String> getCloudConstant(int hash, int index) {
+        return Optional.empty();
     }
 
-    public static LocalDateTime getExpiredDate() {
-        return null;
+    public static Optional<LocalDateTime> getExpiredDate(String role) {
+        return Optional.ofNullable(EXPIRED_DATE.get(role));
+    }
+
+    public static Map<String, LocalDateTime> getExpiredDates() {
+        return EXPIRED_DATE;
     }
 
     public static boolean hasRole(String role) {
         return false;
     }
 
-    public static void setSuspected() {
+    public static void setSuspected(String reason) {
 
     }
 
-    public static long getUserId() {
-        return USER_ID;
+    public static Optional<Long> getUserId() {
+        if (USER_ID > 0) {
+            return Optional.of(USER_ID);
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<String> getUsername() {
+        if (USERNAME != null) {
+            return Optional.of(USERNAME);
+        }
+        return Optional.empty();
     }
 
     private static Map<String, String> genericHeader() {

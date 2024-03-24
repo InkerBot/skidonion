@@ -90,7 +90,7 @@ public class ChaCha20 {
         }
     }
 
-    public void encrypt(byte[] dst, byte[] src, int len) {
+    public synchronized void encrypt(byte[] dst, byte[] src, int len) {
         int[] x = new int[16];
         byte[] output = new byte[64];
         int i, dpos = 0, spos = 0;
