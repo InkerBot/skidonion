@@ -155,8 +155,6 @@ public class VerifyUtils {
                 CRYPTO.decrypt(dst, src, src.length);
                 JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
-
-
             } else {
                 System.exit(0);
             }
