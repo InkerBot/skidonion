@@ -2,7 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 
 import org.objectweb.asm.tree.MethodInsnNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.impl.CurrentTimeMillisInline;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.impl.SystemInline;
 
 import java.util.*;
 
@@ -10,7 +10,7 @@ public class InlineRegister {
     private final List<AbstractStandardMethodInline> inlines = new ArrayList<>();
 
     public InlineRegister() {
-        inlines.add(new CurrentTimeMillisInline());
+        inlines.add(new SystemInline());
     }
 
     public void process(String desc, MethodContext context, MethodInsnNode node) {

@@ -25,6 +25,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.Cache
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtils$OnHttpResultDump;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtilsDump;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.QQUtilsDump;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
@@ -361,40 +362,52 @@ public class NativeObfuscation extends Transformer {
         List<ClassWrapper> injected = new LinkedList<>();
         long verifySoftwareId;
         String verifyPublicKey;
-        if (isVerificationEnable()) {
-            JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(Wrapper.getUserId()), this.verification_token.getValue(), this.verification_software_id.getValue());
-            if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
-                ERROR("Can't request software information");
-                return;
-            }
-            verifySoftwareId = softwareInformation.getAsJsonPrimitive("id").getAsLong();
-            verifyPublicKey = softwareInformation.getAsJsonPrimitive("public_key").getAsString();
-            INFO("Software Name: {}", softwareInformation.getAsJsonPrimitive("software_name").getAsString());
-            List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(HttpUtilsDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            for (ClassWrapper cw : classes) {
-                String origin = cw.getOriginalName();
-                addInternalInclusion(origin, "*");
-                for (MethodWrapper mw : cw.getMethods()) {
-                    injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
+        try {
+            if (isVerificationEnable()) {
+                JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(Wrapper.getUserId()), this.verification_token.getValue(), this.verification_software_id.getValue());
+                if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
+                    ERROR("Can't request software information");
+                    return;
                 }
+                verifySoftwareId = softwareInformation.getAsJsonPrimitive("id").getAsLong();
+                verifyPublicKey = softwareInformation.getAsJsonPrimitive("public_key").getAsString();
+                INFO("Software Name: {}", softwareInformation.getAsJsonPrimitive("software_name").getAsString());
+                List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
+                {
+                    ClassNode node = new ClassNode();
+                    ClassReader reader = new ClassReader(HttpUtilsDump.dump());
+                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                    classes.add(injectClass(node));
+                }
+                {
+                    ClassNode node = new ClassNode();
+                    ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
+                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                    classes.add(injectClass(node));
+                }
+                {
+                    ClassNode node = new ClassNode();
+                    ClassReader reader = new ClassReader(QQUtilsDump.dump());
+                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                    classes.add(injectClass(node));
+                }
+                for (ClassWrapper cw : classes) {
+                    String origin = cw.getOriginalName();
+                    addInternalInclusion(origin, "*");
+                    for (MethodWrapper mw : cw.getMethods()) {
+                        injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
+                    }
+                }
+                injected.addAll(classes);
+                injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
+            } else {
+                verifySoftwareId = -1L;
+                verifyPublicKey = "";
             }
-            injected.addAll(classes);
-            injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
-        } else {
-            verifySoftwareId = -1L;
-            verifyPublicKey = "";
+        } catch (Exception e) {
+            ERROR("Request Verification Software ERROR");
+            System.exit(1);
+            return;
         }
 
 
@@ -480,7 +493,12 @@ public class NativeObfuscation extends Transformer {
                                 iterator.add(new LdcInsnNode(verifySoftwareId));
                                 break;
                             }
-                            case "tech/skidonion/obfuscator/inline/Wrapper.":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
                                 iterator.remove();
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));

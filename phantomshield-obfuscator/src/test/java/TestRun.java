@@ -1,11 +1,12 @@
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
+import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 
 import java.io.File;
 
 public class TestRun {
     public static void main(String[] args) {
-//        CompilerUpdater.updateCompiler();
+        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
 //        debug_information_remover(builder);
@@ -57,7 +58,7 @@ public class TestRun {
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
                 .setPrintInstructionsSetting(false) //
-                .addTarget("x86_64-windows") //
+                .addTarget("x86_64-windows.win7-gnu") //
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //

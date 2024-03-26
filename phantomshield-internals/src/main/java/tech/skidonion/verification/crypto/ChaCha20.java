@@ -45,20 +45,11 @@ public class ChaCha20 {
         x[b] = ROTATE(x[b] ^ x[c], 7);
     }
 
-    public class WrongNonceSizeException extends Exception {
-        private static final long serialVersionUID = 2687731889587117531L;
-    }
 
-    public class WrongKeySizeException extends Exception {
-        private static final long serialVersionUID = -290509589749955895L;
-    }
-
-
-    public ChaCha20(byte[] key, byte[] nonce, int counter)
-            throws WrongKeySizeException, WrongNonceSizeException {
+    public ChaCha20(byte[] key, byte[] nonce, int counter){
 
         if (key.length != KEY_SIZE) {
-            throw new WrongKeySizeException();
+            throw new RuntimeException();
         }
 
         this.matrix[ 0] = 0x61707865;
@@ -86,7 +77,7 @@ public class ChaCha20 {
             this.matrix[14] = littleEndianToInt(nonce, 4);
             this.matrix[15] = littleEndianToInt(nonce, 8);
         } else {
-            throw new WrongNonceSizeException();
+            throw new RuntimeException();
         }
     }
 

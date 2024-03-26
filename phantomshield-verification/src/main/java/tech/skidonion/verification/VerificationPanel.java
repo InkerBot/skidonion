@@ -4,6 +4,7 @@
 
 package tech.skidonion.verification;
 
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.verification.utils.Internals;
 
 import javax.swing.*;
@@ -48,8 +49,13 @@ public class VerificationPanel extends JPanel {
     private void login(ActionEvent e) {
         this.loginButton.setEnabled(false);
         try {
-            this.output.write(1);
-            SwingUtilities.invokeLater(frame::dispose);
+            byte result = (byte) (Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword())) >> 8 & 0xFF);
+            if (result == 0) {
+                this.output.write(1);
+                SwingUtilities.invokeLater(frame::dispose);
+            } else {
+                JOptionPane.showMessageDialog(this, bundle.getString("VerificationPanel.login.code." + result), "skidonion", JOptionPane.WARNING_MESSAGE);
+            }
         } catch (IOException exception) {
             JOptionPane.showMessageDialog(this, this.bundle.getString("VerificationPanel.login.exception"));
         }

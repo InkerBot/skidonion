@@ -17,7 +17,12 @@ class VerifyUtilsTest {
         System.out.println(VerifyUtils.getUserId());
         System.out.println(VerifyUtils.getUsername());
         System.out.println(VerifyUtils.getExpiredDate("授权验证用户组"));
+        System.out.println(VerifyUtils.getExpiredDates());
 
-        VerifyUtils.heartbeat();
+        System.out.println(VerifyUtils.hasRole("授权验证用户组"));
+
+        VerifyUtils.getCloudConstant("授权验证用户组".hashCode(), 0).ifPresent(System.out::println);
+//        VerifyUtils.setAsSuspected("测试");
+//        VerifyUtils.heartbeat();
     }
 }
