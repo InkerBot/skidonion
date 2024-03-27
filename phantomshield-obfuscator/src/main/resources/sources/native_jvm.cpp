@@ -149,6 +149,7 @@ namespace native_jvm::utils {
         if (count == 1) {
             std::string renamed_class_name(class_name);
             std::replace(renamed_class_name.begin(), renamed_class_name.end(), '/', '.');
+            jstring renamed_class_name_string = env->NewStringUTF(renamed_class_name.c_str());
             jclass clazz = find_class_wo_static(env, classloader, renamed_class_name_string);
             env->DeleteLocalRef(renamed_class_name_string);
             if (env->ExceptionCheck()) {

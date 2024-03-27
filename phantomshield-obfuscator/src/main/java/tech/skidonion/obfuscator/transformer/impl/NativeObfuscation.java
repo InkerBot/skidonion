@@ -12,7 +12,6 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
-import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -58,9 +57,10 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("user_internal_user_interface", true);
     private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
+    private final StringValue verification_user_id = new StringValue("verification_user_id", "-1");
     private final StringValue verification_software_id = new StringValue("verification_software_id", "-1");
     private final StringValue verification_token = new StringValue("verification_token", "");
-    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_software_id, verification_token);
+    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_user_id, verification_software_id, verification_token);
 
     public NativeObfuscation(String name) {
         super(name, false);
@@ -360,7 +360,7 @@ public class NativeObfuscation extends Transformer {
         long verifySoftwareId;
         String verifyPublicKey;
         if (isVerificationEnable()) {
-            JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(7), this.verification_token.getValue(), this.verification_software_id.getValue());
+            JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
                 ERROR("Can't request software information");
                 return;

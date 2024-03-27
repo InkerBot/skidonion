@@ -65,6 +65,7 @@ public class TestRun {
                 .setVerificationEnableSetting(true)//
                 .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
+                .setVerificationUserIdSetting("7")//
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
                 .addSubFilters("native_obfuscation", //

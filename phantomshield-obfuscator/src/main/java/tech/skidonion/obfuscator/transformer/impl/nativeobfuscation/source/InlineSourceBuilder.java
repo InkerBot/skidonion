@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.crypto.ChaCha20;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.impl.VerificationInlineBuilder;
 
@@ -43,8 +44,24 @@ public class InlineSourceBuilder {
         }
         cpp.append("namespace native_jvm::inlines {\n");
 
-        if (obfuscation.isVerificationEnable() && obfuscation.isUseInternalVerificationInterface()) {
-            cpp.append("bool licenced = 0;\n");
+        if (obfuscation.isVerificationEnable()) {
+            if (obfuscation.isUseInternalVerificationInterface()) {
+                cpp.append("bool licenced = 0;\n");
+            }
+            cpp.append("jbyteArray nonce;\n");
+            cpp.append("jobject crypto;\n");
+            cpp.append("jobject verify_token;\n");
+            cpp.append("jbyteArray key;\n");
+            cpp.append("jobject username;\n");
+            cpp.append("jlong user_id;\n");
+            cpp.append("jbyteArray magic_key;\n");
+//            private static byte[] NONCE;
+//            private static ChaCha20 CRYPTO;
+//            private static String VERIFY_TOKEN;
+//            private static byte[] KEY;
+//            private static String USERNAME;
+//            private static long USER_ID;
+//            private static byte[] MAGIC_KEY;
         }
 
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
@@ -61,8 +78,17 @@ public class InlineSourceBuilder {
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("namespace native_jvm::inlines {\n");
-        if (obfuscation.isVerificationEnable() && obfuscation.isUseInternalVerificationInterface()) {
-            hpp.append("extern bool licenced;\n");
+        if (obfuscation.isVerificationEnable()) {
+            if (obfuscation.isUseInternalVerificationInterface()) {
+                hpp.append("extern bool licenced;\n");
+            }
+            cpp.append("extern jbyteArray nonce;\n");
+            cpp.append("extern jobject crypto;\n");
+            cpp.append("extern jobject verify_token;\n");
+            cpp.append("extern jbyteArray key;\n");
+            cpp.append("extern jobject username;\n");
+            cpp.append("extern jlong user_id;\n");
+            cpp.append("extern jbyteArray magic_key;\n");
         }
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
             String method = abstractInlineMethodBuilder.buildHpp();

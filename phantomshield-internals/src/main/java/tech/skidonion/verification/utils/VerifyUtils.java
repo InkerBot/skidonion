@@ -25,16 +25,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+
 public class VerifyUtils {
     private static final Random RANDOM = new SecureRandom();
-    private static byte[] NONCE;
-    private static ChaCha20 CRYPTO;
-    private static String VERIFY_TOKEN;
-    private static byte[] KEY;
     private final static Map<Integer, byte[]> CLOUD_CONSTANT_MAP = new HashMap<>();
-    private static String USERNAME;
-    private static long USER_ID;
-    private static byte[] MAGIC_KEY;
     private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
 
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
@@ -63,9 +57,9 @@ public class VerifyUtils {
                     JsonObject entity = json.get("entity").asObject();
                     JsonObject data = entity.get("data").asObject();
                     String signature = entity.getString("signature", "");
-                    USER_ID = data.getLong("uid", -1);
-                    USERNAME = username;
-                    VERIFY_TOKEN = data.getString("jwt", "");
+                    Internals.setUserId(data.getLong("uid", -1));
+                    Internals.setUsername(username);
+                    Internals.setVerifyToken(data.getString("jwt", ""));
 
                     EdDSAEngine verify = new EdDSAEngine();
                     verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
@@ -73,13 +67,13 @@ public class VerifyUtils {
                         result = -1;
                         return r & 0xFFFF00FF | (result & 0xFF) << 8;
                     }
-                    NONCE = Base64.decode(data.getString("n", "=="));
+                    Internals.setNonce(Base64.decode(data.getString("n", "==")));
                     BigInteger s = new BigInteger(1, Base64.decode(data.getString("p", "=="))).modPow(privateKey, m);
                     byte[] src = s.toByteArray();
                     byte[] key = new byte[32];
                     System.arraycopy(src, src.length - 32, key, 0, 32);
-                    KEY = key;
-                    CRYPTO = new ChaCha20(KEY, NONCE, 0);
+                    Internals.setKey(key);
+                    Internals.setCrypto(new ChaCha20(Internals.getKey(), Internals.getNonce(), 0));
 
                     JsonArray roles = data.get("roles").asArray();
                     for (int i = 0; i < roles.size(); i++) {
@@ -131,7 +125,8 @@ public class VerifyUtils {
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
         byte[] dst = new byte[src.length];
-        CRYPTO.encrypt(dst, src, src.length);
+        assert Internals.getCrypto() != null;
+        ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
@@ -147,7 +142,7 @@ public class VerifyUtils {
 
                     src = Base64.decode(data);
                     dst = new byte[src.length];
-                    CRYPTO.decrypt(dst, src, src.length);
+                    ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
                     DatagramSocket socket = new DatagramSocket();
@@ -191,7 +186,7 @@ public class VerifyUtils {
                     if (!verify.verify(result.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
                         return Optional.empty();
                     }
-                    MAGIC_KEY = Base64.decode(result.getString("m", "=="));
+                    Internals.setMagicKey(Base64.decode(result.getString("m", "==")));
                     for (JsonValue c : result.get("c").asArray()) {
                         JsonObject mem = (JsonObject) c;
                         CLOUD_CONSTANT_MAP.put(Integer.parseInt(mem.getString("h", "-1")), Base64.decode(mem.getString("e", "==")));
@@ -216,7 +211,8 @@ public class VerifyUtils {
 
             byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
             byte[] dst = new byte[src.length];
-            CRYPTO.encrypt(dst, src, src.length);
+            assert Internals.getCrypto() != null;
+            ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
             params.put("data", URLEncoder.encode(Base64.encode(dst)));
 
@@ -229,7 +225,7 @@ public class VerifyUtils {
                     String data = entity.getString("data", "==");
                     src = Base64.decode(data);
                     dst = new byte[src.length];
-                    CRYPTO.decrypt(dst, src, src.length);
+                    ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
                     if (result.get("b") != null) {
                         System.exit(0);
@@ -254,7 +250,8 @@ public class VerifyUtils {
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
         byte[] dst = new byte[src.length];
-        CRYPTO.encrypt(dst, src, src.length);
+        assert Internals.getCrypto() != null;
+        ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
@@ -274,7 +271,7 @@ public class VerifyUtils {
             return Optional.empty();
         }
         int magicKey = 0x0;
-        byte[] magic = MAGIC_KEY;
+        byte[] magic = Internals.getMagicKey();
         int base = 0x0;
         for (int i = 0; i < 16; i++) {
             base = base | magic[i] & 0xFF;
@@ -285,7 +282,7 @@ public class VerifyUtils {
                 base <<= 8;
             }
         }
-        ChaCha20 crypto = new ChaCha20(KEY, NONCE, magicKey);
+        ChaCha20 crypto = new ChaCha20(Internals.getKey(), Internals.getNonce(), magicKey);
         byte[] dst = new byte[encoded.length];
         crypto.decrypt(dst, encoded, encoded.length);
         int i = 0;
@@ -313,15 +310,15 @@ public class VerifyUtils {
     }
 
     public static Optional<Long> getUserId() {
-        if (USER_ID > 0) {
-            return Optional.of(USER_ID);
+        if (Internals.getUserId() > 0) {
+            return Optional.of(Internals.getUserId());
         }
         return Optional.empty();
     }
 
     public static Optional<String> getUsername() {
-        if (USERNAME != null) {
-            return Optional.of(USERNAME);
+        if (Internals.getUsername() != null) {
+            return Optional.of(Internals.getUsername());
         }
         return Optional.empty();
     }
@@ -329,7 +326,7 @@ public class VerifyUtils {
     private static Map<String, String> genericHeader() {
         return new HashMap<String, String>() {
             {
-                if (VERIFY_TOKEN != null) put("verify-token", VERIFY_TOKEN);
+                if (Internals.getVerifyToken() != null) put("verify-token", Internals.getVerifyToken());
             }
         };
     }

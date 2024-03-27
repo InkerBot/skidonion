@@ -36,6 +36,7 @@ public class ConfigBuilder {
     private boolean verificationEnableSetting = false;
     private boolean useInternalUserInterfaceSetting = true;
     private String verificationServerSetting = "https://skidonion.tech/";
+    private String verificationUserIdSetting = "-1";
     private String verificationSoftwareIdSetting = "-1";
     private String verificationTokenSetting = "";
 
@@ -132,8 +133,10 @@ public class ConfigBuilder {
             verification.put("verification_enable", verificationEnableSetting);
             verification.put("use_internal_user_interface", useInternalUserInterfaceSetting);
             verification.put("verification_server", verificationServerSetting);
-            verification.put("verification_software_id",verificationSoftwareIdSetting);
+            verification.put("verification_software_id", verificationSoftwareIdSetting);
+            verification.put("verification_user_id", verificationUserIdSetting);
             verification.put("verification_token", verificationTokenSetting);
+
 
             native_obfuscation.put("verification", verification);
 
@@ -491,6 +494,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setVerificationSoftwareIdSetting(String verificationSoftwareIdSetting) {
         this.verificationSoftwareIdSetting = verificationSoftwareIdSetting;
+        return this;
+    }
+
+    public ConfigBuilder setVerificationUserIdSetting(String verificationUserIdSetting) {
+        this.verificationUserIdSetting = verificationUserIdSetting;
         return this;
     }
 }

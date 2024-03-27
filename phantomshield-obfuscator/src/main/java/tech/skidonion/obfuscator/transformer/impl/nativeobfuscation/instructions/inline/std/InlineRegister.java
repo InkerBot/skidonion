@@ -3,6 +3,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 import org.objectweb.asm.tree.MethodInsnNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.impl.SystemInline;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.impl.VerificationInline;
 
 import java.util.*;
 
@@ -11,6 +12,7 @@ public class InlineRegister {
 
     public InlineRegister() {
         inlines.add(new SystemInline());
+        inlines.add(new VerificationInline());
     }
 
     public void process(String desc, MethodContext context, MethodInsnNode node) {
