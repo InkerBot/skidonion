@@ -405,7 +405,6 @@ public class Ed25519FieldElement extends FieldElement {
      *
      * @return The (reasonably reduced) square of this field element.
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public FieldElement square() {
         int f0 = t[0];
         int f1 = t[1];
@@ -562,7 +561,6 @@ public class Ed25519FieldElement extends FieldElement {
      *
      * @return The (reasonably reduced) square of this field element times 2.
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public FieldElement squareAndDouble() {
         int f0 = t[0];
         int f1 = t[1];

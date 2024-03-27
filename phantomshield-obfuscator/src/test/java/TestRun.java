@@ -6,7 +6,7 @@ import java.io.File;
 
 public class TestRun {
     public static void main(String[] args) {
-        CompilerUpdater.updateCompiler();
+//        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
 //        debug_information_remover(builder);
@@ -63,11 +63,13 @@ public class TestRun {
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
                 .setVerificationEnableSetting(true)//
-                .setVerificationTokenSetting("")//
+                .setVerificationServerSetting("http://localhost:8694/")//
+                .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
+                .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
-//                .addSubFilters("native_obfuscation", //
-//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest", //
-//                        "+dev/sim0n/app/test/impl/evaluation/EvaluationTest * **(**)")
+                .addSubFilters("native_obfuscation", //
+                        "+Main", //
+                        "+Main * **(**)")
         ;
     }
 

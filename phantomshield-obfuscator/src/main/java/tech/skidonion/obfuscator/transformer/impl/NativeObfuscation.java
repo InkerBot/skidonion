@@ -8,7 +8,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.*;
-import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
@@ -23,9 +22,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.Pre
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtils$OnHttpResultDump;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.HttpUtilsDump;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.QQUtilsDump;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.*;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
@@ -362,52 +359,84 @@ public class NativeObfuscation extends Transformer {
         List<ClassWrapper> injected = new LinkedList<>();
         long verifySoftwareId;
         String verifyPublicKey;
-        try {
-            if (isVerificationEnable()) {
-                JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(Wrapper.getUserId()), this.verification_token.getValue(), this.verification_software_id.getValue());
-                if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
-                    ERROR("Can't request software information");
-                    return;
-                }
-                verifySoftwareId = softwareInformation.getAsJsonPrimitive("id").getAsLong();
-                verifyPublicKey = softwareInformation.getAsJsonPrimitive("public_key").getAsString();
-                INFO("Software Name: {}", softwareInformation.getAsJsonPrimitive("software_name").getAsString());
-                List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
-                {
-                    ClassNode node = new ClassNode();
-                    ClassReader reader = new ClassReader(HttpUtilsDump.dump());
-                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                    classes.add(injectClass(node));
-                }
-                {
-                    ClassNode node = new ClassNode();
-                    ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
-                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                    classes.add(injectClass(node));
-                }
-                {
-                    ClassNode node = new ClassNode();
-                    ClassReader reader = new ClassReader(QQUtilsDump.dump());
-                    reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                    classes.add(injectClass(node));
-                }
-                for (ClassWrapper cw : classes) {
-                    String origin = cw.getOriginalName();
-                    addInternalInclusion(origin, "*");
-                    for (MethodWrapper mw : cw.getMethods()) {
-                        injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
-                    }
-                }
-                injected.addAll(classes);
-                injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
-            } else {
-                verifySoftwareId = -1L;
-                verifyPublicKey = "";
+        if (isVerificationEnable()) {
+            JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), String.valueOf(7), this.verification_token.getValue(), this.verification_software_id.getValue());
+            if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
+                ERROR("Can't request software information");
+                return;
             }
-        } catch (Exception e) {
-            ERROR("Request Verification Software ERROR");
-            System.exit(1);
-            return;
+            JsonObject entity = softwareInformation.getAsJsonObject("entity");
+            verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
+            verifyPublicKey = entity.getAsJsonPrimitive("public_key").getAsString();
+            INFO("Software Name: {}", entity.getAsJsonPrimitive("software_name").getAsString());
+            List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(HttpUtilsDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(QQUtilsDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(VerifyUtilsDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(VerifyUtils$1Dump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(URLEncoderDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(EdDSAEngineDump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(ChaCha20Dump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            {
+                ClassNode node = new ClassNode();
+                ClassReader reader = new ClassReader(Base64Dump.dump());
+                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                classes.add(injectClass(node));
+            }
+            for (ClassWrapper cw : classes) {
+                obfuscator.buildHierarchy(cw, null);
+                String origin = cw.getOriginalName();
+                addInternalInclusion(origin, "*");
+                for (MethodWrapper mw : cw.getMethods()) {
+                    injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
+                }
+            }
+            injected.addAll(classes);
+            injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
+        } else {
+            verifySoftwareId = -1L;
+            verifyPublicKey = "";
         }
 
 

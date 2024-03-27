@@ -2,7 +2,7 @@ package tech.skidonion.verification.crypto.spec;
 
 import tech.skidonion.verification.crypto.math.Curve;
 import tech.skidonion.verification.crypto.math.GroupElement;
-import tech.skidonion.verification.crypto.math.ScalarOps;
+import tech.skidonion.verification.crypto.math.ed25519.Ed25519ScalarOps;
 
 /**
  * EdDSA Curve specification that can also be referred to by name.
@@ -13,7 +13,7 @@ public class EdDSANamedCurveSpec extends EdDSAParameterSpec {
     private final String name;
 
     public EdDSANamedCurveSpec(String name, Curve curve,
-                               String hashAlgo, ScalarOps sc, GroupElement B) {
+                               String hashAlgo, Ed25519ScalarOps sc, GroupElement B) {
         super(curve, hashAlgo, sc, B);
         this.name = name;
     }

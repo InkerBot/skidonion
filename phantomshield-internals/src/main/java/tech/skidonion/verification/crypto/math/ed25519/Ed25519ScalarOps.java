@@ -10,7 +10,6 @@
  */
 package tech.skidonion.verification.crypto.math.ed25519;
 
-import tech.skidonion.verification.crypto.math.ScalarOps;
 
 import static tech.skidonion.verification.crypto.math.ed25519.Ed25519LittleEndianEncoding.load_3;
 import static tech.skidonion.verification.crypto.math.ed25519.Ed25519LittleEndianEncoding.load_4;
@@ -23,7 +22,7 @@ import static tech.skidonion.verification.crypto.math.ed25519.Ed25519LittleEndia
  * <p>
  * Reviewed/commented by Bloody Rookie (nemproject@gmx.de)
  */
-public class Ed25519ScalarOps implements ScalarOps {
+public class Ed25519ScalarOps  {
 
     /**
      * Reduction modulo the group order $q$.

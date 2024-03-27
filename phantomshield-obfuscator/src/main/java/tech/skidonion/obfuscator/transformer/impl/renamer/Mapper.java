@@ -188,6 +188,7 @@ public class Mapper {
         result.setMaximumIndex(Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex()));
 
         if (cw.getMethodDescriptors().contains(uniqueMethodName)) {
+
             result.add(key, RenamerResult.RenamerType.METHOD);
             if (cw.getAccess().isAnnotation()) {
                 result.add(StringUtils.toDescriptor(owner) + '.' + methodWrapper.getOriginalName(), RenamerResult.RenamerType.ANNOTATION);
@@ -229,7 +230,6 @@ public class Mapper {
 
     private boolean cannotRenameMethod(ClassTree tree, MethodWrapper wrapper, Set<String> visited) {
         String check = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + wrapper.getOriginalDescription();
-
         // Don't check these
         if (visited.contains(check)) return false;
 

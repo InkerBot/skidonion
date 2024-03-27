@@ -30,7 +30,7 @@ import tech.skidonion.verification.crypto.spec.EdDSAPublicKeySpec;
  * "https://tools.ietf.org/html/draft-josefsson-pkix-eddsa-04">Older draft
  * specification</a>
  */
-public class EdDSAPublicKey implements EdDSAKey {
+public class EdDSAPublicKey  {
     private final GroupElement A;
     private GroupElement Aneg = null;
     private final byte[] Abyte;
@@ -155,7 +155,6 @@ public class EdDSAPublicKey implements EdDSAKey {
         }
     }
 
-    @Override
     public EdDSAParameterSpec getParams() {
         return edDsaSpec;
     }

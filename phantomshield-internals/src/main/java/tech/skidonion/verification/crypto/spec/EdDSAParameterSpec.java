@@ -12,7 +12,7 @@ package tech.skidonion.verification.crypto.spec;
 
 import tech.skidonion.verification.crypto.math.Curve;
 import tech.skidonion.verification.crypto.math.GroupElement;
-import tech.skidonion.verification.crypto.math.ScalarOps;
+import tech.skidonion.verification.crypto.math.ed25519.Ed25519ScalarOps;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -25,7 +25,7 @@ import java.security.NoSuchAlgorithmException;
 public class EdDSAParameterSpec {
     private final Curve curve;
     private final String hashAlgo;
-    private final ScalarOps sc;
+    private final Ed25519ScalarOps sc;
     private final GroupElement B;
 
     /**
@@ -36,7 +36,7 @@ public class EdDSAParameterSpec {
      * @throws IllegalArgumentException if hash algorithm is unsupported or length is wrong
      */
     public EdDSAParameterSpec(Curve curve, String hashAlgo,
-                              ScalarOps sc, GroupElement B) {
+                              Ed25519ScalarOps sc, GroupElement B) {
         try {
             MessageDigest hash = MessageDigest.getInstance(hashAlgo);
             // EdDSA hash function must produce 2b-bit output
@@ -60,7 +60,7 @@ public class EdDSAParameterSpec {
         return hashAlgo;
     }
 
-    public ScalarOps getScalarOps() {
+    public Ed25519ScalarOps getScalarOps() {
         return sc;
     }
 

@@ -96,8 +96,8 @@ public class VerifyUtils {
                     if (result != 0) {
                         result += 100;
                     } else {
-                        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-                        service.scheduleWithFixedDelay(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
+                        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(VerifyUtils::daemonFactory);
+                        service.scheduleAtFixedRate(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
                     }
                 }
             }
@@ -106,6 +106,13 @@ public class VerifyUtils {
         }
         return r & 0xFFFF00FF | (result & 0xFF) << 8;
     }
+
+    private static Thread daemonFactory(Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        thread.setDaemon(true);
+        return thread;
+    }
+
 
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private static Optional<Byte> requestInformation() {
@@ -200,18 +207,19 @@ public class VerifyUtils {
 
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private static void heartbeat() {
-        Map<String, String> headers = genericHeader();
-        Map<String, String> params = new HashMap<>();
-        JsonObject p = Json.object();
-        p.add("t", System.currentTimeMillis());
-        p.add("_", Json.NULL);
-
-        byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] dst = new byte[src.length];
-        CRYPTO.encrypt(dst, src, src.length);
-
-        params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
+            Map<String, String> headers = genericHeader();
+            Map<String, String> params = new HashMap<>();
+            JsonObject p = Json.object();
+            p.add("t", System.currentTimeMillis());
+            p.add("_", Json.NULL);
+
+            byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] dst = new byte[src.length];
+            CRYPTO.encrypt(dst, src, src.length);
+
+            params.put("data", URLEncoder.encode(Base64.encode(dst)));
+
             String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();

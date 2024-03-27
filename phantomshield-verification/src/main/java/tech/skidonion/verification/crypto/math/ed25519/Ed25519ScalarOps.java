@@ -10,7 +10,6 @@
  */
 package tech.skidonion.verification.crypto.math.ed25519;
 
-import tech.skidonion.verification.crypto.math.ScalarOps;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 
 import static tech.skidonion.verification.crypto.math.ed25519.Ed25519LittleEndianEncoding.load_3;
@@ -24,7 +23,7 @@ import static tech.skidonion.verification.crypto.math.ed25519.Ed25519LittleEndia
  * <p>
  * Reviewed/commented by Bloody Rookie (nemproject@gmx.de)
  */
-public class Ed25519ScalarOps implements ScalarOps {
+public class Ed25519ScalarOps  {
 
     /**
      * Reduction modulo the group order $q$.
@@ -36,7 +35,6 @@ public class Ed25519ScalarOps implements ScalarOps {
      *   $s[0]+256*s[1]+\dots+256^{31}*s[31] = s \bmod q$
      *   where $q = 2^{252} + 27742317777372353535851937790883648493$.
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public byte[] reduce(byte[] s) {
         // s0,..., s22 have 21 bits, s23 has 29 bits
         long s0 = 0x1FFFFF & load_3(s, 0);

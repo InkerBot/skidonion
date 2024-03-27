@@ -22,7 +22,6 @@ import tech.skidonion.obfuscator.annotations.NativeObfuscation;
  *
  * @author str4d
  */
-@NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
 public class EdDSANamedCurveTable {
 
     public static final EdDSANamedCurveSpec ED_25519_CURVE_SPEC;

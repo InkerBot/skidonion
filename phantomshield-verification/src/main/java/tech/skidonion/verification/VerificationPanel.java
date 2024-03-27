@@ -4,6 +4,7 @@
 
 package tech.skidonion.verification;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.verification.utils.Internals;
 
@@ -12,11 +13,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 
 /**
@@ -27,6 +33,11 @@ public class VerificationPanel extends JPanel {
     private final JFrame frame;
     private PipedInputStream input;
     private PipedOutputStream output;
+    private static final ExecutorService service = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public VerificationPanel(JFrame frame) {
         this.frame = frame;
@@ -46,11 +57,30 @@ public class VerificationPanel extends JPanel {
         }
     }
 
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private void login(ActionEvent e) {
-        this.loginButton.setEnabled(false);
+        if (this.loginButton.isEnabled()) {
+            this.loginButton.setEnabled(false);
+            service.submit(this::loginThread);
+        }
+    }
+
+    private void loginThread() {
         try {
             byte result = (byte) (Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword())) >> 8 & 0xFF);
             if (result == 0) {
+                try {
+                    Path dataPath = Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode());
+                    Files.createDirectories(dataPath);
+                    try (BufferedWriter writer = Files.newBufferedWriter(dataPath.resolve("userinfo"))) {
+                        Properties properties = new Properties();
+                        properties.setProperty("username", this.usernameField.getText());
+                        properties.setProperty("password", new String(this.passwordField.getPassword()));
+                        properties.store(writer, "don't leak to anyone^^");
+                    }
+                } catch (Exception ignore) {
+                }
+
                 this.output.write(1);
                 SwingUtilities.invokeLater(frame::dispose);
             } else {

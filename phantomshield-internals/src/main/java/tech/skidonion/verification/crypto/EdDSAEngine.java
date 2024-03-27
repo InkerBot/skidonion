@@ -56,7 +56,7 @@ import java.util.Arrays;
 public final class EdDSAEngine {
 
     private MessageDigest digest;
-    private EdDSAKey key;
+    private EdDSAPublicKey key;
 
     private void reset() {
         if (digest != null)
@@ -65,7 +65,7 @@ public final class EdDSAEngine {
 
     public void initVerify(EdDSAPublicKey publicKey) throws InvalidKeyException {
         reset();
-        key = (EdDSAPublicKey) publicKey;
+        key = publicKey;
 
         if (digest == null) {
             // Instantiate the digest from the key parameters

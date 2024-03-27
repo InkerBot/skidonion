@@ -375,7 +375,7 @@ public class PhantomShield {
         return hierarchy.get(ref);
     }
 
-    private void buildHierarchy(ClassWrapper wrapper, ClassWrapper sub) {
+    public void buildHierarchy(ClassWrapper wrapper, ClassWrapper sub) {
         if (hierarchy.get(wrapper.getName()) == null) {
             ClassTree tree = new ClassTree(wrapper);
 

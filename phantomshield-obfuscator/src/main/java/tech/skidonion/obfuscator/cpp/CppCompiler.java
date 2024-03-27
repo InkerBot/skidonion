@@ -85,7 +85,7 @@ public class CppCompiler {
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
                     if (virtualizeMacroCount.get() > 0) {
-                        virtualize = virtualize(timestamp, compileInfo);
+//                        virtualize = virtualize(timestamp, compileInfo);
                     }
                     return compileValue | strip | virtualize;
                 }));
@@ -240,8 +240,7 @@ public class CppCompiler {
                 "-fno-optimize-sibling-calls",
                 "-fvisibility-inlines-hidden",
                 "-fvisibility=hidden",
-                "-fPIC",
-                "-Wno-narrowing"
+                "-fPIC"
         ));
         // TODO: if you wanna virtualize methods you must stop optimize your shit code
         //  because optimization will change control flow graph
