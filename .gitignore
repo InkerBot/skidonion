@@ -121,6 +121,7 @@ hs_err_pid*
 /test/output/
 /output/
 /phantomshield-obfuscator/src/main/resources/binaries/
-/config.json
-/config.yaml
+#/config.json
+#/config.yaml
 /mappings.json
+/phantomshield-watermark-trace/libs/

@@ -66,6 +66,9 @@ public class TryCatchBlock extends CodeBlock {
     public void refreshClonedList() {
         this.clone = new ArrayList<>(this.codes);
         this.cloneIndex = 0;
+        for (TryCatchBlock subTryCatch : this.subTryCatches) {
+            subTryCatch.refreshClonedList();
+        }
     }
 
     public CodeBlock nextCodeBlock() {

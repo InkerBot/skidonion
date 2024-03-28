@@ -3,6 +3,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
@@ -71,7 +72,11 @@ public class StringEncryption extends Transformer {
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
-                generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings, dummys);
+                Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
+
+                if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537) {
+                    generateDecryptor(clinit, cw.getName(), decryptedStringsFieldName, strings, dummys);
+                }
             }
         });
         INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);

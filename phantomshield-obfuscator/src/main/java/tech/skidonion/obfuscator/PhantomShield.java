@@ -1,12 +1,12 @@
 package tech.skidonion.obfuscator;
 
-import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.config.Config;
@@ -14,6 +14,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
@@ -26,6 +27,8 @@ import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,10 +66,26 @@ public class PhantomShield {
         this.config = config;
     }
 
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2024 fl0wowp4rty", "All rights reserved");
+
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+        Optional<LocalDateTime> basicRole = Wrapper.getExpiredDate("基础用户组");
+        Optional<LocalDateTime> verificationRole = Wrapper.getExpiredDate("授权验证用户组");
+        if (basicRole.isPresent()) {
+            INFO("Licence Information: Basic Role [" + format.format(basicRole.get()) + "]");
+        } else {
+            ERROR("Please buy a subscription for a basic role");
+            return;
+        }
+
+        if (verificationRole.isPresent()) {
+            INFO("Licence Information: Verification Role [" + format.format(verificationRole.get()) + "]");
+        }
+
 
         if (config.has("dictionary")) {
             Object value = config.get("dictionary");
@@ -115,6 +134,15 @@ public class PhantomShield {
         }
 
         register.parseConfig(config);
+
+        if (!verificationRole.isPresent()) {
+            tech.skidonion.obfuscator.transformer.impl.NativeObfuscation nativeObfuscation = (tech.skidonion.obfuscator.transformer.impl.NativeObfuscation) register.get("native_obfuscation");
+            if (nativeObfuscation != null && nativeObfuscation.isVerificationEnable()) {
+                ERROR("You didn't subscribe verification role!!!");
+                return;
+            }
+        }
+
         register.process(this);
 
         try {

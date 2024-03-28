@@ -23,9 +23,15 @@ public class TestConfigBuilder {
                 .setNativeObfuscationEnable(true)
                 .setLoaderPackageSetting("skidonion/?????")
                 .addTarget("x86_64-windows")
+                .addTarget("x86_64-linux-gnu")
+                .addTarget("aarch64-macos")
                 .setPrintInstructionsSetting(false)
                 .addSubFilter("native_obfuscation", "+org.example.**")
                 .addSubFilter("native_obfuscation", "-org.example.** void main(java.lang.String[])")
+                .setControlFlowObfuscationEnable(true)
+                .setInvokeWrapperEnable(true)
+                .setDebugInformationRemoverEnable(true)
+                .setMemberShufflerEnable(true)
                 .build()
                 .save(new File("config.yaml"));
     }

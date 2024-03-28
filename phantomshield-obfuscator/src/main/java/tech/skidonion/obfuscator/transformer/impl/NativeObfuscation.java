@@ -12,6 +12,7 @@ import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
@@ -124,6 +125,9 @@ public class NativeObfuscation extends Transformer {
 
         hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/___");
 
+        Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
+
+
         Integer[] classIndexReference = new Integer[]{0};
         AtomicInteger internalIndex = new AtomicInteger();
         getFilteredClasses().forEach(cw -> {
@@ -159,11 +163,12 @@ public class NativeObfuscation extends Transformer {
                 ClassReader computedReader = new ClassReader(computedWriter.toByteArray());
                 ClassNode computedClassNode = new ClassNode(Opcodes.ASM9);
                 computedReader.accept(computedClassNode, 0);
-
-                IntStream.range(0, computedClassNode.methods.size())
-                        .forEach(i -> cw.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
-                IntStream.range(0, computedClassNode.fields.size())
-                        .forEach(i -> cw.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
+                if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537) {
+                    IntStream.range(0, computedClassNode.methods.size())
+                            .forEach(i -> cw.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
+                    IntStream.range(0, computedClassNode.fields.size())
+                            .forEach(i -> cw.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
+                }
 
                 cw.setClassNode(computedClassNode);
                 cw.getOrCreateClinit();
@@ -205,7 +210,8 @@ public class NativeObfuscation extends Transformer {
                                 context.virtualization = clinitVirtualization;
                             }
                         }
-                        methodProcessor.processMethod(context);
+                        if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
+                            methodProcessor.processMethod(context);
                         shouldVirtualize |= context.shouldVirtualize;
 
                         headers.addAll(context.headers);
@@ -355,11 +361,12 @@ public class NativeObfuscation extends Transformer {
             }
         }));
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
+        Optional<String> opt = Wrapper.getCloudConstant(467287013, 0);
 
         List<ClassWrapper> injected = new LinkedList<>();
         long verifySoftwareId;
         String verifyPublicKey;
-        if (isVerificationEnable()) {
+        if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
                 ERROR("Can't request software information");
@@ -463,7 +470,11 @@ public class NativeObfuscation extends Transformer {
                         switch (reference) {
                             case "tech/skidonion/obfuscator/inline/Inline._verification_checkHardwareID([Ljava/lang/Object;)V":
                             case "tech/skidonion/obfuscator/inline/Inline._verification_generateHardwareID([Ljava/lang/Object;)V": {
-                                if (obfuscated) break;
+//                                2082061244
+//                                173359771
+//                                1984756007
+                                if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                    break;
                                 MethodNode inlineMethod = new MethodNode();
                                 inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
                                 inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
@@ -529,10 +540,16 @@ public class NativeObfuscation extends Transformer {
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
+                                if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                    break;
                                 iterator.remove();
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
                                 break;
                             }
+                            case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant()V":
+                                ERROR("You can't use phantom-shield-x verification debug method in release time");
+                                System.exit(0);
+                                break;
                         }
                     }
                 }
@@ -547,7 +564,7 @@ public class NativeObfuscation extends Transformer {
         if (!injected.isEmpty()) {
             Mapper mapper = new Mapper(obfuscator, injected);
             mapper.setRepackage(true);
-            mapper.setRepakageName("/");
+            mapper.setRepakageName("");
             mapper.generateMappings();
             mapper.apply();
         }

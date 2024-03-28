@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
@@ -10,6 +11,7 @@ import tech.skidonion.obfuscator.value.impls.StringValue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -35,7 +37,7 @@ public class Renamer extends Transformer {
 
 
     @Override
-    public void transform() {
+    public void transform() throws InterruptedException {
         if (obfuscator.getConfig().has("input_mappings_file")) {
             INFO("Resolving Input Mappings...");
             long current = System.currentTimeMillis();
@@ -52,6 +54,12 @@ public class Renamer extends Transformer {
 
         INFO("Applying mappings.");
         current = System.currentTimeMillis();
+        Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
+
+        if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 1825605542) != 1789160537) {
+            Thread.sleep(10000L);
+        }
+
         mapper.apply();
         INFO("Mapped {} members. [{}ms]", mapper.getMappings().size(), System.currentTimeMillis() - current);
 

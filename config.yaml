@@ -1,0 +1,52 @@
+input: D:\workspaces\java\phantom-shield-x\test\input\obf-test-1.0-SNAPSHOT.jar
+output: D:\workspaces\java\phantom-shield-x\test\output\obf-test-1.0-SNAPSHOT.jar
+dictionary: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+creation_date: 2024.2.5 12:00:00
+input_mappings_file: mappings.txt
+targets:
+- x86_64-windows
+- x86_64-linux-gnu
+- aarch64-macos
+libraries:
+- D:\Program Files\Eclipse Adoptium\jdk-8.0.392.8-hotspot\jre\lib\rt.jar
+- D:\Program Files\Eclipse Adoptium\jdk-8.0.392.8-hotspot\jre\lib\jce.jar
+filters:
+- -org.example.**
+native_obfuscation:
+  loader_package: skidonion/?????
+  print_instructions: false
+  hidden_stack_trace: true
+  verification:
+    verification_enable: false
+    use_internal_user_interface: true
+    verification_server: https://skidonion.tech/
+    verification_software_id: '-1'
+    verification_user_id: '-1'
+    verification_token: ''
+  filters:
+  - +org.example.**
+  - -org.example.** void main(java.lang.String[])
+string_encryption: {
+  }
+renamer:
+  print_mappings: true
+  print_mappings_file: mappings.txt
+  prefix_name: ''
+  repackage: false
+  repackage_name: skidonion/???
+  adapt_resources:
+  - META-INF/MANIFEST.MF
+member_shuffler: {
+  }
+debug_information_remover:
+  remove_signatures: true
+  remove_source_file: true
+  remove_inner_class: true
+  remove_line_number: true
+  remove_local_variable: true
+  remove_kotlin_reference: true
+control_flow_obfuscation: {
+  }
+invoke_wrapper_obfuscation:
+  package_mode: ''
+  inject_to_other_class: true

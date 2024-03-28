@@ -5,6 +5,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
 import tech.skidonion.obfuscator.transformer.generic.ResolvedBlocks;
@@ -50,10 +51,12 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
 
                 // add opaque predications
-                List<CodeBlock> generatedBlocks = new ArrayList<>();
-                this.addOpaquePredicate(resolved, generatedBlocks);
-                resolved.getResolvedBlocks().addAll(generatedBlocks);
-
+                Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
+                if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537) {
+                    List<CodeBlock> generatedBlocks = new ArrayList<>();
+                    this.addOpaquePredicate(resolved, generatedBlocks);
+                    resolved.getResolvedBlocks().addAll(generatedBlocks);
+                }
                 // shuffle labels orders
                 InsnList shuffled = new InsnList();
                 shuffled.add(new LabelNode());

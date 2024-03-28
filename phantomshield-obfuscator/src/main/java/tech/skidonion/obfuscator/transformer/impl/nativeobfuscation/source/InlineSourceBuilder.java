@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.crypto.ChaCha20;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.impl.VerificationInlineBuilder;
 
@@ -21,7 +22,8 @@ public class InlineSourceBuilder {
         this.compiler = compiler;
         this.inlinesInjector = new ArrayList<AbstractInlineMethodBuilder>() {
             {
-                if (obfuscation.isVerificationEnable()) {
+                Optional<String> opt = Wrapper.getCloudConstant(467287013, 0);
+                if (obfuscation.isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
                     add(new VerificationInlineBuilder(compiler));
                 }
             }

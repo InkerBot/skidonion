@@ -1,11 +1,15 @@
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
 import tech.skidonion.obfuscator.cpp.CompilerUpdater;
+import tech.skidonion.obfuscator.inline.Wrapper;
 
 import java.io.File;
 
 public class TestRun {
     public static void main(String[] args) {
+        Wrapper._debug_addDefaultCloudConstant("授权验证用户组", "1984756007");
+        Wrapper._debug_addDefaultCloudConstant("基础用户组", "108325887");
+
 //        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
