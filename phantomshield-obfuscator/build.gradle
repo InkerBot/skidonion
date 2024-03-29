@@ -19,10 +19,10 @@ dependencies {
 
     implementation 'info.picocli:picocli:4.6.3'
 
-    implementation 'org.ow2.asm:asm:9.6'
-    implementation 'org.ow2.asm:asm-tree:9.6'
-    implementation 'org.ow2.asm:asm-analysis:9.6'
-    implementation 'org.ow2.asm:asm-commons:9.6'
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-tree:9.7'
+    implementation 'org.ow2.asm:asm-analysis:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
 
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'org.apache.logging.log4j:log4j-core:2.22.1'
