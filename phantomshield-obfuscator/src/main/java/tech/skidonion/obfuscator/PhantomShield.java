@@ -14,6 +14,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
+import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
@@ -122,8 +123,10 @@ public class PhantomShield {
             compiler.setAarch64(config.getBoolean("cpp_compiler_is_aarch64"));
         }
 
-        loadClassPath();
-        loadInput();
+        if (Inline._advanced_checkProtection(0x65328212) == 0x65328212) {
+            loadClassPath();
+            loadInput();
+        }
 
         INFO("Attempt to build classes inheritance...");
         try {
@@ -154,6 +157,7 @@ public class PhantomShield {
             return;
         }
 
+
         writeOutput();
     }
 
@@ -165,46 +169,47 @@ public class PhantomShield {
         if (output.exists())
             INFO("Output file already exists, renamed to {}.", FileUtils.renameExistingFile(output));
 
-        try {
+        if (Inline._advanced_checkCRCImage(0x86543210) == 0x86543210)
+            try {
 
-            DateFormat formatter = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-            String creationDate = config.getString("creation_date");
-            long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
+                DateFormat formatter = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+                String creationDate = config.getString("creation_date");
+                long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
 
-            ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
-            classes.values().forEach(classWrapper -> {
-                try {
-                    ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
-                    entry.setTime(timestamp);
-                    zos.putNextEntry(entry);
-                    zos.write(classWrapper.toByteArray());
-                    zos.closeEntry();
-                } catch (IOException ioe) {
-                    ERROR("Error writing class {}. Skipping.", classWrapper.getName() + ".class");
-                    ioe.printStackTrace();
-                }
-            });
+                ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
+                classes.values().forEach(classWrapper -> {
+                    try {
+                        ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
+                        entry.setTime(timestamp);
+                        zos.putNextEntry(entry);
+                        zos.write(classWrapper.toByteArray());
+                        zos.closeEntry();
+                    } catch (IOException ioe) {
+                        ERROR("Error writing class {}. Skipping.", classWrapper.getName() + ".class");
+                        ioe.printStackTrace();
+                    }
+                });
 
-            resources.forEach((name, bytes) -> {
-                try {
-                    ZipEntry entry = new ZipEntry(name);
-                    zos.putNextEntry(entry);
-                    zos.write(bytes);
-                    zos.closeEntry();
-                } catch (IOException ioe) {
-                    ERROR("Error writing resource {}. Skipping.", name);
-                    ioe.printStackTrace();
-                }
-            });
-            zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
-            zos.close();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new RuntimeException();
-        } catch (ParseException pe) {
-            pe.printStackTrace();
-            throw new RuntimeException(pe);
-        }
+                resources.forEach((name, bytes) -> {
+                    try {
+                        ZipEntry entry = new ZipEntry(name);
+                        zos.putNextEntry(entry);
+                        zos.write(bytes);
+                        zos.closeEntry();
+                    } catch (IOException ioe) {
+                        ERROR("Error writing resource {}. Skipping.", name);
+                        ioe.printStackTrace();
+                    }
+                });
+                zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
+                zos.close();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                throw new RuntimeException();
+            } catch (ParseException pe) {
+                pe.printStackTrace();
+                throw new RuntimeException(pe);
+            }
     }
 
     private void loadClassPath(File file) {
