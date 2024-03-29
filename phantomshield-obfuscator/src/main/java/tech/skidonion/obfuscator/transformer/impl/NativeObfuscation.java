@@ -555,13 +555,13 @@ public class NativeObfuscation extends Transformer {
             injected.add(inline);
         }
 
-//        if (!injected.isEmpty()) {
-//            Mapper mapper = new Mapper(obfuscator, injected);
-//            mapper.setRepackage(true);
-//            mapper.setRepakageName("");
-//            mapper.generateMappings();
-//            mapper.apply();
-//        }
+        if (!injected.isEmpty()) {
+            Mapper mapper = new Mapper(obfuscator, injected);
+            mapper.setRepackage(true);
+            mapper.setRepakageName("");
+            mapper.generateMappings();
+            mapper.apply();
+        }
     }
 
     @Override

@@ -165,7 +165,7 @@ public class VerifyUtils {
                     long timestamp = result.getLong("t", -1);
                     long diff = now - timestamp - delay;
                     if (diff < 0) diff = -diff;
-                    if (diff > 10000L) {
+                    if (diff > 60000L) {
                         return Optional.empty();
                     }
 

@@ -1018,7 +1018,7 @@ methodVisitor.visitLabel(label58);
 methodVisitor.visitLineNumber(168, label58);
 methodVisitor.visitFrame(Opcodes.F_NEW, 28, new Object[] {Opcodes.LONG, "java/util/Map", "java/util/Map", "tech/skidonion/verification/json/JsonObject", "tech/skidonion/verification/json/JsonArray", "[Ljava/lang/String;", "[B", "[B", "java/lang/String", Opcodes.LONG, "tech/skidonion/verification/json/JsonObject", Opcodes.INTEGER, "tech/skidonion/verification/json/JsonObject", "java/lang/String", "java/lang/String", "tech/skidonion/verification/json/JsonObject", "java/net/DatagramSocket", "tech/skidonion/verification/time/Packet", Opcodes.LONG, "[B", "java/net/DatagramPacket", Opcodes.LONG, "tech/skidonion/verification/time/Packet", Opcodes.LONG, Opcodes.LONG, Opcodes.LONG, Opcodes.LONG, Opcodes.LONG}, 0, new Object[] {});
 methodVisitor.visitVarInsn(LLOAD, 35);
-methodVisitor.visitLdcInsn(new Long(10000L));
+methodVisitor.visitLdcInsn(new Long(60000L));
 methodVisitor.visitInsn(LCMP);
 methodVisitor.visitJumpInsn(IFLE, label3);
 Label label59 = new Label();
