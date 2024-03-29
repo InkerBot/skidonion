@@ -90,6 +90,9 @@ public class CodeBlockResolver implements Opcodes {
                     return; // the new one is parent of it
                 } else if (it.getEndIndex() <= startIndex) {
                     continue; // not inclusive
+                } else if (it.getEndIndex() < endIndex) {
+                    sub = it;
+                    break;
                 } else {
                     throw new RuntimeException("impossible try catch length!!??"); // intersection??
                 }

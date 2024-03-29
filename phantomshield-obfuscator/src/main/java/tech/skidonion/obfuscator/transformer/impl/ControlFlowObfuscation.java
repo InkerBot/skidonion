@@ -48,7 +48,13 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 }
                 // delete the fuck shit
                 method.localVariables = null;
-                ResolvedBlocks resolved = CodeBlockResolver.resolve(method);
+
+                ResolvedBlocks resolved;
+                try {
+                    resolved = CodeBlockResolver.resolve(method);
+                } catch (Exception e) {
+                    return;
+                }
 
                 // add opaque predications
                 Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
