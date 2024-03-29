@@ -15,7 +15,7 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-//        renamer(builder);
+        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
@@ -72,12 +72,12 @@ public class TestRun {
                 .setVerificationUserIdSetting("7")//
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
-                .addSubFilters("native_obfuscation", //
-                        "+tech.skidonion.obfuscator.PhantomShield",//
-                        "+tech.skidonion.obfuscator.PhantomShield * *(*)",//
-                        "+tech.skidonion.obfuscator.transformaer.**",//
-                        "+tech.skidonion.obfuscator.transformaer.** * *(*)"//
-                )
+//                .addSubFilters("native_obfuscation", //
+//                        "+tech.skidonion.obfuscator.PhantomShield",//
+//                        "+tech.skidonion.obfuscator.PhantomShield * *(*)",//
+//                        "+tech.skidonion.obfuscator.transformaer.**",//
+//                        "+tech.skidonion.obfuscator.transformaer.** * *(*)"//
+//                )
         ;
     }
 

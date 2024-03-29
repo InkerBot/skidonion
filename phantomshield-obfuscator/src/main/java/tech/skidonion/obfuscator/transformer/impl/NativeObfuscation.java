@@ -403,12 +403,6 @@ public class NativeObfuscation extends Transformer {
             }
             {
                 ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(VerifyUtils$1Dump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
                 ClassReader reader = new ClassReader(URLEncoderDump.dump());
                 reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
                 classes.add(injectClass(node));
@@ -540,7 +534,7 @@ public class NativeObfuscation extends Transformer {
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
-                                if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
                                     break;
                                 iterator.remove();
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
@@ -561,13 +555,13 @@ public class NativeObfuscation extends Transformer {
             injected.add(inline);
         }
 
-        if (!injected.isEmpty()) {
-            Mapper mapper = new Mapper(obfuscator, injected);
-            mapper.setRepackage(true);
-            mapper.setRepakageName("");
-            mapper.generateMappings();
-            mapper.apply();
-        }
+//        if (!injected.isEmpty()) {
+//            Mapper mapper = new Mapper(obfuscator, injected);
+//            mapper.setRepackage(true);
+//            mapper.setRepakageName("");
+//            mapper.generateMappings();
+//            mapper.apply();
+//        }
     }
 
     @Override

@@ -49,7 +49,7 @@ public class VerificationInline extends AbstractStandardMethodInline {
                 context.output.append("cstack").append(context.stackPointer).append(".j = ").append("(jlong) inlines::user_id;").append("\n");
                 break;
             case "tech/skidonion/verification/utils/Internals.setUserId(J)V":
-                context.output.append("inlines::user_id = (jlong) env->NewGlobalRef(cstack").append(context.stackPointer - 2).append(".l);\n");
+                context.output.append("inlines::user_id = (jlong) cstack").append(context.stackPointer - 2).append(".j;\n");
                 break;
             case "tech/skidonion/verification/utils/Internals.getMagicKey()[B":
                 context.output.append("cstack").append(context.stackPointer).append(".l = ").append("(jobject) inlines::magic_key;").append("\n");

@@ -12,7 +12,7 @@ import java.util.Set;
 public class QQUtils {
     private final static byte[] header = new byte[]{-1, -40, -1, -32, 0, 16, 74, 70, 73, 70};
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public static Set<String> getAllQQ() {
         Set<String> qqs = new HashSet<>();
 
@@ -59,7 +59,7 @@ public class QQUtils {
         return qqs;
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private static boolean checkNTQQFile(File file) {
         try (FileInputStream stream = new FileInputStream(file)) {
             byte[] header = new byte[10];

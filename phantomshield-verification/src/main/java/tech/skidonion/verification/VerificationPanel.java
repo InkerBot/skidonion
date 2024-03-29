@@ -57,7 +57,7 @@ public class VerificationPanel extends JPanel {
         }
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private void login(ActionEvent e) {
         if (this.loginButton.isEnabled()) {
             this.loginButton.setEnabled(false);

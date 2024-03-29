@@ -31,11 +31,12 @@ public class VerifyUtils {
     private final static Map<Integer, byte[]> CLOUD_CONSTANT_MAP = new HashMap<>();
     private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public static int login(String username, String password) {
         int r = RANDOM.nextInt();
         byte result = -1;
-        Map<String, String> headers = genericHeader();
+        Map<String, String> headers = new HashMap<>();
+        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
         Map<String, String> params = new HashMap<>();
         try {
             params.put("username", URLEncoder.encode(username));
@@ -108,10 +109,11 @@ public class VerifyUtils {
     }
 
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private static Optional<Byte> requestInformation() {
         long delay = 0;
-        Map<String, String> headers = genericHeader();
+        Map<String, String> headers = new HashMap<>();
+        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
         Map<String, String> params = new HashMap<>();
         JsonObject p = Json.object();
         p.add("t", System.currentTimeMillis());
@@ -125,7 +127,6 @@ public class VerifyUtils {
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
         byte[] dst = new byte[src.length];
-        assert Internals.getCrypto() != null;
         ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
@@ -200,10 +201,11 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     private static void heartbeat() {
         try {
-            Map<String, String> headers = genericHeader();
+            Map<String, String> headers = new HashMap<>();
+            if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
             Map<String, String> params = new HashMap<>();
             JsonObject p = Json.object();
             p.add("t", System.currentTimeMillis());
@@ -211,7 +213,6 @@ public class VerifyUtils {
 
             byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
             byte[] dst = new byte[src.length];
-            assert Internals.getCrypto() != null;
             ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
             params.put("data", URLEncoder.encode(Base64.encode(dst)));
@@ -239,9 +240,11 @@ public class VerifyUtils {
         }
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public static void setAsSuspected(String reason) {
-        Map<String, String> headers = genericHeader();
+        Map<String, String> headers = new HashMap<>();
+        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
+
         Map<String, String> params = new HashMap<>();
         JsonObject p = Json.object();
         p.add("t", System.currentTimeMillis());
@@ -250,7 +253,6 @@ public class VerifyUtils {
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
         byte[] dst = new byte[src.length];
-        assert Internals.getCrypto() != null;
         ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
@@ -264,7 +266,7 @@ public class VerifyUtils {
     /**
      * "xxxx用户组".hashcode();
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
     public static Optional<String> getCloudConstant(int hash, int index) {
         byte[] encoded = CLOUD_CONSTANT_MAP.get(hash);
         if (encoded == null) {
@@ -323,13 +325,6 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
-    private static Map<String, String> genericHeader() {
-        return new HashMap<String, String>() {
-            {
-                if (Internals.getVerifyToken() != null) put("verify-token", Internals.getVerifyToken());
-            }
-        };
-    }
 
 
 }
