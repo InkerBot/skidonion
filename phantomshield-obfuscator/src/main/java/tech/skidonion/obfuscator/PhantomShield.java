@@ -67,7 +67,7 @@ public class PhantomShield {
         this.config = config;
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
     @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));

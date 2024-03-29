@@ -17,7 +17,7 @@ import java.util.ResourceBundle;
 
 public class Main {
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.DOLPHIN_WHITE)
     public static int showVerification() {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
             Properties properties = new Properties();

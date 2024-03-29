@@ -62,7 +62,7 @@ public class IOUtils {
             Map<String, byte[]> map = new HashMap<>();
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
-                if (!entry.isDirectory() && !entry.getName().endsWith(".class")) {
+                if (!entry.isDirectory() && !entry.getName().endsWith(".class") && !"META-INF/MANIFEST.MF".equals(entry.getName())) {
                     map.put(entry.getName(), IOUtils.toByteArray(zip));
                 }
             }

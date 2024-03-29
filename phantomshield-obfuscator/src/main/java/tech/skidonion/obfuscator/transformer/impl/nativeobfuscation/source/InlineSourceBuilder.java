@@ -84,13 +84,13 @@ public class InlineSourceBuilder {
             if (obfuscation.isUseInternalVerificationInterface()) {
                 hpp.append("extern bool licenced;\n");
             }
-            cpp.append("extern jbyteArray nonce;\n");
-            cpp.append("extern jobject crypto;\n");
-            cpp.append("extern jobject verify_token;\n");
-            cpp.append("extern jbyteArray key;\n");
-            cpp.append("extern jobject username;\n");
-            cpp.append("extern jlong user_id;\n");
-            cpp.append("extern jbyteArray magic_key;\n");
+            hpp.append("extern jbyteArray nonce;\n");
+            hpp.append("extern jobject crypto;\n");
+            hpp.append("extern jobject verify_token;\n");
+            hpp.append("extern jbyteArray key;\n");
+            hpp.append("extern jobject username;\n");
+            hpp.append("extern jlong user_id;\n");
+            hpp.append("extern jbyteArray magic_key;\n");
         }
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
             String method = abstractInlineMethodBuilder.buildHpp();
