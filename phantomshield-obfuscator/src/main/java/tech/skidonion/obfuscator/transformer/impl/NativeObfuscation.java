@@ -365,6 +365,7 @@ public class NativeObfuscation extends Transformer {
         List<ClassWrapper> injected = new ArrayList<>();
         long verifySoftwareId;
         String verifyPublicKey;
+        String verifyVersion;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
@@ -374,6 +375,7 @@ public class NativeObfuscation extends Transformer {
             JsonObject entity = softwareInformation.getAsJsonObject("entity");
             verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
             verifyPublicKey = entity.getAsJsonPrimitive("public_key").getAsString();
+            verifyVersion = entity.getAsJsonPrimitive("version").getAsString();
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
             List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
             {
@@ -437,6 +439,7 @@ public class NativeObfuscation extends Transformer {
         } else {
             verifySoftwareId = -1L;
             verifyPublicKey = "";
+            verifyVersion = "";
         }
 
 
@@ -526,6 +529,12 @@ public class NativeObfuscation extends Transformer {
                                 iterator.add(new LdcInsnNode(verifySoftwareId));
                                 break;
                             }
+                            case "tech/skidonion/verification/utils/Internals.version()Ljava/lang/String;": {
+                                iterator.remove();
+                                iterator.add(new LdcInsnNode(verifyVersion));
+                                break;
+                            }
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
                             case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":

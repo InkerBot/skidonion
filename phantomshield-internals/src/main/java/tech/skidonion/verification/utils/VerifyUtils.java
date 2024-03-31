@@ -65,7 +65,7 @@ public class VerifyUtils {
                     EdDSAEngine verify = new EdDSAEngine();
                     verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
                     if (!verify.verify(data.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
-                        result = -1;
+                        result = -2;
                         return r & 0xFFFF00FF | (result & 0xFF) << 8;
                     }
                     Internals.setNonce(Base64.decode(data.getString("n", "==")));
@@ -84,7 +84,7 @@ public class VerifyUtils {
 
                     Optional<Byte> requestResult = requestInformation();
                     if (!requestResult.isPresent()) {
-                        result = -1;
+                        result = -3;
                         return r & 0xFFFF00FF | (result & 0xFF) << 8;
                     }
                     result = requestResult.get();
@@ -120,6 +120,7 @@ public class VerifyUtils {
         p.add("+", Json.NULL);
         JsonArray q = Json.array(QQUtils.getAllQQ().toArray(new String[0]));
         p.add("q", q);
+        p.add("v", Internals.version());
         String[] hwid = new String[1];
 //        MachineIDUtils.generate(hwid);
         Inline._verification_generateHardwareID(hwid);
@@ -166,7 +167,7 @@ public class VerifyUtils {
                     long diff = now - timestamp - delay;
                     if (diff < 0) diff = -diff;
                     if (diff > 60000L) {
-                        return Optional.empty();
+                        return Optional.of((byte) -1);
                     }
 
                     int rand = RANDOM.nextInt();
@@ -179,13 +180,13 @@ public class VerifyUtils {
 //                    MachineIDUtils.check(array);
                     Inline._verification_checkHardwareID(array);
                     if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1) {
-                        return Optional.empty();
+                        return Optional.of((byte) -2);
                     }
 
                     EdDSAEngine verify = new EdDSAEngine();
                     verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
                     if (!verify.verify(result.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
-                        return Optional.empty();
+                        return Optional.of((byte) -3);
                     }
                     Internals.setMagicKey(Base64.decode(result.getString("m", "==")));
                     for (JsonValue c : result.get("c").asArray()) {
@@ -299,6 +300,10 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
+    public static String getVerifyToken() {
+        return Internals.getVerifyToken();
+    }
+
     public static Optional<LocalDateTime> getExpiredDate(String role) {
         return Optional.ofNullable(EXPIRED_DATE.get(role));
     }
@@ -324,7 +329,6 @@ public class VerifyUtils {
         }
         return Optional.empty();
     }
-
 
 
 }

@@ -15,6 +15,10 @@ public class Internals {
         return 1L;
     }
 
+    public static String version() {
+        return "";
+    }
+
     public static byte[] getNonce() {
         return new byte[0];
     }

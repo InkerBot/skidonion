@@ -29,6 +29,10 @@ public class Wrapper {
         return 0;
     }
 
+    public static String getVerifyToken() {
+        return "";
+    }
+
     public static void setAsSuspected(String reason) {
 
     }
