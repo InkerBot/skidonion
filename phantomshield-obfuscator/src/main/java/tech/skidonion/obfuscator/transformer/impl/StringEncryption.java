@@ -69,7 +69,7 @@ public class StringEncryption extends Transformer {
                         dummys.add(fieldNode);
                     }
                 }
-                final MethodNode methodNode = getPullMethod(cw, decryptorMethodName, decryptedStringsFieldName, dummys);
+                final MethodNode methodNode = getPullMethod(cw, decryptorMethodName, decryptedStringsFieldName);
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
 
@@ -83,48 +83,12 @@ public class StringEncryption extends Transformer {
         INFO(TRANSLATION("phantom-shield-x.string.encrypted"), count.get(), System.currentTimeMillis() - current);
     }
 
-    private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName, List<FieldNode> dummys) {
+    private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName) {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
         Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");
 //        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
         final InsnList insnList = new InsnList();
-        if (dummys.isEmpty()) {
-            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
-            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
-            insnList.add(new VarInsnNode(ILOAD, 0));
-            insnList.add(new InsnNode(AALOAD));
-            insnList.add(new InsnNode(ARETURN));
-            methodNode.instructions = insnList;
-            return methodNode;
-        }
-        final boolean randomBoolean = RandomUtils.getRandomBoolean();
-        final LabelNode label0 = new LabelNode();
-        final LabelNode label1 = new LabelNode();
-        if (randomBoolean) {
-            insnList.add(ASMUtils.generateTrue());
-            insnList.add(new JumpInsnNode(IFEQ, label1));
-            insnList.add(label0);
-            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
-            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
-            insnList.add(new VarInsnNode(ILOAD, 0));
-            insnList.add(new InsnNode(AALOAD));
-            insnList.add(new InsnNode(ARETURN));
-            insnList.add(label1);
-            final FieldNode fieldNode = dummys.size() == 1 ? dummys.get(0) : dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
-            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
-        } else {
-            insnList.add(ASMUtils.generateFalse());
-            insnList.add(new JumpInsnNode(IFEQ, label1));
-            insnList.add(label0);
-            final FieldNode fieldNode = dummys.size() == 1 ? dummys.get(0) : dummys.get(RandomUtils.getRandomInt(0, dummys.size() - 1));
-            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), fieldNode.name, "Ljava/lang/Object;"));
-            insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
-            insnList.add(new VarInsnNode(ILOAD, 0));
-            insnList.add(new InsnNode(AALOAD));
-            insnList.add(new InsnNode(ARETURN));
-            insnList.add(label1);
-            insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
-        }
+        insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
         insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
         insnList.add(new VarInsnNode(ILOAD, 0));
         insnList.add(new InsnNode(AALOAD));
