@@ -15,11 +15,11 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-        renamer(builder);
+//        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
-        native_obfuscation(builder);
+//        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);

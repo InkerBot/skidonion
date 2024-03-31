@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.Future;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class DownloadBuilder {
     private String url;
@@ -62,7 +63,7 @@ public class DownloadBuilder {
                 conn.disconnect();
             }
         } catch (Exception e) {
-            ERROR("Failed to download file: ", e);
+            ERROR(TRANSLATION("phantom-shield-x.download.failed"), e);
             if (onFailure != null) {
                 onFailure.run();
             }

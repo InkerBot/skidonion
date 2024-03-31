@@ -46,8 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static tech.skidonion.obfuscator.PhantomShield.ERROR;
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class NativeObfuscation extends Transformer {
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
@@ -150,7 +149,7 @@ public class NativeObfuscation extends Transformer {
                 boolean isInternal = displayName.startsWith("tech/skidonion/verification/");
                 if (isInternal) displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
 
-                INFO("Converting to JNI: {}", displayName);
+                INFO(TRANSLATION("phantom-shield-x.native.covert"), displayName);
 
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)
@@ -244,7 +243,7 @@ public class NativeObfuscation extends Transformer {
 
                 currentClassId++;
             } catch (IOException ex) {
-                ERROR("Error while processing {}", cw.getOriginalName(), ex);
+                ERROR(TRANSLATION("phantom-shield-x.native.error"), cw.getOriginalName(), ex);
             }
 
         });
@@ -363,19 +362,19 @@ public class NativeObfuscation extends Transformer {
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
         Optional<String> opt = Wrapper.getCloudConstant(467287013, 0);
 
-        List<ClassWrapper> injected = new LinkedList<>();
+        List<ClassWrapper> injected = new ArrayList<>();
         long verifySoftwareId;
         String verifyPublicKey;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
-                ERROR("Can't request software information");
+                ERROR(TRANSLATION("phantom-shield-x.native.request"));
                 return;
             }
             JsonObject entity = softwareInformation.getAsJsonObject("entity");
             verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
             verifyPublicKey = entity.getAsJsonPrimitive("public_key").getAsString();
-            INFO("Software Name: {}", entity.getAsJsonPrimitive("software_name").getAsString());
+            INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
             List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
             {
                 ClassNode node = new ClassNode();
@@ -541,7 +540,7 @@ public class NativeObfuscation extends Transformer {
                                 break;
                             }
                             case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant()V":
-                                ERROR("You can't use phantom-shield-x verification debug method in release time");
+                                ERROR(TRANSLATION("phantom-shield-x.native.you"));
                                 System.exit(0);
                                 break;
                         }
@@ -556,6 +555,7 @@ public class NativeObfuscation extends Transformer {
         }
 
         if (!injected.isEmpty()) {
+            Collections.shuffle(injected);
             Mapper mapper = new Mapper(obfuscator, injected);
             mapper.setRepackage(true);
             mapper.setRepakageName("");

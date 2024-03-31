@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class Renamer extends Transformer {
 
@@ -39,20 +40,20 @@ public class Renamer extends Transformer {
     @Override
     public void transform() throws InterruptedException {
         if (obfuscator.getConfig().has("input_mappings_file")) {
-            INFO("Resolving Input Mappings...");
+            INFO(TRANSLATION("phantom-shield-x.renamer.input"));
             long current = System.currentTimeMillis();
             mapper.resolveInputMapping(new File(obfuscator.getConfig().getString("input_mappings_file")));
-            INFO("Resolved done. [{}ms]", System.currentTimeMillis() - current);
+            INFO(TRANSLATION("phantom-shield-x.renamer.resolved"), System.currentTimeMillis() - current);
         }
 
 
-        INFO("Generating mappings.");
+        INFO(TRANSLATION("phantom-shield-x.renamer.generate"));
         long current = System.currentTimeMillis();
         mapper.generateMappings();
-        INFO("Finished generated mappings. [{}ms]", System.currentTimeMillis() - current);
+        INFO(TRANSLATION("phantom-shield-x.renamer.finish"), System.currentTimeMillis() - current);
 
 
-        INFO("Applying mappings.");
+        INFO(TRANSLATION("phantom-shield-x.renamer.apply"));
         current = System.currentTimeMillis();
         Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
 
@@ -61,11 +62,11 @@ public class Renamer extends Transformer {
         }
 
         mapper.apply();
-        INFO("Mapped {} members. [{}ms]", mapper.getMappings().size(), System.currentTimeMillis() - current);
+        INFO(TRANSLATION("phantom-shield-x.renamer.mapped"), mapper.getMappings().size(), System.currentTimeMillis() - current);
 
 
         // Now we gotta fix those resources because we probably screwed up random files.
-        INFO("Attempting to map class names in resources");
+        INFO(TRANSLATION("phantom-shield-x.renamer.attempt"));
         current = System.currentTimeMillis();
         AtomicInteger fixed = new AtomicInteger();
         getResources().forEach((name, byteArray) -> adapt_resources.getValue().forEach(s -> {
@@ -93,14 +94,14 @@ public class Renamer extends Transformer {
                 fixed.incrementAndGet();
             }
         }));
-        INFO("Mapped {} names in resources. [{}ms]", fixed.get(), System.currentTimeMillis() - current);
+        INFO(TRANSLATION("phantom-shield-x.renamer.mapped2"), fixed.get(), System.currentTimeMillis() - current);
 
         if (print_mappings.isEnable()) {
             current = System.currentTimeMillis();
-            INFO("Printing mappings.");
+            INFO(TRANSLATION("phantom-shield-x.renamer.print"));
             File file = new File(print_mappings_file.getValue());
             mapper.printMappings(file);
-            INFO("Finished printing mappings at {}. [{}ms]", file.getAbsolutePath(), System.currentTimeMillis() - current);
+            INFO(TRANSLATION("phantom-shield-x.renamer.finished2"), file.getAbsolutePath(), System.currentTimeMillis() - current);
         }
     }
 

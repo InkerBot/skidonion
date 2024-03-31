@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class StringEncryption extends Transformer {
     private final AtomicInteger count = new AtomicInteger(0);
@@ -79,7 +80,7 @@ public class StringEncryption extends Transformer {
                 }
             }
         });
-        INFO("Encrypted {} strings... [{}ms]", count.get(), System.currentTimeMillis() - current);
+        INFO(TRANSLATION("phantom-shield-x.string.encrypted"), count.get(), System.currentTimeMillis() - current);
     }
 
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName, List<FieldNode> dummys) {

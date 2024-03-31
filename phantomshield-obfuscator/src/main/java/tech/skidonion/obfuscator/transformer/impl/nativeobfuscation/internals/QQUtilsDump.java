@@ -51,7 +51,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "getAllQQ", "()Ljava/util/Set;", "()Ljava/util/Set<Ljava/lang/String;>;", null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();
@@ -438,7 +438,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PRIVATE | ACC_STATIC, "checkNTQQFile", "(Ljava/io/File;)Z", null, null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();

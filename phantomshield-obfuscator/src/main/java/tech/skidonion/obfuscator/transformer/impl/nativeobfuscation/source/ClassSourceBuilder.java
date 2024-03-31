@@ -208,11 +208,11 @@ public class ClassSourceBuilder implements AutoCloseable {
     }
 
     protected String vmStart() {
-        return prefixVM + "_TIGER_RED_START\n";
+        return prefixVM + "_TIGER_WHITE_START\n";
     }
 
     protected String vmEnd() {
-        return prefixVM + "_TIGER_RED_END\n";
+        return prefixVM + "_TIGER_WHITE_END\n";
     }
 
     @Override

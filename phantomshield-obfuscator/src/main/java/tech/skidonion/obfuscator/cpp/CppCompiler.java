@@ -12,8 +12,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static tech.skidonion.obfuscator.PhantomShield.ERROR;
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class CppCompiler {
     private final static SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd-hhmmss");
@@ -39,7 +38,7 @@ public class CppCompiler {
 
         File compilerFile = new File(compiler);
         if (!compilerFile.exists()) {
-            ERROR("compiler is not found");
+            ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.compile"));
             this.compiler = CompilerUpdater.DEFAULT_COMPILER;
         }
         if (CompilerUpdater.DEFAULT_COMPILER.equals(this.compiler)) {
@@ -71,7 +70,7 @@ public class CppCompiler {
             for (final String target : targets) {
                 final File logfile_compile = new File("logs/" + target + "/" + timestamp + ".log");
                 if (!logfile_compile.getParentFile().exists()) logfile_compile.getParentFile().mkdirs();
-                INFO("Compiling with target: " + target + " [" + logfile_compile + "]");
+                INFO(TRANSLATION("phantom-shield-x.cpp-compiler.compile3"), target, logfile_compile);
                 futures.add(PhantomShield.EXECUTOR.submit(() -> {
                     CompileInfo compileInfo = buildCompileInfo(target);
 
@@ -81,7 +80,7 @@ public class CppCompiler {
                     if (compileValue == 0 && compileInfo.getOs() == OS.MAC) {
                         final File logfile_strip = new File("logs/strip/" + target + "/" + timestamp + ".log");
                         if (!logfile_strip.getParentFile().exists()) logfile_strip.getParentFile().mkdirs();
-                        INFO("Stripping debug information: " + target + " [" + logfile_strip + "]");
+                        INFO(TRANSLATION("phantom-shield-x.cpp-compiler.strip"), target, logfile_strip);
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
                     if (virtualizeMacroCount.get() > 0) {
@@ -100,7 +99,7 @@ public class CppCompiler {
         } else {
             final File logfile = new File("logs/compile/" + timestamp + ".log");
             if (!logfile.getParentFile().exists()) logfile.getParentFile().mkdirs();
-            INFO("Compiling with target [" + logfile + "]");
+            INFO(TRANSLATION("phantom-shield-x.cpp-compiler.compile4"), logfile);
             try {
                 PhantomShield.EXECUTOR.submit(() -> {
                     int compileValue = startProcess(makeCompileCommandLine(null, null), logfile);
@@ -119,7 +118,7 @@ public class CppCompiler {
             try (FileInputStream fis = new FileInputStream(file)) {
                 obfuscator.resources.put(properties.get("loader_path") + "/" + file.getName(), IOUtils.toByteArray(fis));
             } catch (IOException e) {
-                ERROR("inject native libraries failed:", e);
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.inject"), e);
             }
         }
     }
@@ -150,7 +149,7 @@ public class CppCompiler {
                     .start();
             return process.waitFor();
         } catch (Exception e) {
-            ERROR("compiling failed:", e);
+            ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.compile5"), e);
         }
         return -1;
     }
@@ -161,7 +160,7 @@ public class CppCompiler {
         if (!logfile_virtualize.getParentFile().exists()) logfile_virtualize.getParentFile().mkdirs();
         File origin = new File(outputDir + "\\build\\" + output);
         File newer = new File(outputDir + "\\build\\_" + output);
-        INFO("Virtualizing: " + output + " [" + logfile_virtualize + "]");
+        INFO(TRANSLATION("phantom-shield-x.cpp-compiler.virtualize"), output, logfile_virtualize);
         String arch;
         File config;
         if (isAdvancedModuleEnable()) {
@@ -191,28 +190,28 @@ public class CppCompiler {
                 newer.renameTo(origin);
                 break;
             case 1:
-                ERROR("Project file does not exist or invalid.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.project"));
                 break;
             case 2:
-                ERROR("File to protect cannot be opened.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.file"));
                 break;
             case 3:
-                ERROR("File do not have any blocks to protect.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.file2"));
                 break;
             case 4:
-                ERROR("Error in inserted block.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.error"));
                 break;
             case 5:
-                ERROR("Fatal error while protecting file.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.fatal"));
                 break;
             case 6:
-                ERROR("Cannot write protected file to disk.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.cannot"));
                 break;
             case 7:
-                ERROR(output + " isn't compatible.");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.output"), output);
                 break;
             default:
-                ERROR("Unknown error");
+                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.unknown"));
                 break;
         }
         return virtualize;

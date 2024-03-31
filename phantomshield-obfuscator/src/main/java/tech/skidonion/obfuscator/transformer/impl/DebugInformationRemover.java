@@ -10,6 +10,7 @@ import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class DebugInformationRemover extends Transformer {
     private final BooleanValue remove_signatures = new BooleanValue("remove_signatures", true);
@@ -176,13 +177,13 @@ public class DebugInformationRemover extends Transformer {
             });
 
         });
-        if (signatures.get() != 0) INFO("Removed {} signatures.", signatures.get());
-        if (inner_class.get() != 0) INFO("Removed {} inner classes information.", inner_class.get());
-        if (source_file.get() != 0) INFO("Removed {} source file attributes.", source_file.get());
-        if (outer_method.get() != 0) INFO("Removed {} outer methods.", outer_method.get());
-        if (local_variable.get() != 0) INFO("Removed {} local variables.", local_variable.get());
-        if (line_number.get() != 0) INFO("Removed {} line numbers.", line_number.get());
-        if (kotlin_reference.get() != 0) INFO("Removed {} kotlin reference.", kotlin_reference.get());
+        if (signatures.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed1"), signatures.get());
+        if (inner_class.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed2"), inner_class.get());
+        if (source_file.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed3"), source_file.get());
+        if (outer_method.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed4"), outer_method.get());
+        if (local_variable.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed5"), local_variable.get());
+        if (line_number.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed6"), line_number.get());
+        if (kotlin_reference.get() != 0) INFO(TRANSLATION("phantom-shield-x.debug-information-remover.removed7"), kotlin_reference.get());
     }
 
     @Override

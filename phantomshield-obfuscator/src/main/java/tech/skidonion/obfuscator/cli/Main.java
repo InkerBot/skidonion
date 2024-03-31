@@ -9,8 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import static tech.skidonion.obfuscator.PhantomShield.ERROR;
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class Main {
     @CommandLine.Command(name = "Phantom-Shield-X", mixinStandardHelpOptions = true, version = PhantomShield.VERSION, description = "Heavy Duty to Protect Your Jar")
@@ -36,8 +35,8 @@ public class Main {
                 new PhantomShield(Config.readConfig(config)).process();
                 return 0;
             }
-            ERROR("invalid arguments");
-            ERROR("Try to use -h or --help for more information");
+            ERROR(TRANSLATION("phantom-shield-x.main.invalid"));
+            ERROR(TRANSLATION("phantom-shield-x.main.try"));
             return -1;
         }
     }

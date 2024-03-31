@@ -170,7 +170,7 @@ public class InvokeWrapperObfuscation extends Transformer {
         }
 
 
-        PhantomShield.INFO("Wrapped {} references.", counter.get());
+        PhantomShield.INFO(PhantomShield.TRANSLATION("phantom-shield-x.invoke-wrapper.wrapped"), counter.get());
     }
 
     @Override

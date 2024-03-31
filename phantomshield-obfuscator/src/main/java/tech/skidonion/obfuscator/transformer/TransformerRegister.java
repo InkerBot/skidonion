@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
@@ -80,20 +81,20 @@ public class TransformerRegister {
             try {
                 instance.preprocess();
             } catch (Exception e) {
-                ERROR("Occurred an error while preprocessing.", e);
+                ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred"), e);
             }
         });
 
         instances.values().stream().filter(instance -> Objects.nonNull(instance) && instance.isEnabled()).forEach(instance -> {
             PhantomShield.INFO("-----------------------");
-            PhantomShield.INFO("Transformer: {}", instance.getName());
+            PhantomShield.INFO(TRANSLATION("phantom-shield-x.transformer-register.transformer"), instance.getName());
             long current = System.currentTimeMillis();
             try {
                 instance.transform();
             } catch (Exception e) {
-                ERROR("Occurred an error while preprocessing.", e);
+                ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred2"), e);
             }
-            PhantomShield.INFO("Finished running {} transformer. [{}ms]", instance.getName(), (System.currentTimeMillis() - current));
+            PhantomShield.INFO(TRANSLATION("phantom-shield-x.transformer-register.finish"), instance.getName(), (System.currentTimeMillis() - current));
             PhantomShield.INFO("-----------------------");
         });
     }

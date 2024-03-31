@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class Mapper {
     public static final String MAPPING_VERSION = "phantom-shield-x,1";
@@ -336,7 +337,7 @@ public class Mapper {
                                     classWrapper.getFieldDictionary().setUniqueIndex(object.getAsJsonPrimitive("field_unique_index").getAsInt());
                                 }
                             } catch (RuntimeException e) {
-                                ERROR("Cann't find class '{}'", name);
+                                ERROR(TRANSLATION("phantom-shield-x.mapper.cant"), name);
                             }
 
                             if (object.has("obfuscated")) {
@@ -364,9 +365,9 @@ public class Mapper {
                 throw new RuntimeException("is not a valid phantom-shield-x mappings file");
             }
         } catch (FileNotFoundException fnfe) {
-            ERROR("Can't find input mappings...", fnfe);
+            ERROR(TRANSLATION("phantom-shield-x.mapper.cant2"), fnfe);
         } catch (IOException e) {
-            ERROR("Occurs an error while resolving mappings...", e);
+            ERROR(TRANSLATION("phantom-shield-x.mapper.occurs"), e);
         } catch (RuntimeException e) {
             ERROR("", e);
         }
@@ -469,7 +470,7 @@ public class Mapper {
             gson.toJson(mappings, bw);
             bw.close();
         } catch (Throwable t) {
-            ERROR("Ran into an error trying to create the mappings file.", t);
+            ERROR(TRANSLATION("phantom-shield-x.mapper.ran"), t);
         }
     }
 

@@ -63,7 +63,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "login", "(Ljava/lang/String;Ljava/lang/String;)I", null, null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();
@@ -614,7 +614,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PRIVATE | ACC_STATIC, "requestInformation", "()Ljava/util/Optional;", "()Ljava/util/Optional<Ljava/lang/Byte;>;", null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();
@@ -1266,7 +1266,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PRIVATE | ACC_STATIC, "heartbeat", "()V", null, null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();
@@ -1505,7 +1505,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "setAsSuspected", "(Ljava/lang/String;)V", null, null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();
@@ -1658,7 +1658,7 @@ methodVisitor.visitEnd();
 methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "getCloudConstant", "(II)Ljava/util/Optional;", "(II)Ljava/util/Optional<Ljava/lang/String;>;", null);
 {
 annotationVisitor0 = methodVisitor.visitAnnotation("Ltech/skidonion/obfuscator/annotations/NativeObfuscation;", false);
-annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_RED");
+annotationVisitor0.visitEnum("virtualize", "Ltech/skidonion/obfuscator/annotations/NativeObfuscation$VirtualMachine;", "TIGER_WHITE");
 annotationVisitor0.visitEnd();
 }
 methodVisitor.visitCode();

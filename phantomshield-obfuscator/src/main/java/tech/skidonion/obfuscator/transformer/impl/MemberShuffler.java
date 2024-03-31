@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 public class MemberShuffler extends Transformer {
     public MemberShuffler(String name) {
@@ -57,7 +58,7 @@ public class MemberShuffler extends Transformer {
                 });
             });
 
-            INFO("Moved {} field values into static block.[{}ms]", counter.get(), (System.currentTimeMillis() - currentTime));
+            INFO(TRANSLATION("phantom-shield-x.member-shuffler.moved"), counter.get(), (System.currentTimeMillis() - currentTime));
         }
         {
             long currentTime = System.currentTimeMillis();
@@ -73,7 +74,7 @@ public class MemberShuffler extends Transformer {
                 counter.addAndGet(classWrapper.getClassNode().fields.size());
             });
 
-            INFO("Shuffled {} members.[{}ms]", counter.get(), (System.currentTimeMillis() - currentTime));
+            INFO(TRANSLATION("phantom-shield-x.member-shuffler.shuffled"), counter.get(), (System.currentTimeMillis() - currentTime));
         }
     }
 

@@ -20,6 +20,7 @@ import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
+import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,8 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class PhantomShield {
-    public static final String VERSION = "v0.0.2";
+    public static final ResourceBundle BUNDLE = ResourceBundle.getBundle("tech.skidonion.obfuscator.lang", new UTF8Control());
+    public static final String VERSION = "v0.0.3";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -58,16 +60,16 @@ public class PhantomShield {
     public PhantomShield(File file) throws IOException {
         this(Config.readConfig(file));
         if (!config.has("input"))
-            throw new RuntimeException("No input file specified.");
+            throw new RuntimeException(BUNDLE.getString("phantom-shield-x.instance.no-input"));
         if (!config.has("output"))
-            throw new RuntimeException("No output file specified.");
+            throw new RuntimeException(BUNDLE.getString("phantom-shield-x.instance.no-output"));
     }
 
     public PhantomShield(Config config) {
         this.config = config;
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
@@ -77,14 +79,14 @@ public class PhantomShield {
         Optional<LocalDateTime> basicRole = Wrapper.getExpiredDate("基础用户组");
         Optional<LocalDateTime> verificationRole = Wrapper.getExpiredDate("授权验证用户组");
         if (basicRole.isPresent()) {
-            INFO("Licence Information: Basic Role [" + format.format(basicRole.get()) + "]");
+            INFO(BUNDLE.getString("phantom-shield-x.instance.basic-role"), format.format(basicRole.get()));
         } else {
-            ERROR("Please buy a subscription for a basic role");
+            ERROR(BUNDLE.getString("phantom-shield-x.instance.unregistered"));
             return;
         }
 
         if (verificationRole.isPresent()) {
-            INFO("Licence Information: Verification Role [" + format.format(verificationRole.get()) + "]");
+            INFO(BUNDLE.getString("phantom-shield-x.instance.verification-role"), format.format(verificationRole.get()));
         }
 
 
@@ -93,12 +95,12 @@ public class PhantomShield {
             if (value instanceof List) {
                 List<String> list = ((List<String>) value);
                 if (list.size() < 2)
-                    throw new RuntimeException("it needed at least 2 characters to generate dictionary.");
+                    throw new RuntimeException(BUNDLE.getString("phantom-shield-x.instance.dictionary-length"));
                 dictionary = DictionaryFactory.getCustom(((List<String>) value));
             } else if (value instanceof String) {
                 String string = (String) value;
                 if (string.length() < 2)
-                    throw new RuntimeException("it needed at least 2 characters to generate dictionary.");
+                    throw new RuntimeException(BUNDLE.getString("phantom-shield-x.instance.dictionary-length"));
                 dictionary = DictionaryFactory.get(string);
             }
         } else {
@@ -128,11 +130,11 @@ public class PhantomShield {
             loadInput();
         }
 
-        INFO("Attempt to build classes inheritance...");
+        INFO(BUNDLE.getString("phantom-shield-x.instance.attempt-build-inheritance"));
         try {
             this.buildInheritance();
         } catch (Exception e) {
-            INFO("Occurs a error while building classes inheritance...", e);
+            INFO(BUNDLE.getString("phantom-shield-x.instance.build-inheritance-error"), e);
             return;
         }
 
@@ -141,7 +143,7 @@ public class PhantomShield {
         if (!verificationRole.isPresent()) {
             tech.skidonion.obfuscator.transformer.impl.NativeObfuscation nativeObfuscation = (tech.skidonion.obfuscator.transformer.impl.NativeObfuscation) register.get("native_obfuscation");
             if (nativeObfuscation != null && nativeObfuscation.isVerificationEnable()) {
-                ERROR("You didn't subscribe verification role!!!");
+                ERROR(BUNDLE.getString("phantom-shield-x.instance.none-verification-role"));
                 return;
             }
         }
@@ -153,7 +155,7 @@ public class PhantomShield {
             watermarking.init(this);
             watermarking.transform();
         } catch (Exception e) {
-            ERROR("Occurs a FATAL ERROR: ", e);
+            ERROR(BUNDLE.getString("phantom-shield-x.instance.fatal-error"), e);
             return;
         }
 
@@ -163,11 +165,11 @@ public class PhantomShield {
 
     private void writeOutput() {
         File output = new File(config.getString("output"));
-        INFO("Writing output to \"{}\".", output.getAbsolutePath());
+        INFO(BUNDLE.getString("phantom-shield-x.instance.output"), output.getAbsolutePath());
 
 
         if (output.exists())
-            INFO("Output file already exists, renamed to {}.", FileUtils.renameExistingFile(output));
+            INFO(BUNDLE.getString("phantom-shield-x.instance.exist"), FileUtils.renameExistingFile(output));
 
         if (Inline._advanced_checkCRCImage(0x86543210) == 0x86543210)
             try {
@@ -185,7 +187,7 @@ public class PhantomShield {
                         zos.write(classWrapper.toByteArray());
                         zos.closeEntry();
                     } catch (IOException ioe) {
-                        ERROR("Error writing class {}. Skipping.", classWrapper.getName() + ".class");
+                        ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
                         ioe.printStackTrace();
                     }
                 });
@@ -197,7 +199,7 @@ public class PhantomShield {
                         zos.write(bytes);
                         zos.closeEntry();
                     } catch (IOException ioe) {
-                        ERROR("Error writing resource {}. Skipping.", name);
+                        ERROR(BUNDLE.getString("phantom-shield-x.instance.resource-error"), name);
                         ioe.printStackTrace();
                     }
                 });
@@ -225,7 +227,7 @@ public class PhantomShield {
                     }
                 }
             } else {
-                INFO("Loading library \"{}\".", file.getAbsolutePath());
+                INFO(BUNDLE.getString("phantom-shield-x.instance.load-library"), file.getAbsolutePath());
                 try (ZipFile zipFile = new ZipFile(file)) {
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
@@ -237,21 +239,21 @@ public class PhantomShield {
                                 ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true);
                                 classpath.put(cw.getName(), cw);
                             } catch (Throwable t) {
-                                ERROR("Error while loading library class \"{}\".", entry.getName().replace(".class", ""));
+                                ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error"), entry.getName().replace(".class", ""));
                                 t.printStackTrace();
                             }
                     }
                 } catch (ZipException e) {
-                    ERROR("Library \"{}\" could not be opened as a zip file.", file.getAbsolutePath());
+                    ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error2"), file.getAbsolutePath());
                     e.printStackTrace();
                 } catch (IOException e) {
-                    ERROR("IOException happened while trying to load classes from \"{}\".", file.getAbsolutePath());
+                    ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error3"), file.getAbsolutePath());
                     e.printStackTrace();
                 }
 
             }
         } else {
-            ERROR("Library \"{}\" could not be found and will be ignored.", file.getAbsolutePath());
+            ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error4"), file.getAbsolutePath());
         }
     }
 
@@ -271,7 +273,7 @@ public class PhantomShield {
 
         if (input.exists()) {
             long current = System.currentTimeMillis();
-            INFO("Loading input \"{}\".", input.getAbsolutePath());
+            INFO(BUNDLE.getString("phantom-shield-x.instance.load-input"), input.getAbsolutePath());
 
             Map<String, ClassWrapper> classes = new HashMap<>();
 
@@ -303,38 +305,38 @@ public class PhantomShield {
                                 if (entryName.endsWith(wrapperEntryName) && !entryName.equals(wrapperEntryName))
                                     cw.setEntryPrefix(entry.getName().substring(0, entryName.length() - wrapperEntryName.length()));
                             } catch (Throwable t) {
-                                LOGGER.warn(String.format("Could not load %s as a class.", entry.getName()));
+                                LOGGER.warn(BUNDLE.getString("phantom-shield-x.instance.input-error"), entry.getName());
                                 this.resources.put(entry.getName(), IOUtils.toByteArray(in));
                             }
                         else
                             this.resources.put(entry.getName(), IOUtils.toByteArray(in));
                 }
             } catch (ZipException e) {
-                ERROR("Input file \"{}\" could not be opened as a zip file.", input.getAbsolutePath());
+                ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-2"), input.getAbsolutePath());
                 e.printStackTrace();
                 throw new RuntimeException(e);
             } catch (IOException e) {
-                ERROR("IOException happened while trying to load classes from \"{}\".", input.getAbsolutePath());
+                ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-3"), input.getAbsolutePath());
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
 
             if (config.has("random_seed")) {
                 seed = config.getLong("random_seed");
-                INFO("Setting random seed to \"{}\".", seed);
+                INFO(BUNDLE.getString("phantom-shield-x.instance.seed"), seed);
             } else {
                 seed = ThreadLocalRandom.current().nextLong();
-                INFO("Setting random seed to \"{}\".", seed);
+                INFO(BUNDLE.getString("phantom-shield-x.instance.seed"), seed);
             }
             List<String> keys = new ArrayList<>(classes.keySet());
             Collections.shuffle(keys, new Random(seed));
             for (String key : keys) {
                 this.classes.put(key, classes.get(key));
             }
-            INFO("Loaded {} classes in {}ms.", this.classes.size(), System.currentTimeMillis() - current);
+            INFO(BUNDLE.getString("phantom-shield-x.instance.load-input-done"), this.classes.size(), System.currentTimeMillis() - current);
 
         } else {
-            ERROR("Unable to find \"{}\".", input.getAbsolutePath());
+            ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-4"), input.getAbsolutePath());
             throw new RuntimeException();
         }
     }
@@ -364,7 +366,7 @@ public class PhantomShield {
 
         ClassTree firstTree = getTree(type1);
         if (firstTree == null)
-            throw new RuntimeException("Could not find " + type1 + " in the built class hierarchy");
+            throw new RuntimeException(String.format(BUNDLE.getString("phantom-shield-x.instance.hierarchy-error"), type1));
 
         Set<String> allChildren = new HashSet<>();
         Deque<String> toProcess = new ArrayDeque<>(firstTree.getSubClasses());
@@ -388,7 +390,7 @@ public class PhantomShield {
      */
     public ClassWrapper getClassWrapper(String ref) {
         if (!classpath.containsKey(ref))
-            throw new RuntimeException("Could not find " + ref);
+            throw new RuntimeException(String.format(BUNDLE.getString("phantom-shield-x.instance.hierarchy-error-2"), ref));
 
         return classpath.get(ref);
     }
@@ -491,6 +493,10 @@ public class PhantomShield {
 
     public static void ERROR(String s, Throwable throwable) {
         LOGGER.error(s, throwable);
+    }
+
+    public static String TRANSLATION(String key) {
+        return BUNDLE.getString(key);
     }
 
 }

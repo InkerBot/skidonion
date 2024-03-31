@@ -31,7 +31,7 @@ public class VerifyUtils {
     private final static Map<Integer, byte[]> CLOUD_CONSTANT_MAP = new HashMap<>();
     private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     public static int login(String username, String password) {
         int r = RANDOM.nextInt();
         byte result = -1;
@@ -109,7 +109,7 @@ public class VerifyUtils {
     }
 
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     private static Optional<Byte> requestInformation() {
         long delay = 0;
         Map<String, String> headers = new HashMap<>();
@@ -201,7 +201,7 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     private static void heartbeat() {
         try {
             Map<String, String> headers = new HashMap<>();
@@ -240,7 +240,7 @@ public class VerifyUtils {
         }
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     public static void setAsSuspected(String reason) {
         Map<String, String> headers = new HashMap<>();
         if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
@@ -266,7 +266,7 @@ public class VerifyUtils {
     /**
      * "xxxx用户组".hashcode();
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_RED)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     public static Optional<String> getCloudConstant(int hash, int index) {
         byte[] encoded = CLOUD_CONSTANT_MAP.get(hash);
         if (encoded == null) {
