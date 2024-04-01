@@ -2,10 +2,13 @@ package tech.skidonion.obfuscator.cpp;
 
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.utils.IOUtils;
+import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -13,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
+import static tech.skidonion.obfuscator.utils.StringUtils.createStringMap;
 
 public class CppCompiler {
     private final static SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd-hhmmss");
@@ -74,7 +78,7 @@ public class CppCompiler {
                 futures.add(PhantomShield.EXECUTOR.submit(() -> {
                     CompileInfo compileInfo = buildCompileInfo(target);
 
-                    int compileValue = startProcess(makeCompileCommandLine(target, compileInfo), logfile_compile.getAbsoluteFile());
+                    int compileValue = startProcess(makeCompileCommandLine(target, compileInfo), logfile_compile.getAbsoluteFile(), "ZIG_LOCAL_CACHE_DIR", Paths.get(".cache").toAbsolutePath().toString());
                     int strip = 0;
                     int virtualize = 0;
                     if (compileValue == 0 && compileInfo.getOs() == OS.MAC) {
@@ -102,7 +106,7 @@ public class CppCompiler {
             INFO(TRANSLATION("phantom-shield-x.cpp-compiler.compile4"), logfile);
             try {
                 PhantomShield.EXECUTOR.submit(() -> {
-                    int compileValue = startProcess(makeCompileCommandLine(null, null), logfile);
+                    int compileValue = startProcess(makeCompileCommandLine(null, null), logfile, "ZIG_LOCAL_CACHE_DIR", Paths.get(".cache").toAbsolutePath().toString());
                     int virtualize = 0;
                     if (virtualizeMacroCount.get() > 0) {
                         virtualize = virtualize(timestamp, null);
@@ -141,9 +145,11 @@ public class CppCompiler {
         return isOnlyIntelPE == 1;
     }
 
-    private int startProcess(String[] commands, File printFile) {
+    private int startProcess(String[] commands, File printFile, String... env) {
         try {
-            Process process = new ProcessBuilder(commands)
+            ProcessBuilder builder = new ProcessBuilder(commands);
+            builder.environment().putAll(createStringMap((Object[]) env));
+            Process process = builder
                     .redirectErrorStream(true)
                     .redirectOutput(printFile)
                     .start();
@@ -244,6 +250,7 @@ public class CppCompiler {
         // TODO: if you wanna virtualize methods you must stop optimize your shit code
         //  because optimization will change control flow graph
         //  it will cause mistakes while virtualizing
+        commands.add("-DNDEBUG");
         if (virtualizeMacroCount.get() == 0) {
             commands.add("-O2");
         }

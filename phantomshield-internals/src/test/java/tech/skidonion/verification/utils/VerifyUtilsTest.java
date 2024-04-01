@@ -21,6 +21,8 @@ class VerifyUtilsTest {
 
         System.out.println(VerifyUtils.hasRole("授权验证用户组"));
 
+        System.out.println(VerifyUtils.getVerifyToken());
+
         VerifyUtils.getCloudConstant("授权验证用户组".hashCode(), 0).ifPresent(System.out::println);
 //        VerifyUtils.setAsSuspected("测试");
 //        VerifyUtils.heartbeat();

@@ -10,9 +10,9 @@ class VerifyUtilsTest {
     @Test
     void requestSoftwareInfo() {
         JsonObject jsonObject = VerifyUtils.requestSoftwareInformation(
-                "http://localhost:8694/",
-                "7",
-                "fc5c8bf3750cf741378a0c672532583c",
+                "https://skidonion.tech/",
+                "1",
+                "769e4f678db8436b0018fc6fe60a5a7a",
                 "1");
 
         System.out.println(jsonObject.toString());

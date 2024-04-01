@@ -40,8 +40,9 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+@NativeObfuscation
 public class PhantomShield {
-    public static final ResourceBundle BUNDLE = ResourceBundle.getBundle("tech.skidonion.obfuscator.lang", new UTF8Control());
+    public static ResourceBundle BUNDLE;
     public static final String VERSION = "v0.0.3";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
@@ -66,6 +67,9 @@ public class PhantomShield {
     }
 
     public PhantomShield(Config config) {
+        if (BUNDLE == null) {
+            BUNDLE = ResourceBundle.getBundle("i18n.lang", new UTF8Control());
+        }
         this.config = config;
     }
 

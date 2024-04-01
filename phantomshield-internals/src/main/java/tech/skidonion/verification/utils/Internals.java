@@ -2,7 +2,18 @@ package tech.skidonion.verification.utils;
 
 import tech.skidonion.verification.crypto.ChaCha20;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Internals {
+    private static byte[] NONCE;
+    private static Object CRYPTO;
+    private static String VERIFY_TOKEN;
+    private static byte[] KEY;
+    private static String USERNAME;
+    private static long USER_ID;
+    private static byte[] MAGIC_KEY;
+
     public static String verificationServer() {
         return "http://localhost:8694/";
     }
@@ -20,52 +31,59 @@ public class Internals {
     }
 
     public static byte[] getNonce() {
-        return new byte[0];
+        return NONCE;
     }
 
     public static void setNonce(byte[] NONCE) {
+        Internals.NONCE = NONCE;
     }
 
     public static Object getCrypto() {
-        return null;
+        return CRYPTO;
     }
 
     public static void setCrypto(Object CRYPTO) {
+        Internals.CRYPTO = CRYPTO;
     }
 
     public static String getVerifyToken() {
-        return null;
+        return VERIFY_TOKEN;
     }
 
     public static void setVerifyToken(String verifyToken) {
+        Internals.VERIFY_TOKEN = verifyToken;
     }
 
     public static byte[] getKey() {
-        return new byte[0];
+        return KEY;
     }
 
     public static void setKey(byte[] KEY) {
+        Internals.KEY = KEY;
     }
 
     public static String getUsername() {
-        return null;
+        return USERNAME;
     }
 
     public static void setUsername(String USERNAME) {
+        Internals.USERNAME = USERNAME;
     }
 
     public static long getUserId() {
-        return 0;
+        return USER_ID;
     }
 
     public static void setUserId(long userId) {
+        Internals.USER_ID = USER_ID;
     }
 
     public static byte[] getMagicKey() {
-        return new byte[0];
+        return MAGIC_KEY;
     }
 
     public static void setMagicKey(byte[] magicKey) {
+        Internals.MAGIC_KEY = magicKey;
     }
 
 }

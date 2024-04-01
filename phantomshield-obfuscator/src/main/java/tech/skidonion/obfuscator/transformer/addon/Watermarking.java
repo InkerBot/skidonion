@@ -6,6 +6,7 @@ import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.crypto.ChaCha20;
+import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -17,9 +18,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@NativeObfuscation
 public class Watermarking extends Addon {
     private final static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
-    private final String date = formatter.format(new Date());
 
     @Override
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
@@ -60,12 +61,11 @@ public class Watermarking extends Addon {
         }
         return selectedMethod;
     }
-
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     private String buildWatermarking() {
         StringBuilder builder = new StringBuilder();
-
-        builder.append("build-time: ").append(date);
-
+        builder.append("build-time: ").append(formatter.format(new Date())).append('\n');
+        builder.append("username: ").append(Wrapper.getUsername());
         return builder.toString();
     }
 

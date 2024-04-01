@@ -4,9 +4,11 @@ import picocli.CommandLine;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.cpp.CompilerUpdater;
+import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
@@ -42,6 +44,9 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
+        if (BUNDLE == null) {
+            BUNDLE = ResourceBundle.getBundle("i18n.lang", new UTF8Control());
+        }
         System.exit(new CommandLine(new CommandParser()).setCaseInsensitiveEnumValuesAllowed(true).execute(args));
     }
 }
