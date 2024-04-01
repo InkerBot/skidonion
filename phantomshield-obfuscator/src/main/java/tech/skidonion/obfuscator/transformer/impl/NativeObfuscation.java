@@ -346,7 +346,7 @@ public class NativeObfuscation extends Transformer {
 
         ClassNode loaderClass;
 
-        List<ClassNode> classNodes = ASMUtils.readClassesWithInputStream("/binaries/phantomshield-loader.bin");
+        List<ClassNode> classNodes = ASMUtils.readClassesWithInputStream("/binaries/phantomshield-loader.bin", 0);
         if (classNodes.size() != 1) throw new RuntimeException("impossible loader class member size");
 
         loaderClass = classNodes.get(0);
@@ -378,7 +378,7 @@ public class NativeObfuscation extends Transformer {
             verifyPublicKey = entity.getAsJsonPrimitive("public_key").getAsString();
             verifyVersion = entity.getAsJsonPrimitive("version").getAsString();
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
-            List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin"));
+            List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
             {
                 ClassNode node = new ClassNode();
                 ClassReader reader = new ClassReader(HttpUtilsDump.dump());

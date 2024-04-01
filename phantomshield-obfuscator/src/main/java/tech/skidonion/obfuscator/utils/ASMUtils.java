@@ -32,17 +32,17 @@ public class ASMUtils implements Opcodes {
 
     public static boolean hasAnnotations(ClassNode classNode) {
         return (classNode.visibleAnnotations != null && !classNode.visibleAnnotations.isEmpty())
-                || (classNode.invisibleAnnotations != null && !classNode.invisibleAnnotations.isEmpty());
+               || (classNode.invisibleAnnotations != null && !classNode.invisibleAnnotations.isEmpty());
     }
 
     public static boolean hasAnnotations(MethodNode methodNode) {
         return (methodNode.visibleAnnotations != null && !methodNode.visibleAnnotations.isEmpty())
-                || (methodNode.invisibleAnnotations != null && !methodNode.invisibleAnnotations.isEmpty());
+               || (methodNode.invisibleAnnotations != null && !methodNode.invisibleAnnotations.isEmpty());
     }
 
     public static boolean hasAnnotations(FieldNode fieldNode) {
         return (fieldNode.visibleAnnotations != null && !fieldNode.visibleAnnotations.isEmpty())
-                || (fieldNode.invisibleAnnotations != null && !fieldNode.invisibleAnnotations.isEmpty());
+               || (fieldNode.invisibleAnnotations != null && !fieldNode.invisibleAnnotations.isEmpty());
     }
 
     public static boolean isStringInsn(AbstractInsnNode insn) {
@@ -58,7 +58,7 @@ public class ASMUtils implements Opcodes {
                 || opcode == BIPUSH
                 || opcode == SIPUSH
                 || (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Integer));
+                    && ((LdcInsnNode) insn).cst instanceof Integer));
     }
 
     public static boolean isLongInsn(AbstractInsnNode insn) {
@@ -66,19 +66,19 @@ public class ASMUtils implements Opcodes {
         return (opcode == LCONST_0
                 || opcode == LCONST_1
                 || (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Long));
+                    && ((LdcInsnNode) insn).cst instanceof Long));
     }
 
     public static boolean isFloatInsn(AbstractInsnNode insn) {
         int opcode = insn.getOpcode();
         return (opcode >= FCONST_0 && opcode <= FCONST_2)
-                || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Float);
+               || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Float);
     }
 
     public static boolean isDoubleInsn(AbstractInsnNode insn) {
         int opcode = insn.getOpcode();
         return (opcode >= DCONST_0 && opcode <= DCONST_1)
-                || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Double);
+               || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Double);
     }
 
     public static AbstractInsnNode getNumberInsn(int number) {
@@ -118,10 +118,10 @@ public class ASMUtils implements Opcodes {
         if (opcode >= ICONST_M1 && opcode <= ICONST_5) {
             return opcode - 3;
         } else if (insn instanceof IntInsnNode
-                && insn.getOpcode() != NEWARRAY) {
+                   && insn.getOpcode() != NEWARRAY) {
             return ((IntInsnNode) insn).operand;
         } else if (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Integer) {
+                   && ((LdcInsnNode) insn).cst instanceof Integer) {
             return (Integer) ((LdcInsnNode) insn).cst;
         }
 
@@ -134,7 +134,7 @@ public class ASMUtils implements Opcodes {
         if (opcode >= LCONST_0 && opcode <= LCONST_1) {
             return opcode - 9;
         } else if (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Long) {
+                   && ((LdcInsnNode) insn).cst instanceof Long) {
             return (Long) ((LdcInsnNode) insn).cst;
         }
 
@@ -147,7 +147,7 @@ public class ASMUtils implements Opcodes {
         if (opcode >= FCONST_0 && opcode <= FCONST_2) {
             return opcode - 11;
         } else if (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Float) {
+                   && ((LdcInsnNode) insn).cst instanceof Float) {
             return (Float) ((LdcInsnNode) insn).cst;
         }
 
@@ -160,7 +160,7 @@ public class ASMUtils implements Opcodes {
         if (opcode >= DCONST_0 && opcode <= DCONST_1) {
             return opcode - 14;
         } else if (insn instanceof LdcInsnNode
-                && ((LdcInsnNode) insn).cst instanceof Double) {
+                   && ((LdcInsnNode) insn).cst instanceof Double) {
             return (Double) ((LdcInsnNode) insn).cst;
         }
 
@@ -292,14 +292,14 @@ public class ASMUtils implements Opcodes {
     }
 
 
-    public static List<ClassNode> readClassesWithInputStream(String path) {
+    public static List<ClassNode> readClassesWithInputStream(String path, int parseOption) {
         try (InputStream stream = ASMUtils.class.getResourceAsStream(path); ZipInputStream zip = new ZipInputStream(Objects.requireNonNull(stream));) {
             List<ClassNode> list = new ArrayList<>();
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
                 if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
                     ClassNode cn = new ClassNode();
-                    new ClassReader(IOUtils.toByteArray(zip)).accept(cn, 0);
+                    new ClassReader(IOUtils.toByteArray(zip)).accept(cn, parseOption);
                     list.add(cn);
                 }
             }
@@ -532,9 +532,9 @@ public class ASMUtils implements Opcodes {
                 int local = ((VarInsnNode) insnNode).var;
                 int size =
                         (insnNode.getOpcode() == Opcodes.LLOAD
-                                || insnNode.getOpcode() == Opcodes.DLOAD
-                                || insnNode.getOpcode() == Opcodes.LSTORE
-                                || insnNode.getOpcode() == Opcodes.DSTORE)
+                         || insnNode.getOpcode() == Opcodes.DLOAD
+                         || insnNode.getOpcode() == Opcodes.LSTORE
+                         || insnNode.getOpcode() == Opcodes.DSTORE)
                                 ? 2
                                 : 1;
                 maxLocals = Math.max(maxLocals, local + size);

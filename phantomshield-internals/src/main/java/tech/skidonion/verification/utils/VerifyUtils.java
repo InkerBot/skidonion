@@ -7,13 +7,8 @@ import tech.skidonion.verification.json.Json;
 import tech.skidonion.verification.json.JsonArray;
 import tech.skidonion.verification.json.JsonObject;
 import tech.skidonion.verification.json.JsonValue;
-import tech.skidonion.verification.time.Packet;
 
 import java.math.BigInteger;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -147,22 +142,7 @@ public class VerifyUtils {
                     ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
-                    DatagramSocket socket = new DatagramSocket();
-                    socket.setSoTimeout(3000);
-                    Packet ntpPacket = new Packet();
-                    long t0 = System.currentTimeMillis();
-                    ntpPacket.setTransmitTimestamp(new Packet.Timestamp(t0));
-                    byte[] ntpRawPacket = ntpPacket.asByteArray();
-                    DatagramPacket packet = new DatagramPacket(ntpRawPacket, ntpRawPacket.length, InetAddress.getByName("time.windows.com"), 123);
-                    socket.send(packet);
-                    socket.receive(packet);
-                    long t3 = System.currentTimeMillis();
-                    Packet recvPacket = new Packet(ByteBuffer.wrap(packet.getData()));
-                    long t1 = recvPacket.getReceiveTimestamp().getTimeMillis();
-                    long t2 = recvPacket.getTransmitTimestamp().getTimeMillis();
-                    socket.close();
-                    delay += System.currentTimeMillis() - lastTimestamp;
-                    long now = System.currentTimeMillis() + (t1 + t2 - t0 - t3 + 1) / 2;
+                    long now = System.currentTimeMillis();
                     long timestamp = result.getLong("t", -1);
                     long diff = now - timestamp - delay;
                     if (diff < 0) diff = -diff;
@@ -197,7 +177,6 @@ public class VerifyUtils {
                 return Optional.of(code);
             }
         } catch (Exception ignore) {
-
         }
         return Optional.empty();
     }

@@ -4,6 +4,6 @@ import java.io.File;
 
 public class TestTrace {
     public static void main(String[] args) {
-        new Tracer(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")).trace().forEach(System.out::println);
+        new Tracer(new File("D:\\runtimes\\java-obfuscator\\phantom-shield-x\\phantomshield-obfuscator.jar")).trace().forEach(System.out::println);
     }
 }
