@@ -25,6 +25,7 @@ public class CppCompiler {
     private String compiler;
     private String extraCommandLine;
     private File outputDir;
+    private boolean isDebug = false;
     private int isOnlyIntelPE = -1;
     private boolean isAarch64 = false;
     private String defaultOutput = "x64-windows.dll";
@@ -39,6 +40,10 @@ public class CppCompiler {
     public void init(PhantomShield obfuscator) {
         this.obfuscator = obfuscator;
         this.outputDir = new File(obfuscator.getConfig().getString("output")).getParentFile();
+
+        if (obfuscator.getConfig().has("__debug")) {
+            this.isDebug = obfuscator.getConfig().getBoolean("__debug");
+        }
 
         File compilerFile = new File(compiler);
         if (!compilerFile.exists()) {
@@ -87,7 +92,7 @@ public class CppCompiler {
                         INFO(TRANSLATION("phantom-shield-x.cpp-compiler.strip"), target, logfile_strip);
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
-                    if (virtualizeMacroCount.get() > 0) {
+                    if (virtualizeMacroCount.get() > 0 && !isDebug) {
                         virtualize = virtualize(timestamp, compileInfo);
                     }
                     return compileValue | strip | virtualize;
@@ -108,7 +113,7 @@ public class CppCompiler {
                 PhantomShield.EXECUTOR.submit(() -> {
                     int compileValue = startProcess(makeCompileCommandLine(null, null), logfile, "ZIG_LOCAL_CACHE_DIR", Paths.get(".cache").toAbsolutePath().toString());
                     int virtualize = 0;
-                    if (virtualizeMacroCount.get() > 0) {
+                    if (virtualizeMacroCount.get() > 0 && !isDebug) {
                         virtualize = virtualize(timestamp, null);
                     }
                     return compileValue | virtualize;
