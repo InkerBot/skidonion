@@ -79,6 +79,23 @@ public class PhantomShield {
         INFO("Java Home: {}", System.getProperty("java.home"));
         INFO("Phantom Shield X {}\n{}\n{}", VERSION, "Copyright 2024 fl0wowp4rty", "All rights reserved");
 
+        if (config.has("__debug") && config.getBoolean("__debug")) {
+            WARN(BUNDLE.getString("phantom-shield-x.debug"));
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+                WARN(BUNDLE.getString("phantom-shield-x.debug"));
+            }
+        }
+
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
         Optional<LocalDateTime> basicRole = Wrapper.getExpiredDate("基础用户组");
         Optional<LocalDateTime> verificationRole = Wrapper.getExpiredDate("授权验证用户组");
