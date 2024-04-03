@@ -38,6 +38,12 @@ public class Wrapper {
     }
 
     public static Optional<String> getCloudConstant(int hash, int index) {
+        String key = "phantom-shield-x.cloud-constant." + hash + "." + index;
+        String result;
+        if ((result = System.getProperty(key)) != null) {
+            return Optional.of(result);
+        }
+
         List<String> array = DEFAULT_CONSTANT_POOL.get(hash);
         if (array != null && index < array.size() && index >= 0) {
             return Optional.of(array.get(index));
