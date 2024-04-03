@@ -55,7 +55,7 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
 
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
-    private final BooleanValue use_internal_user_interface = new BooleanValue("user_internal_user_interface", true);
+    private final BooleanValue use_internal_user_interface = new BooleanValue("use_internal_user_interface", true);
     private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
     private final StringValue verification_user_id = new StringValue("verification_user_id", "-1");
     private final StringValue verification_software_id = new StringValue("verification_software_id", "-1");
@@ -549,7 +549,7 @@ public class NativeObfuscation extends Transformer {
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
                                 break;
                             }
-                            case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant()V":
+                            case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant(Ljava/lang/String;Ljava/lang/String;)V":
                                 ERROR(TRANSLATION("phantom-shield-x.native.you"));
                                 System.exit(0);
                                 break;
