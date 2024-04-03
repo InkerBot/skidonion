@@ -42,6 +42,7 @@ import java.util.zip.ZipOutputStream;
 
 @NativeObfuscation
 public class PhantomShield {
+    @NativeObfuscation.InlineStaticFieldAccess
     public static ResourceBundle BUNDLE;
     public static final String VERSION = "v0.0.3";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);

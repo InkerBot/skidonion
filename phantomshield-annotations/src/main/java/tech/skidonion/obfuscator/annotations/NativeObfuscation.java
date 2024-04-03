@@ -38,4 +38,9 @@ public @interface NativeObfuscation {
         LION_RED,
         LION_BLACK;
     }
+
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.FIELD)
+    public @interface InlineStaticFieldAccess {
+    }
 }

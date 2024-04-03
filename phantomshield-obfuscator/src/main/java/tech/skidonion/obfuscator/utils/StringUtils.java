@@ -243,7 +243,12 @@ public class StringUtils {
                 result.append(c);
                 continue;
             }
-            result.append("\\u").append(String.format("%04x", (int) c));
+            String hex = Integer.toHexString(c & 0xFFFF);
+            result.append("\\u");
+            for (int j = 0; j < 4 - hex.length(); j++) {
+                result.append('0');
+            }
+            result.append(hex);
         }
         return result.toString();
     }

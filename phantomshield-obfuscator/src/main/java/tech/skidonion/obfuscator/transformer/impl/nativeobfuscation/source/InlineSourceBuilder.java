@@ -1,14 +1,17 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
+import org.objectweb.asm.Type;
+import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
-import tech.skidonion.obfuscator.crypto.ChaCha20;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.impl.VerificationInlineBuilder;
 
 import java.util.*;
 
 public class InlineSourceBuilder {
+
     private final NativeObfuscation obfuscation;
     private final CppCompiler compiler;
     private final StringBuilder cpp = new StringBuilder();
@@ -46,6 +49,12 @@ public class InlineSourceBuilder {
         }
         cpp.append("namespace native_jvm::inlines {\n");
 
+        obfuscation.inlineStaticFields.forEach(((key, pair) -> {
+            String cppName = pair.getFirst();
+            FieldWrapper fw = pair.getSecond();
+            cpp.append(MethodProcessor.CPP_TYPES[Type.getType(fw.getDescription()).getSort()]).append(" ").append(cppName).append(";\n");
+        }));
+
         if (obfuscation.isVerificationEnable()) {
             if (obfuscation.isUseInternalVerificationInterface()) {
                 cpp.append("bool licenced = 0;\n");
@@ -80,6 +89,13 @@ public class InlineSourceBuilder {
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("namespace native_jvm::inlines {\n");
+
+        obfuscation.inlineStaticFields.forEach(((key, pair) -> {
+            String cppName = pair.getFirst();
+            FieldWrapper fw = pair.getSecond();
+            hpp.append("extern ").append(MethodProcessor.CPP_TYPES[Type.getType(fw.getDescription()).getSort()]).append(" ").append(cppName).append(";\n");
+        }));
+
         if (obfuscation.isVerificationEnable()) {
             if (obfuscation.isUseInternalVerificationInterface()) {
                 hpp.append("extern bool licenced;\n");

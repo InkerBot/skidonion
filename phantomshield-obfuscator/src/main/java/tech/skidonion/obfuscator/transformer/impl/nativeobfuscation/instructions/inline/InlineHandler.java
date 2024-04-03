@@ -1,11 +1,16 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline;
 
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.commons.Pair;
 
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 import static tech.skidonion.obfuscator.PhantomShield.WARN;
 
 public class InlineHandler {
@@ -19,7 +24,7 @@ public class InlineHandler {
                 compiler.getVirtualizeMacroCount().incrementAndGet();
                 processAdvanced(context, node);
             } else {
-                WARN("Advanced module is disabled, some inline methods won't be applied...");
+                WARN(TRANSLATION("phantom-shield-x.native.inline1"));
             }
         }
         if (node.name.startsWith("_verification_")) {
@@ -28,7 +33,72 @@ public class InlineHandler {
                 compiler.getVirtualizeMacroCount().incrementAndGet();
                 processVerification(context, node);
             } else {
-                WARN("Verification is disabled, some inline methods won't be applied...");
+                WARN(TRANSLATION("phantom-shield-x.native.inline2"));
+            }
+        }
+
+        if (node.name.startsWith("_field_")) {
+            String key = node.name.substring(7);
+            Pair<String, FieldWrapper> pair = context.obfuscator.inlineStaticFields.get(key);
+            Type returnType = Type.getReturnType(node.desc);
+            boolean isSet = returnType.getSort() == Type.VOID;
+
+            String desc = pair.getSecond().getDescription();
+            int sort = Type.getType(desc).getSort();
+            switch (sort) {
+                case Type.VOID:
+                    throw new UnsupportedOperationException("invalid field desc");
+                case Type.BOOLEAN:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                case Type.INT:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".i;\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".i = (jint) inlines::").append(pair.getFirst()).append(";\n");
+                    }
+                    break;
+                case Type.FLOAT:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".f;\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".f = inlines::").append(pair.getFirst()).append(";\n");
+                    }
+                    break;
+                case Type.LONG:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".j;\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".j = inlines::").append(pair.getFirst()).append(";\n");
+                    }
+                    break;
+                case Type.DOUBLE:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".d;\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".d = inlines::").append(pair.getFirst()).append(";\n");
+                    }
+                    break;
+                case Type.ARRAY:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
+                        context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".l = (jobject) inlines::").append(pair.getFirst()).append(";\n");
+                        context.output.append("refs.insert(cstack").append(context.stackPointer).append(".l);\n");
+                    }
+                    break;
+                case Type.OBJECT:
+                case Type.METHOD:
+                    if (isSet) {
+                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
+                        context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
+                    } else {
+                        context.output.append("cstack").append(context.stackPointer).append(".l = inlines::").append(pair.getFirst()).append(";\n");
+                        context.output.append("refs.insert(cstack").append(context.stackPointer).append(".l);\n");
+                    }
+                    break;
             }
         }
     }

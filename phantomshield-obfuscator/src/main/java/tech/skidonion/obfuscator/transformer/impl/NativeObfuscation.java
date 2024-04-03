@@ -10,6 +10,7 @@ import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
+import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.inline.Wrapper;
@@ -30,6 +31,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.MainS
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.utils.*;
+import tech.skidonion.obfuscator.utils.commons.Pair;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringValue;
@@ -49,7 +51,9 @@ import java.util.stream.IntStream;
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class NativeObfuscation extends Transformer {
+    private final String INLINE_STATIC_FIELD_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.InlineStaticFieldAccess.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
+    public final Map<String, Pair<String, FieldWrapper>> inlineStaticFields = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
@@ -340,6 +344,8 @@ public class NativeObfuscation extends Transformer {
 
     @Override
     public void preprocess() throws Exception {
+        long last = System.currentTimeMillis();
+        INFO(TRANSLATION("phantom-shield-x.native.preprocess"));
         this.init();
 
         String loaderClassName = nativeDir + "/___";
@@ -454,6 +460,21 @@ public class NativeObfuscation extends Transformer {
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
         getClassWrappers().forEach(classWrapper -> {
+            int i = 0;
+            for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
+                FieldWrapper fieldWrapper = iterator.next();
+                if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_STATIC_FIELD_DESC)) {
+                    if (!fieldWrapper.getAccess().isStatic()) {
+                        ERROR(TRANSLATION("phantom-shield-x.native.static"), classWrapper.getOriginalName() + "." + fieldWrapper.getOriginalName());
+                        continue;
+                    }
+                    inlineStaticFields.put(fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription(), new Pair<>(StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')), fieldWrapper));
+                    iterator.remove();
+                    classWrapper.getClassNode().fields.remove(i--);
+                }
+            }
+        });
+        getClassWrappers().forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
@@ -461,7 +482,43 @@ public class NativeObfuscation extends Transformer {
 
                 for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
                     AbstractInsnNode instruction = iterator.next();
-                    if (instruction instanceof MethodInsnNode) {
+                    if (instruction instanceof FieldInsnNode) {
+                        FieldInsnNode fieldInsnNode = (FieldInsnNode) instruction;
+                        String key = fieldInsnNode.owner + "." + fieldInsnNode.name + "." + fieldInsnNode.desc;
+                        Pair<String, FieldWrapper> pair = inlineStaticFields.get(key);
+                        if (pair != null) {
+                            int opcode = instruction.getOpcode();
+                            MethodInsnNode injectedNode = null;
+                            if (opcode == GETSTATIC) {
+                                iterator.remove();
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "()" + fieldInsnNode.desc, false);
+                            } else if (opcode == PUTSTATIC) {
+                                iterator.remove();
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(" + fieldInsnNode.desc + ")V", false);
+                            }
+
+                            if (injectedNode != null) {
+                                if (obfuscated) {
+                                    iterator.add(injectedNode);
+                                } else {
+                                    MethodNode inlineMethod = new MethodNode();
+                                    inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
+                                    inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
+                                    inlineMethod.desc = injectedNode.desc;
+                                    Type[] arguments = Type.getArgumentTypes(injectedNode.desc);
+                                    for (int i = 0; i < arguments.length; i++) {
+                                        Type argument = arguments[i];
+                                        inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
+                                    }
+                                    inlineMethod.instructions.add(injectedNode);
+                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(injectedNode.desc))));
+                                    inline.addMethod(inlineMethod);
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                }
+                            }
+                        }
+
+                    } else if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
                         String reference = methodInsnNode.owner + "." + methodInsnNode.name + methodInsnNode.desc;
                         switch (reference) {
@@ -572,6 +629,7 @@ public class NativeObfuscation extends Transformer {
             mapper.generateMappings();
             mapper.apply();
         }
+        INFO(TRANSLATION("phantom-shield-x.native.preprocess2"), System.currentTimeMillis() - last);
     }
 
     @Override
