@@ -18,7 +18,6 @@ class HttpUtilsTest {
         params.put("software_id", "1");
         String result = HttpUtils.post(URL + "software-information", params, header());
         System.out.println(result);
-
     }
 
     @Test

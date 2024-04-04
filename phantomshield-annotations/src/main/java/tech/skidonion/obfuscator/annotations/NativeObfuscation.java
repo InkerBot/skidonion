@@ -25,7 +25,7 @@ public @interface NativeObfuscation {
         PUMA_WHITE,
         PUMA_RED,
         PUMA_BLACK,
-        SHARK_WHIT,
+        SHARK_WHITE,
         SHARK_RED,
         SHARK_BLACK,
         DOLPHIN_WHITE,
