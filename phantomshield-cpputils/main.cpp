@@ -26,6 +26,30 @@ void baieroops::init() {
 
 }
 
+java_hotspot::instance_klass *baieroops::get_instance_klass_from_jclass(jclass clz) {
+    if (clz == nullptr)
+        return nullptr;
+
+    /* Dereference class */
+    void *klass_ptr = *reinterpret_cast<void **>(clz);
+    if (klass_ptr == nullptr)
+        return nullptr;
+
+    // Get the instance klass
+    klass_ptr = *reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(klass_ptr) + global_offsets::klass_offset);
+    return static_cast<java_hotspot::instance_klass *>(klass_ptr);
+}
+
+jfieldID baieroops::get_field_id(jclass clz, const char *name, const char *sign, bool isStatic) {
+    auto klass = baieroops::get_instance_klass_from_jclass(clz);
+    auto info = klass->find_field_info(name,sign);
+    auto field = std::get<0>(info);
+    auto holder = std::get<1>(info);
+    if (!isStatic){
+        return java_hotspot::instance_klass::to_instance_jfieldID(field->get_offset());
+    }
+    return holder->to_static_jfieldID(field->get_offset());
+}
 
 
 auto java_hotspot::symbol::to_string() -> std::string {
@@ -92,6 +116,64 @@ auto java_hotspot::instance_klass::get_fields() -> array<uint16_t> * {
     if (!_fields_entry) return nullptr;
     return *reinterpret_cast<array<uint16_t> **>(reinterpret_cast<uint8_t *>(this) + _fields_entry->offset);
 }
+
+void java_hotspot::instance_klass::set_jni_ids(java_hotspot::JNIid *ids) {
+    static VMStructEntry *_jni_ids_entry = JVMWrappers::find_type_fields("InstanceKlass").value().get()["_jni_ids"];
+    if (!_jni_ids_entry) return;
+    *reinterpret_cast<JNIid **>(reinterpret_cast<uint8_t *>(this) + _jni_ids_entry->offset) = ids;
+}
+
+auto java_hotspot::instance_klass::jni_ids() -> java_hotspot::JNIid * {
+    static VMStructEntry *_jni_ids_entry = JVMWrappers::find_type_fields("InstanceKlass").value().get()["_jni_ids"];
+    if (!_jni_ids_entry) return nullptr;
+    return *reinterpret_cast<JNIid **>(reinterpret_cast<uint8_t *>(this) + _jni_ids_entry->offset);
+}
+
+
+auto java_hotspot::instance_klass::encode_klass_hash(int offset) -> uintptr_t {
+    uintptr_t klass_hash = 0;
+    auto current_klass = this;
+    while (!klass_hash) {
+        const auto fields = current_klass->get_fields();
+        const auto fields_length = fields->get_length() / field_slots;
+        const auto fields_data = fields->get_data();
+
+        for (auto i = 0; i < fields->get_length(); i++) {
+            const auto field = field_info::from_field_array(fields_data, i);
+            if (!field) {
+                continue;
+            }
+            if (field->get_offset() == offset){
+                klass_hash = current_klass->identity_hash();
+            }
+        }
+        current_klass = current_klass->get_super_klass();
+    }
+
+    return ((klass_hash & klass_mask) << klass_shift) | checked_mask_in_place;
+}
+
+auto java_hotspot::instance_klass::to_instance_jfieldID(int offset) -> jfieldID {
+    intptr_t as_uint = ((offset & large_offset_mask) << offset_shift) | instance_mask_in_place;
+    auto result = (jfieldID) as_uint;
+    return result;
+}
+
+auto java_hotspot::instance_klass::to_static_jfieldID(int offset) -> jfieldID {
+    JNIid *id = this->jni_id_for_offset(offset);
+    return(jfieldID) id;;
+}
+
+auto java_hotspot::instance_klass::jni_id_for_offset(int offset) -> java_hotspot::JNIid * {
+    JNIid* probe = jni_ids() == nullptr ? nullptr : jni_ids()->find(offset);
+    if (probe == nullptr) {
+        probe = new JNIid(this, offset, this->jni_ids());
+        this->set_jni_ids(probe);
+    }
+    return probe;
+}
+
+
 
 
 auto java_hotspot::const_pool::get_base() -> void ** {
@@ -201,4 +283,45 @@ auto vm_symbols::get_symbol() -> java_hotspot::symbol ** {
 
 auto vm_symbols::symbol_at(const int index) -> java_hotspot::symbol * {
     return get_symbol()[index];
+}
+
+java_hotspot::JNIid *java_hotspot::JNIid::get_next() {
+    static VMStructEntry *_next_entry = JVMWrappers::find_type_fields("JNIid").value().get()[
+            "_next"];
+    if (!_next_entry) return nullptr;
+    return *reinterpret_cast<JNIid **>(reinterpret_cast<uint8_t *>(this) + _next_entry->offset);
+}
+
+int java_hotspot::JNIid::get_offset() {
+    static VMStructEntry *_offset_entry = JVMWrappers::find_type_fields("JNIid").value().get()[
+            "_offset"];
+    if (!_offset_entry) return 0;
+    return *reinterpret_cast<int*>(reinterpret_cast<uint8_t *>(this) + _offset_entry->offset);
+}
+
+java_hotspot::JNIid::JNIid(java_hotspot::instance_klass *pKlass, int i, java_hotspot::JNIid *pIid) {
+    set_holder(pKlass);
+    set_offset(i);
+    set_next(pIid);
+}
+
+void java_hotspot::JNIid::set_offset(int offset) {
+    static VMStructEntry *_offset_entry = JVMWrappers::find_type_fields("JNIid").value().get()[
+            "_offset"];
+    if (!_offset_entry) return;
+     *reinterpret_cast<int*>(reinterpret_cast<uint8_t *>(this) + _offset_entry->offset) = offset;
+}
+
+void java_hotspot::JNIid::set_holder(java_hotspot::instance_klass *klass) {
+    static VMStructEntry *_offset_entry = JVMWrappers::find_type_fields("JNIid").value().get()[
+            "_holder"];
+    if (!_offset_entry) return;
+    *reinterpret_cast<instance_klass**>(reinterpret_cast<uint8_t *>(this) + _offset_entry->offset) = klass;
+}
+
+void java_hotspot::JNIid::set_next(java_hotspot::JNIid *next) {
+    static VMStructEntry *_next_entry = JVMWrappers::find_type_fields("JNIid").value().get()[
+            "_next"];
+    if (!_next_entry) return;
+    *reinterpret_cast<JNIid **>(reinterpret_cast<uint8_t *>(this) + _next_entry->offset) = next;
 }
