@@ -125,3 +125,4 @@ hs_err_pid*
 #/config.yaml
 /mappings.json
 /phantomshield-watermark-trace/libs/
+/.cache/
