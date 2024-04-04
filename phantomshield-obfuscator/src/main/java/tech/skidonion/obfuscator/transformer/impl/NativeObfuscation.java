@@ -459,6 +459,7 @@ public class NativeObfuscation extends Transformer {
         ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
+        AtomicInteger inlineFieldIndex = new AtomicInteger();
         getClassWrappers().forEach(classWrapper -> {
             int i = 0;
             for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
@@ -468,7 +469,7 @@ public class NativeObfuscation extends Transformer {
                         ERROR(TRANSLATION("phantom-shield-x.native.static"), classWrapper.getOriginalName() + "." + fieldWrapper.getOriginalName());
                         continue;
                     }
-                    inlineStaticFields.put(fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription(), new Pair<>(StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')), fieldWrapper));
+                    inlineStaticFields.put(fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription(), new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));
                     iterator.remove();
                     classWrapper.getClassNode().fields.remove(i--);
                 }
