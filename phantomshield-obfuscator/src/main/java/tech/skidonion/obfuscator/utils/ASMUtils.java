@@ -444,17 +444,16 @@ public class ASMUtils implements Opcodes {
     }
 
     public static InsnList getStringInst(String string) {
+        int length = string.length();
         InsnList list = new InsnList();
-        if (string.getBytes(StandardCharsets.UTF_8).length > 65535) {
-            int end;
+        if (length >= 16383) {
+
             list.add(new TypeInsnNode(NEW, Type.getInternalName(StringBuilder.class)));
             list.add(new InsnNode(DUP));
             list.add(new MethodInsnNode(INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "()V"));
-            while (!string.isEmpty()) {
-                end = Math.min(string.length(), 65535);
-                while (string.substring(0, end).getBytes(StandardCharsets.UTF_8).length > 65535) end--;
-                String s = string.substring(0, end);
-                string = string.substring(end);
+            int pointer = 0;
+            while (pointer < length) {
+                String s = string.substring(pointer, pointer += Math.min(length - pointer, 16383));
                 list.add(new LdcInsnNode(s));
                 list.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;"));
             }

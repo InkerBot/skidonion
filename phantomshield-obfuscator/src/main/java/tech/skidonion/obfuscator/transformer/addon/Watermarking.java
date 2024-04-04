@@ -61,7 +61,7 @@ public class Watermarking extends Addon {
         }
         return selectedMethod;
     }
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.MUTATE_ONLY)
+//    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.MUTATE_ONLY)
     private String buildWatermarking() {
         StringBuilder builder = new StringBuilder();
         builder.append("build-time: ").append(formatter.format(new Date())).append('\n');

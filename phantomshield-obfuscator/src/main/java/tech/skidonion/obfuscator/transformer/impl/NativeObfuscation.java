@@ -600,7 +600,7 @@ public class NativeObfuscation extends Transformer {
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
                                 if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
                                     break;

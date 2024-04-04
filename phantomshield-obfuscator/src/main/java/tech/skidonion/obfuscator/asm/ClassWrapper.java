@@ -148,12 +148,12 @@ public class ClassWrapper {
 
     public MethodNode getMethod(String name, String desc) {
         return getClassNode().methods.stream().filter(methodNode -> name.equals(methodNode.name)
-                && desc.equals(methodNode.desc)).findAny().orElse(null);
+                                                                    && desc.equals(methodNode.desc)).findAny().orElse(null);
     }
 
     public FieldNode getField(String name, String desc) {
         return getClassNode().fields.stream().filter(methodNode -> name.equals(methodNode.name)
-                && desc.equals(methodNode.desc)).findAny().orElse(null);
+                                                                   && desc.equals(methodNode.desc)).findAny().orElse(null);
     }
 
     public MethodNode getOrCreateClinit() {
@@ -360,6 +360,19 @@ public class ClassWrapper {
         return methodDictionary;
     }
 
+    public String generateRandomStaticMethodName() {
+        String generated;
+        do {
+            generated = this.getMethodDictionary().nextUniqueString();
+        } while (!isStaticMethodNameUnique(generated, getOriginalName()));
+        return generated;
+    }
+
+    private boolean isStaticMethodNameUnique(String name, String owner) {
+        ClassTree tree = obfuscator.getTree(owner);
+        return !tree.getClassWrapper().methodNames.contains(name);
+    }
+
     public String generateRandomMethodName() {
         String generated;
         Set<String> visited;
@@ -368,6 +381,21 @@ public class ClassWrapper {
             generated = this.getMethodDictionary().nextUniqueString();
         } while (!isMethodNameUnique(generated, getOriginalName(), visited));
         return generated;
+    }
+
+
+
+    public String generateRandomStaticFieldName() {
+        String generated;
+        do {
+            generated = this.getFieldDictionary().nextUniqueString();
+        } while (!isStaticFieldNameUnique(generated, getOriginalName()));
+        return generated;
+    }
+
+    private boolean isStaticFieldNameUnique(String name, String owner) {
+        ClassTree tree = obfuscator.getTree(owner);
+        return !tree.getClassWrapper().fieldNames.contains(name);
     }
 
     public String generateRandomFieldName() {

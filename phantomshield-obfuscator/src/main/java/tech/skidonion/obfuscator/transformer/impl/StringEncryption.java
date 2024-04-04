@@ -36,8 +36,8 @@ public class StringEncryption extends Transformer {
             if (cw.getAccess().isInterface()) return;
             List<String> strings = new ArrayList<>();
             List<FieldNode> dummys = new ArrayList<>();
-            String decryptorMethodName = cw.generateRandomMethodName();
-            String decryptedStringsFieldName = cw.generateRandomFieldName();
+            String decryptorMethodName = cw.generateRandomStaticMethodName();
+            String decryptedStringsFieldName = cw.generateRandomStaticFieldName();
             cw.getMethods().stream().filter(this::match).forEach(method -> {
                 removeAnnotation(method);
                 ListIterator<AbstractInsnNode> iter = method.getInstructions().iterator();
@@ -64,7 +64,7 @@ public class StringEncryption extends Transformer {
 
                 if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     for (int i = 0; i < Math.min(7, strings.size() - 1); i++) { // 均分 最大7个dummy field
-                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomFieldName(), "Ljava/lang/Object;", "", null);
+                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomStaticFieldName(), "Ljava/lang/Object;", "", null);
                         cw.addField(fieldNode);
                         dummys.add(fieldNode);
                     }
