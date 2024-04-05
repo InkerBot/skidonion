@@ -148,6 +148,7 @@ public class NativeObfuscation extends Transformer {
             }
             try {
                 addInternalInclusion(cw.getOriginalName(), "<clinit>()V");
+                cw.getOrCreateClinit();
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
                 String displayName = cw.getOriginalName();
@@ -175,7 +176,6 @@ public class NativeObfuscation extends Transformer {
                 }
 
                 cw.setClassNode(computedClassNode);
-                cw.getOrCreateClinit();
 
                 cachedStrings.clear();
                 cachedClasses.clear();
