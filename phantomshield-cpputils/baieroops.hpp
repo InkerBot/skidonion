@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <string>
+#include <tuple>
 #include "jvm_internal.hpp"
 
 #define FIELDINFO_TAG_SIZE             2
@@ -17,9 +18,6 @@
 #define FIELDINFO_TAG_TYPE_CONTENDED   3
 #define FIELDINFO_TAG_MASK             3
 
-namespace baieroops {
-    static inline void init();
-};
 
 namespace offset{
     inline uintptr_t class_offset;
@@ -123,6 +121,7 @@ namespace java_hotspot {
 
         [[nodiscard]] auto get_shorts() -> uint16_t *;
 
+
         auto get_access_flags() -> uint16_t;
 
         auto get_name_index() -> uint16_t;
@@ -144,17 +143,49 @@ namespace java_hotspot {
     };
 }
 
+namespace java_hotspot{
+
+    class instance_klass;
+
+    class JNIid{
+        JNIid* get_next();
+        int get_offset();
+        void set_holder(instance_klass* klass);
+        void set_offset(int offset);
+        void set_next(JNIid* next);
+
+    public:
+        JNIid* find(int offset) {
+            JNIid* current = this;
+            while (current != nullptr) {
+                if (current->get_offset() == offset) return current;
+                current = current->get_next();
+            }
+            return nullptr;
+        }
+
+        JNIid(java_hotspot::instance_klass *pKlass, int i, JNIid *pIid);
+    };
+}
 
 namespace java_hotspot {
     class instance_klass {
     public:
         auto get_name() -> symbol *;
+        auto jni_ids() -> JNIid*;
+        auto jni_id_for_offset(int offset) -> JNIid*;
+        void set_jni_ids(JNIid* ids);
+        auto identity_hash()  { return (int)(uintptr_t)this; }
 
+        static auto to_instance_jfieldID(int offset) -> jfieldID ;
+        auto to_static_jfieldID(int offset) -> jfieldID ;
         auto get_fields() -> array<uint16_t> *;
 
         auto get_constants() -> const_pool *;
 
         auto get_super_klass() -> instance_klass *;
+
+        auto encode_klass_hash(int offset) -> uintptr_t;
 
         auto find_field_info(
                 const std::string &field_name,
@@ -198,5 +229,10 @@ namespace vm_symbols {
 }
 
 
+namespace baieroops {
+    static inline void init();
+    inline java_hotspot::instance_klass* get_instance_klass_from_jclass(jclass clz);
+    inline jfieldID get_field_id(jclass clz,const char* name,const char* sign,bool isStatic);
+};
 
 #endif //JVMACQUIRER_BAIEROOPS_H

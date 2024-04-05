@@ -9,9 +9,43 @@
 #include <unordered_map>
 #include <string>
 #include "jni.h"
+static constexpr uint32_t BitsPerWord = ((int32_t )32);
+const intptr_t OneBit     =  1; // only right_most bit set in a word
+#define nth_bit(n)        (n >= BitsPerWord ? 0 : OneBit << (n))
+#define right_n_bits(n)   (nth_bit(n) - 1)
 
+enum {
+    checked_bits           = 1,
+    instance_bits          = 1,
+    address_bits           = BitsPerWord - checked_bits - instance_bits,
 
+    large_offset_bits      = address_bits,  // unioned with address
+    small_offset_bits      = 7,
+    klass_bits             = address_bits - small_offset_bits,
 
+    checked_shift          = 0,
+    instance_shift         = checked_shift  + checked_bits,
+    address_shift          = instance_shift + instance_bits,
+
+    offset_shift           = address_shift,  // unioned with address
+    klass_shift            = offset_shift + small_offset_bits,
+
+    checked_mask_in_place  = right_n_bits(checked_bits)  << checked_shift,
+    instance_mask_in_place = right_n_bits(instance_bits) << instance_shift,
+#ifndef _WIN64
+    large_offset_mask      = right_n_bits(large_offset_bits),
+    small_offset_mask      = right_n_bits(small_offset_bits),
+    klass_mask             = right_n_bits(klass_bits)
+#endif
+
+};
+
+#ifdef _WIN64
+// These values are too big for Win64
+constexpr static uintptr_t large_offset_mask = right_n_bits(large_offset_bits);
+constexpr static uintptr_t small_offset_mask = right_n_bits(small_offset_bits);
+constexpr static uintptr_t klass_mask        = right_n_bits(klass_bits);
+#endif
 
 enum JavaThreadState {
     _thread_uninitialized     =  0, // should never happen (missing initialization)
