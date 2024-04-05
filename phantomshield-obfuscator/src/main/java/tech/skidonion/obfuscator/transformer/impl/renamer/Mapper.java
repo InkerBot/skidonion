@@ -13,6 +13,7 @@ import tech.skidonion.obfuscator.asm.remapper.Remapper;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.impl.Renamer;
 import tech.skidonion.obfuscator.utils.FileUtils;
+import tech.skidonion.obfuscator.utils.MapUtils;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
@@ -97,7 +98,7 @@ public class Mapper {
                     newName = repakage_name;
                 } else {
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(currentPackageName, packageName -> obfuscator.getDictionary().copy());
-                    newName = packageMappings.computeIfAbsent(currentPackageName, package_name -> {
+                    newName = MapUtils.computeIfAbsent(packageMappings,currentPackageName, package_name -> {
                         StringBuilder packageName = new StringBuilder(package_name);
                         int index = 0;
                         StringBuilder lastPackageName = new StringBuilder();
