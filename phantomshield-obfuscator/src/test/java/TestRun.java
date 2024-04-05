@@ -13,11 +13,11 @@ public class TestRun {
 //        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
-//        debug_information_remover(builder);
-//        shuffler(builder);
-//        renamer(builder);
-//        string_encryption(builder);
-//        invoke_wrapper(builder);
+        debug_information_remover(builder);
+        shuffler(builder);
+        renamer(builder);
+        string_encryption(builder);
+        invoke_wrapper(builder);
 //        control_flow(builder);
         native_obfuscation(builder);
 //         =================
@@ -66,7 +66,7 @@ public class TestRun {
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(true)//
+                .setVerificationEnableSetting(false)//
                 .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
                 .setVerificationUserIdSetting("7")//

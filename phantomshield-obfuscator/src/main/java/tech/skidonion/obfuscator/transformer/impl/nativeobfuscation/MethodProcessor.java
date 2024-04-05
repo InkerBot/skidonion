@@ -197,7 +197,7 @@ public class MethodProcessor {
             classesForTryCatches.forEach((clazz) -> {
                 int classId = context.getCachedClasses().getId(clazz);
 
-                context.output.append(String.format("    // try-catch-class %s\n", StringUtils.escapeCommentString(clazz)));
+//                context.output.append(String.format("    // try-catch-class %s\n", StringUtils.escapeCommentString(clazz)));
                 context.output.append(String.format("    if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { cclasses_mtx[%d].lock(); "
                                 + "if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { if (jclass clazz = %s) { cclasses[%d] = (jclass) env->NewWeakGlobalRef(clazz); env->DeleteLocalRef(clazz); } } "
                                 + "cclasses_mtx[%d].unlock(); if (env->ExceptionCheck()) { return (%s) 0; } }\n",
