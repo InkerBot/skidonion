@@ -68,16 +68,16 @@ public class SimpleInterpreter extends BasicInterpreter {
         return super.newOperation(insn);
     }
 
-    @Override
-    public BasicValue binaryOperation(AbstractInsnNode insn, BasicValue value1, BasicValue value2) throws AnalyzerException {
-        if (insn.getOpcode() == Opcodes.AALOAD) {
-            Type arrayType = value1.getType();
-            if (arrayType != null && arrayType.getSort() == Type.ARRAY) {
-                return new BasicValue(arrayType.getElementType());
-            }
-        }
-        return super.binaryOperation(insn, value1, value2);
-    }
+//    @Override
+//    public BasicValue binaryOperation(AbstractInsnNode insn, BasicValue value1, BasicValue value2) throws AnalyzerException {
+//        if (insn.getOpcode() == Opcodes.AALOAD) {
+//            Type arrayType = value1.getType();
+//            if (arrayType != null && arrayType.getSort() == Type.ARRAY) {
+//                return new BasicValue(arrayType.getElementType());
+//            }
+//        }
+//        return super.binaryOperation(insn, value1, value2);
+//    }
 
 
     @Override
