@@ -293,6 +293,10 @@ public class ClassWrapper {
         return classNode.version >= Opcodes.V1_7 && classNode.version != Opcodes.V1_1;
     }
 
+    public boolean allowsDynamicConstant() {
+        return classNode.version >= Opcodes.V11 && classNode.version != Opcodes.V1_1;
+    }
+
     /**
      * @return the computed current constant pool size of the wrapped {@link ClassNode}.
      */
@@ -314,11 +318,10 @@ public class ClassWrapper {
 
     public byte[] toByteArray() {
         // Construct byte writer
-        ClassWriter writer = new CustomClassWriter(ClassWriter.COMPUTE_FRAMES, obfuscator);
+        ClassWriter writer = new CustomClassWriter(allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES, obfuscator);
 
         try {
             writer.newUTF8("PHANTOMSHIELD" + PhantomShield.VERSION);
-
             // Populate writer with class info
             classNode.accept(writer);
 
@@ -382,7 +385,6 @@ public class ClassWrapper {
         } while (!isMethodNameUnique(generated, getOriginalName(), visited));
         return generated;
     }
-
 
 
     public String generateRandomStaticFieldName() {

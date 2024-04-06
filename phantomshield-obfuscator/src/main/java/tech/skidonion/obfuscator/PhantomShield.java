@@ -311,14 +311,6 @@ public class PhantomShield {
                             try {
                                 ClassWrapper cw = new ClassWrapper(this, new ClassReader(in), false);
 
-                                if (cw.getVersion() <= Opcodes.V1_5)
-                                    for (int i = 0; i < cw.getMethods().size(); i++) {
-                                        MethodNode methodNode = cw.getMethods().get(i).getMethodNode();
-                                        JSRInlinerAdapter adapter = new JSRInlinerAdapter(methodNode, methodNode.access, methodNode.name, methodNode.desc, methodNode.signature, methodNode.exceptions.toArray(new String[0]));
-                                        methodNode.accept(adapter);
-                                        cw.getMethods().get(i).setMethodNode(adapter);
-                                    }
-
                                 classpath.put(cw.getName(), cw);
                                 classes.put(cw.getName(), cw);
 
