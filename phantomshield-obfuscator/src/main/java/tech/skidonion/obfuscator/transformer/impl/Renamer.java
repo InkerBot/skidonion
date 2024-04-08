@@ -24,9 +24,9 @@ public class Renamer extends Transformer {
     private final StringValue print_mappings_file = new StringValue("print_mappings_file", "mappings.txt");
     //    TODO: encrypted number line number for stack trace
 //    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
-    private final StringValue prefix_name = new StringValue("prefix_name", "");
+    public final StringValue prefix_name = new StringValue("prefix_name", "");
     private final BooleanValue repackage = new BooleanValue("repackage", false);
-    private final ClassPackageValue repackage_name = new ClassPackageValue("repackage_name", "skidonion/??????");
+    public final ClassPackageValue repackage_name = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adapt_resources = new StringArrayValue("adapt_resources");
     private Mapper mapper;
 
@@ -82,8 +82,8 @@ public class Renamer extends Transformer {
                         // manifest.
                         // Example: name == Main
                         if ("META-INF/MANIFEST.MF".equals(name) // Manifest
-                                || "plugin.yml".equals(name) // Spigot plugin
-                                || "bungee.yml".equals(name)) // Bungeecord plugin
+                            || "plugin.yml".equals(name) // Spigot plugin
+                            || "bungee.yml".equals(name)) // Bungeecord plugin
                             stringVer = stringVer.replaceAll("(?<=[: ])" + original, mapper.getClassMappings().get(mapping).replace("/", "."));
                         else
                             stringVer = stringVer.replace(original, mapper.getClassMappings().get(mapping).replace("/", "."));
@@ -107,7 +107,7 @@ public class Renamer extends Transformer {
 
     @Override
     public void preprocess() throws Exception {
-        mapper = new Mapper(obfuscator, getClassWrappers());
+        mapper = new Mapper(obfuscator, getClassWrappers(), this);
         mapper.setPrefixName(prefix_name.getValue());
         mapper.setRepackage(repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());

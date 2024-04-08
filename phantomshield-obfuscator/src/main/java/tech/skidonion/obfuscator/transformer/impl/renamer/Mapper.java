@@ -41,7 +41,6 @@ public class Mapper {
     private String prefix_name = "";
     private boolean repackage = false;
     private String repakage_name = "";
-    private boolean random_package = false;
 
     public Mapper(PhantomShield obfuscator, Collection<ClassWrapper> classes) {
         this(obfuscator, classes, null);
@@ -81,6 +80,7 @@ public class Mapper {
                 }
             });
 
+
             if (renamer == null || renamer.match(classWrapper)) {
                 if (renamer != null) renamer.removeAnnotation(classWrapper);
 
@@ -88,17 +88,12 @@ public class Mapper {
                 Dictionary classDictionary;
 
                 String newName;
-                if (random_package) {
-                    List<ClassWrapper> wrappers = new ArrayList<>(obfuscator.classes.values());
-                    String randomPackage = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getPackageName();
-                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(randomPackage, packageName -> obfuscator.getDictionary().copy());
-                    newName = randomPackage;
-                } else if (repackage) {
+                if (repackage) {
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent("", packageName -> obfuscator.getDictionary().copy());
                     newName = repakage_name;
                 } else {
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(currentPackageName, packageName -> obfuscator.getDictionary().copy());
-                    newName = MapUtils.computeIfAbsent(packageMappings,currentPackageName, package_name -> {
+                    newName = MapUtils.computeIfAbsent(packageMappings, currentPackageName, package_name -> {
                         StringBuilder packageName = new StringBuilder(package_name);
                         int index = 0;
                         StringBuilder lastPackageName = new StringBuilder();
@@ -535,9 +530,5 @@ public class Mapper {
 
     public void setRepakageName(String repakage_name) {
         this.repakage_name = repakage_name;
-    }
-
-    public void setRandomPackage(boolean random_package) {
-        this.random_package = random_package;
     }
 }
