@@ -637,9 +637,11 @@ public class NativeObfuscation extends Transformer {
 
         if (!injected.isEmpty()) {
             Collections.shuffle(injected);
+            Renamer renamer = (Renamer) obfuscator.getRegister().get("renamer");
             Mapper mapper = new Mapper(obfuscator, injected);
             mapper.setRepackage(true);
-            mapper.setRepakageName("");
+            mapper.setPrefixName(renamer.prefix_name.getValue());
+            mapper.setRepakageName(renamer.repackage_name.getValue());
             mapper.generateMappings();
             mapper.apply();
         }
