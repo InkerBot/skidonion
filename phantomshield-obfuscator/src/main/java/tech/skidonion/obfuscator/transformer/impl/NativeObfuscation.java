@@ -165,7 +165,7 @@ public class NativeObfuscation extends Transformer {
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)
                         .filter(MethodProcessor::shouldProcess)
-                        .forEach(methodNode -> PreprocessorRunner.preprocess(this, cw.getClassNode(), methodNode));
+                        .forEach(PreprocessorRunner::preprocess);
 
                 CustomClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                 cw.getClassNode().accept(computedWriter);
