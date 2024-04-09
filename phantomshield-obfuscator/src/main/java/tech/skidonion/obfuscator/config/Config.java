@@ -39,6 +39,11 @@ public class Config {
         return (long) this.config.get(key);
     }
 
+    public Number getNumber(String key) {
+        return (Number) this.config.get(key);
+    }
+
+
     public boolean getBoolean(String key) {
         return (boolean) this.config.get(key);
     }

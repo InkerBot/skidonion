@@ -336,7 +336,7 @@ public class PhantomShield {
             }
 
             if (config.has("random_seed")) {
-                seed = config.getLong("random_seed");
+                seed = config.getNumber("random_seed").longValue();
                 INFO(BUNDLE.getString("phantom-shield-x.instance.seed"), seed);
             } else {
                 seed = ThreadLocalRandom.current().nextLong();
