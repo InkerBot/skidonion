@@ -130,9 +130,9 @@ public class NativeObfuscation extends Transformer {
 
         Optional<String> opt = Wrapper.getCloudConstant(271423823, 0);
 
+        final boolean[] internalTip = {false};
 
         Integer[] classIndexReference = new Integer[]{0};
-        AtomicInteger internalIndex = new AtomicInteger();
         getFilteredClasses().forEach(cw -> {
             boolean clinitIgnoreTryCatch = false;
             String clinitVirtualization = "NONE";
@@ -157,10 +157,17 @@ public class NativeObfuscation extends Transformer {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
                 String displayName = cw.getOriginalName();
-                boolean isInternal = displayName.startsWith("tech/skidonion/verification/");
-                if (isInternal) displayName = "[Internal Class" + internalIndex.getAndIncrement() + "]";
+                boolean isInternal = displayName.startsWith("iterator");
+                if (isInternal) {
+                    if (!internalTip[0]) {
+                        displayName = "[Internal Classes]";
+                        internalTip[0] = true;
+                    } else {
+                        displayName = null;
+                    }
+                }
 
-                INFO(TRANSLATION("phantom-shield-x.native.covert"), displayName);
+                if (displayName != null) INFO(TRANSLATION("phantom-shield-x.native.covert"), displayName);
 
                 cw.getMethods().stream().filter(this::match)
                         .map(MethodWrapper::getMethodNode)
@@ -556,6 +563,14 @@ public class NativeObfuscation extends Transformer {
                                 iterator.remove();
                                 inline.addMethod(inlineMethod);
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                break;
+                            }
+                            case "tech/skidonion/obfuscator/inline/Inline.trycatch()V": {
+                                if (!obfuscated) {
+                                    ERROR(TRANSLATION("phantom-shield-x.native.trycatch"));
+                                    System.exit(0);
+                                    return;
+                                }
                                 break;
                             }
                             case "tech/skidonion/obfuscator/inline/Inline._advanced_checkProtection(I)I":

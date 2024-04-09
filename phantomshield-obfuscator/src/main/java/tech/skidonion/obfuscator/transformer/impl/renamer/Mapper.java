@@ -373,7 +373,7 @@ public class Mapper {
     public void printMappings(File mappingFile) {
 
         if (mappingFile.exists()) FileUtils.renameExistingFile(mappingFile);
-
+        Set<String> cachedExcluded = new HashSet<>();
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(mappingFile));
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -398,6 +398,10 @@ public class Mapper {
             Map<String, JsonObject> classesFieldMap = new HashMap<>();
             final JsonObject classes = new JsonObject();
             classMappings.forEach((origin, obfuscated) -> {
+                if (cachedExcluded.contains(origin) || origin.startsWith("tech/skidonion/verification/")) {
+                    cachedExcluded.add(origin);
+                    return;
+                }
                 final JsonObject classMapping = new JsonObject();
                 final JsonObject methods = new JsonObject();
                 final JsonObject fields = new JsonObject();
@@ -431,6 +435,10 @@ public class Mapper {
             methodMappings.forEach((origin, obfuscated) -> {
                 String[] parts = origin.split("\\.");
                 if (parts.length != 2) throw new RuntimeException("impossible method mapping: " + origin);
+                if (cachedExcluded.contains(parts[0]) || parts[0].startsWith("tech/skidonion/verification/")) {
+                    cachedExcluded.add(parts[0]);
+                    return;
+                }
                 final JsonObject methods = classesMethodMap.computeIfAbsent(parts[0], className -> {
                     final JsonObject classMapping = new JsonObject();
                     final JsonObject methodsMapping = new JsonObject();
@@ -449,6 +457,10 @@ public class Mapper {
             fieldMappings.forEach((origin, obfuscated) -> {
                 String[] parts = origin.split("\\.");
                 if (parts.length != 3) throw new RuntimeException("impossible method mapping: " + origin);
+                if (cachedExcluded.contains(parts[0]) || parts[0].startsWith("tech/skidonion/verification/")) {
+                    cachedExcluded.add(parts[0]);
+                    return;
+                }
                 final JsonObject fields = classesFieldMap.computeIfAbsent(parts[0], className -> {
                     final JsonObject classMapping = new JsonObject();
                     final JsonObject methodsMapping = new JsonObject();

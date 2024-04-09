@@ -18,6 +18,7 @@ import tech.skidonion.obfuscator.value.impls.ModeValue;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -73,8 +74,8 @@ public class InvokeWrapperObfuscation extends Transformer {
                 field.access = new AccessFlags(field.access).setPublic().getFlags();
             }
 
-            for (MethodNode method : node.methods) {
-
+            for (MethodWrapper methodWrapper : cw.getMethods()) {
+                MethodNode method = methodWrapper.getMethodNode();
                 InstructionModifier modifier = new InstructionModifier();
 
                 for (AbstractInsnNode instruction : method.instructions) {
@@ -85,7 +86,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                         MethodNode targetMethod = wrapper.getMethod(methodInsnNode.name, methodInsnNode.desc);
                         if (targetMethod == null) continue;
                         AccessFlags flag = new AccessFlags(targetMethod.access);
-                        if (flag.isPrivate() || flag.isProtected())
+                        if ( flag.isPrivate() || flag.isProtected() || Objects.equals(methodWrapper.getOriginalName(),"tech/skidonion/obfuscator/inline/Inline"))
                             continue;
 
                         if (methodInsnNode.getOpcode() == INVOKESTATIC) {

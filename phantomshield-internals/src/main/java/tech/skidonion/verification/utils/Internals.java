@@ -74,7 +74,7 @@ public class Internals {
         return USER_ID;
     }
 
-    public static void setUserId(long userId) {
+    public static void setUserId(long USER_ID) {
         Internals.USER_ID = USER_ID;
     }
 
