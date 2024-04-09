@@ -51,7 +51,7 @@ import java.util.stream.IntStream;
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class NativeObfuscation extends Transformer {
-    private final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
+    public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
     public final Map<String, Pair<String, FieldWrapper>> inlineStaticFields = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);

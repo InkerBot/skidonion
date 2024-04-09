@@ -28,8 +28,12 @@ public class StringEncryption extends Transformer {
         super(name, false);
     }
 
+    public boolean isNativeObfuscationEnable;
+
     @Override
     public void transform() throws Exception {
+        isNativeObfuscationEnable = Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).isEnabled();
+
         long current = System.currentTimeMillis();
         getFilteredClasses().forEach(cw -> {
             removeAnnotation(cw);
@@ -60,15 +64,28 @@ public class StringEncryption extends Transformer {
                 if (strings.size() > 0xFFFF)
                     throw new RuntimeException("String Constant Pool is bigger than maximum pool size??");
                 this.count.addAndGet(strings.size());
-                cw.addField(new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null));
+
+                FieldNode realStringField = new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null);
 
                 if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
-                    for (int i = 0; i < Math.min(7, strings.size() - 1); i++) { // 均分 最大7个dummy field
+                    int amount = Math.min(7, strings.size() - 1);
+                    int theReal = RandomUtils.getRandomInt(amount);
+                    for (int i = 0; i < amount; i++) { // 均分 最大7个dummy field
+                        if (i == theReal) {
+                            cw.addField(realStringField);
+                        }
                         final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomStaticFieldName(), "Ljava/lang/Object;", "", null);
                         cw.addField(fieldNode);
                         dummys.add(fieldNode);
                     }
+                } else {
+                    if (isNativeObfuscationEnable) {
+                        realStringField.visitAnnotation(NativeObfuscation.INLINE_DESC, false);
+                    }
+                    cw.addField(realStringField);
                 }
+
+
                 final MethodNode methodNode = getPullMethod(cw, decryptorMethodName, decryptedStringsFieldName);
                 cw.addMethod(methodNode);
                 MethodNode clinit = cw.getOrCreateClinit();
@@ -86,7 +103,7 @@ public class StringEncryption extends Transformer {
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName) {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
         Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");
-//        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), true);
+//        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), false);
         final InsnList insnList = new InsnList();
         insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
         insnList.add(new TypeInsnNode(CHECKCAST, "[Ljava/lang/Object;"));
@@ -307,7 +324,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
 
-        decryptInsts.add(generateDummy(dummys, shuffled, strings, ownerName, decryptedStringsFieldName, startIndex));
+        decryptInsts.add(generateDummy(dummys, shuffled, ownerName, decryptedStringsFieldName, startIndex));
 
         decryptInsts.add(realMethodStart);
         method.instructions.insertBefore(method.instructions.getFirst(), decryptInsts);
@@ -332,7 +349,7 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, List<String> origin, String owner, String fieldName, int startIndex) {
+    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, String owner, String fieldName, int startIndex) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
         Collections.shuffle(dummys); // dummy field也打乱 防止鉴定
@@ -353,8 +370,7 @@ public class StringEncryption extends Transformer {
                 insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
                 insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
                 int conVar = 0;
-                for (String string : origin) {
-                    final int i = shuffle.indexOf(string);
+                for (int i = 0; i < shuffle.size(); i++) {
                     insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
                     insnList.add(ASMUtils.getNumberInsn(conVar));
                     insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
