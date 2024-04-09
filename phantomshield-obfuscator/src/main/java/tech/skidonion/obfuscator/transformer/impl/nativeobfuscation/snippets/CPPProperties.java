@@ -155,7 +155,7 @@ public class CPPProperties {
                 .append("NEW=if (jobject obj = env->AllocObject($desc_ptr)) { cstack$stackindex0.l = obj; refs.insert(obj); } $trycatchhandler\n")
                 .append("ANEWARRAY={ cstack$stackindexm1.l = env->NewObjectArray(cstack$stackindexm1.i, $desc_ptr, nullptr); refs.insert(cstack$stackindexm1.l); } $trycatchhandler\n")
                 .append("ARRAYLENGTH=cstack$stackindexm1.i = env->GetArrayLength((jarray) cstack$stackindexm1.l); $trycatchhandler\n")
-                .append("ATHROW={ jthrowable exception = (jthrowable) cstack$stackindexm1.l; env->Throw(exception); refs.insert(exception); } $trycatchhandler\n")
+                .append("ATHROW={ jthrowable exception = (jthrowable) cstack$stackindexm1.l; env->Throw(exception); refs.insert(exception); } $origintrycatchhandler\n")
                 .append("INSTANCEOF=cstack$stackindexm1.i = cstack$stackindexm1.l == nullptr ? false : env->IsInstanceOf(cstack$stackindexm1.l, $desc_ptr);\n")
                 .append("MONITORENTER=env->MonitorEnter(cstack$stackindexm1.l); $trycatchhandler\n")
                 .append("MONITOREXIT=env->MonitorExit(cstack$stackindexm1.l); $trycatchhandler\n")

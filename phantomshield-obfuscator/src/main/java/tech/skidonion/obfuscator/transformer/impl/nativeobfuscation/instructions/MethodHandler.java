@@ -49,7 +49,7 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
     @Override
     protected void process(MethodContext context, MethodInsnNode node) {
         if (node.owner.equals(Type.getInternalName(Inline.class))) {
-            InlineHandler.process(context, node);
+            InlineHandler.process(context, node, originTryCatchBlock);
             instructionName = null;
             return;
         }
@@ -131,8 +131,8 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             node.setOpcode(Opcodes.INVOKESTATIC);
         }
         if (node.owner.equals("java/lang/invoke/MethodHandle") &&
-                (node.name.equals("invokeExact") || node.name.equals("invoke")) &&
-                node.getOpcode() == Opcodes.INVOKEVIRTUAL) {
+            (node.name.equals("invokeExact") || node.name.equals("invoke")) &&
+            node.getOpcode() == Opcodes.INVOKEVIRTUAL) {
             // stack - mh, args
             String methodDesc = simplifyDesc(Type.getMethodType(Type.getReturnType(node.desc),
                     Stream.concat(Arrays.stream(new Type[]{
@@ -239,6 +239,6 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             currentStackPointer -= 1;
         }
         return currentStackPointer - Arrays.stream(Type.getArgumentTypes(node.desc)).mapToInt(Type::getSize).sum()
-                + Type.getReturnType(node.desc).getSize();
+               + Type.getReturnType(node.desc).getSize();
     }
 }

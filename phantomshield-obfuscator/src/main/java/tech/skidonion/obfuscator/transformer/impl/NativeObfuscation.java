@@ -51,7 +51,7 @@ import java.util.stream.IntStream;
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class NativeObfuscation extends Transformer {
-    private final String INLINE_STATIC_FIELD_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.InlineStaticFieldAccess.class);
+    private final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
     public final Map<String, Pair<String, FieldWrapper>> inlineStaticFields = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
@@ -134,6 +134,7 @@ public class NativeObfuscation extends Transformer {
         Integer[] classIndexReference = new Integer[]{0};
         AtomicInteger internalIndex = new AtomicInteger();
         getFilteredClasses().forEach(cw -> {
+            boolean clinitIgnoreTryCatch = false;
             String clinitVirtualization = "NONE";
             {
                 Map<String, Object> map = getAnnotationValues(cw);
@@ -143,6 +144,10 @@ public class NativeObfuscation extends Transformer {
                     if (virtualize instanceof String[]) {
                         clinitVirtualization = ((String[]) virtualize)[1];
                         compiler.getVirtualizeMacroCount().getAndIncrement();
+                    }
+                    Object ignoreTryCatch = map.get("ignoreTryCatch");
+                    if (ignoreTryCatch instanceof Boolean) {
+                        clinitIgnoreTryCatch = (boolean) ignoreTryCatch;
                     }
                 }
             }
@@ -207,12 +212,17 @@ public class NativeObfuscation extends Transformer {
                                 context.virtualization = ((String[]) virtualize)[1];
                                 compiler.getVirtualizeMacroCount().getAndIncrement();
                             }
+                            Object ignoreTryCatch = map.get("ignoreTryCatch");
+                            if (ignoreTryCatch instanceof Boolean) {
+                                context.ignoreTryCatch = (boolean) ignoreTryCatch;
+                            }
                         }
                         if ("<clinit>".equals(method.getName())) {
                             if (!"NONE".equals(clinitVirtualization)) {
                                 shouldVirtualize = true;
                                 context.virtualization = clinitVirtualization;
                             }
+                            context.ignoreTryCatch = clinitIgnoreTryCatch;
                         }
                         if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                             methodProcessor.processMethod(context);
@@ -377,6 +387,7 @@ public class NativeObfuscation extends Transformer {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
                 ERROR(TRANSLATION("phantom-shield-x.native.request"));
+                System.exit(0);
                 return;
             }
             JsonObject entity = softwareInformation.getAsJsonObject("entity");
@@ -464,9 +475,10 @@ public class NativeObfuscation extends Transformer {
             int i = 0;
             for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
                 FieldWrapper fieldWrapper = iterator.next();
-                if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_STATIC_FIELD_DESC)) {
+                if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_DESC)) {
                     if (!fieldWrapper.getAccess().isStatic()) {
                         ERROR(TRANSLATION("phantom-shield-x.native.static"), classWrapper.getOriginalName() + "." + fieldWrapper.getOriginalName());
+                        System.exit(0);
                         continue;
                     }
                     inlineStaticFields.put(fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription(), new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));

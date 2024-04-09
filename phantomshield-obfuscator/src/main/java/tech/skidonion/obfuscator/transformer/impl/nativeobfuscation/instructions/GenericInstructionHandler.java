@@ -16,9 +16,13 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
     protected String instructionName;
     protected String trimmedTryCatchBlock;
 
+    protected String originTryCatchBlock;
+
     @Override
     public void accept(MethodContext context, T node) {
         props = new HashMap<>();
+        instructionName = MethodProcessor.INSTRUCTIONS.getOrDefault(node.getOpcode(), "NOTFOUND");
+        props.put("line", String.valueOf(context.line));
         List<TryCatchBlockNode> tryCatchBlockNodeList = new ArrayList<>();
         for (TryCatchBlockNode tryCatchBlock : context.method.getMethodNode().tryCatchBlocks) {
             if (!context.tryCatches.contains(tryCatchBlock)) {
@@ -29,13 +33,11 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
                 tryCatchBlockNodeList.add(tryCatchBlock);
             }
         }
-        instructionName = MethodProcessor.INSTRUCTIONS.getOrDefault(node.getOpcode(), "NOTFOUND");
-        props.put("line", String.valueOf(context.line));
         StringBuilder tryCatch = new StringBuilder("\n");
         tryCatch.append("    ");
-        if (tryCatchBlockNodeList.size() > 0) {
+        if (!tryCatchBlockNodeList.isEmpty()) {
             String tryCatchLabelName = context.catches.computeIfAbsent(new CatchesBlock(tryCatchBlockNodeList.stream().map(item ->
-                    new CatchesBlock.CatchBlock(item.type, item.handler)).collect(Collectors.toList())),
+                            new CatchesBlock.CatchBlock(item.type, item.handler)).collect(Collectors.toList())),
                     key -> String.format("L_CATCH_%d", context.catches.size()));
             tryCatch.append(context.getSnippets().getSnippet("TRYCATCH_START"));
             tryCatch.append(" goto ").append(tryCatchLabelName).append("; }");
@@ -44,9 +46,18 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
                     "rettype", MethodProcessor.CPP_TYPES[context.ret.getSort()]
             )));
         }
-        props.put("trycatchhandler", tryCatch.toString());
+        String tryCatchString = tryCatch.toString();
+        originTryCatchBlock = tryCatchString.trim().replace('\n', ' ');
+        props.put("origintrycatchhandler", tryCatchString);
+        if (!context.ignoreTryCatch) {
+            props.put("trycatchhandler", tryCatchString);
+            trimmedTryCatchBlock = originTryCatchBlock;
+        } else {
+            props.put("trycatchhandler", "");
+            trimmedTryCatchBlock = "";
+        }
+
         props.put("rettype", MethodProcessor.CPP_TYPES[context.ret.getSort()]);
-        trimmedTryCatchBlock = tryCatch.toString().trim().replace('\n', ' ');
 
         for (int i = -5; i <= 5; i++) {
             props.put("stackindex" + (i >= 0 ? i : "m" + (-i)), String.valueOf(context.stackPointer + i));

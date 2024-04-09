@@ -10,11 +10,13 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProces
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.commons.Pair;
 
+import java.util.Objects;
+
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 import static tech.skidonion.obfuscator.PhantomShield.WARN;
 
 public class InlineHandler {
-    public static void process(MethodContext context, MethodInsnNode node) {
+    public static void process(MethodContext context, MethodInsnNode node, String trimmedTryCatchBlock) {
         CppCompiler compiler = context.obfuscator.obfuscator.getCompiler();
         boolean verification = context.obfuscator.isVerificationEnable();
         boolean advanced = compiler.isAdvancedModuleEnable();
@@ -26,8 +28,7 @@ public class InlineHandler {
             } else {
                 WARN(TRANSLATION("phantom-shield-x.native.inline1"));
             }
-        }
-        if (node.name.startsWith("_verification_")) {
+        } else if (node.name.startsWith("_verification_")) {
             if (verification) {
                 context.shouldVirtualize = true;
                 compiler.getVirtualizeMacroCount().incrementAndGet();
@@ -35,9 +36,7 @@ public class InlineHandler {
             } else {
                 WARN(TRANSLATION("phantom-shield-x.native.inline2"));
             }
-        }
-
-        if (node.name.startsWith("_field_")) {
+        } else if (node.name.startsWith("_field_")) {
             String key = node.name.substring(7);
             Pair<String, FieldWrapper> pair = context.obfuscator.inlineStaticFields.get(key);
             Type returnType = Type.getReturnType(node.desc);
@@ -100,6 +99,8 @@ public class InlineHandler {
                     }
                     break;
             }
+        } else if (Objects.equals("trycatch", node.name)) {
+            context.output.append(trimmedTryCatchBlock).append("\n");
         }
     }
 

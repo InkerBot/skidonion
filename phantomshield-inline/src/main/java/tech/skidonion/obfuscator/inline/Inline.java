@@ -23,6 +23,10 @@ public class Inline {
         }
     }
 
+    public static void trycatch() {
+
+    }
+
     public static int _advanced_checkProtection(int expected) {
         return expected;
     }

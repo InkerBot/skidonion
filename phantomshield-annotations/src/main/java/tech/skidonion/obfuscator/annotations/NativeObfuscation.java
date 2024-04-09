@@ -11,6 +11,8 @@ public @interface NativeObfuscation {
     // true or false
     boolean obfuscated() default true;
 
+    boolean ignoreTryCatch() default false;
+
     VirtualMachine virtualize() default VirtualMachine.NONE;
 
     enum VirtualMachine {

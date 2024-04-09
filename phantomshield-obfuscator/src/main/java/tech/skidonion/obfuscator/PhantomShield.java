@@ -42,9 +42,9 @@ import java.util.zip.ZipOutputStream;
 
 @NativeObfuscation
 public class PhantomShield {
-    @NativeObfuscation.InlineStaticFieldAccess
+    @NativeObfuscation.Inline
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.0.4";
+    public static final String VERSION = "v0.1.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
