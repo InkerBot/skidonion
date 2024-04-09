@@ -43,6 +43,16 @@ public class VerificationPanel extends JPanel {
         this.frame = frame;
         this.bundle = ResourceBundle.getBundle("tech.skidonion.verification.lang");
         initComponents();
+
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
+            Properties properties = new Properties();
+            properties.load(reader);
+            String username = properties.getProperty("username");
+            String password = properties.getProperty("password");
+            this.usernameField.setText(username);
+            this.passwordField.setText(password);
+        } catch (Exception ignore) {
+        }
     }
 
 
