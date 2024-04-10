@@ -54,7 +54,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                     packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).nextUniqueString() + "/";
                 } else if (package_mode.is("random_existed")) {
                     List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
-                    packageName = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getPackageName();
+                    packageName = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getOriginPackageName();
                 }
                 Dictionary classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
 
