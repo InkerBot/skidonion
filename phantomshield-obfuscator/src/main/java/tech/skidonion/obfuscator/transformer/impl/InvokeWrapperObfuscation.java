@@ -47,16 +47,19 @@ public class InvokeWrapperObfuscation extends Transformer {
                 ClassNode targetNode = new ClassNode();
 
                 String packageName = null;
-
+                Dictionary classDictionary;
                 if (package_mode.is("root")) {
                     packageName = "";
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 } else if (package_mode.is("unique")) {
                     packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).nextUniqueString() + "/";
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 } else if (package_mode.is("random_existed")) {
                     List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
-                    packageName = wrappers.get(RandomUtils.getRandomInt(wrappers.size())).getOriginPackageName();
+                    ClassWrapper classWrapper = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
+                    packageName = classWrapper.getPackageName();
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(classWrapper.getOriginPackageName(), name -> obfuscator.getDictionary().copy());
                 }
-                Dictionary classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
 
                 String name = packageName + classDictionary.nextUniqueString();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
