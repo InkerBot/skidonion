@@ -126,3 +126,5 @@ hs_err_pid*
 /mappings.json
 /phantomshield-watermark-trace/libs/
 /.cache/
+/IK
+/test/input

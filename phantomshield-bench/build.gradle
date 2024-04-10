@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+}
+
+sourceCompatibility = targetCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+dependencies {
+    implementation project(':phantomshield-inline')
+    implementation project(':phantomshield-annotations')
+}
+
+jar {
+    archiveFileName.set('bench.jar');
+    manifest.attributes([
+            'Main-Class': 'pack.Main'
+    ])
+}
+
+task copyToInput(type: Copy) {
+    from 'build/libs/bench.jar'
+    into '../test/input/'
+}
+
+jar.finalizedBy(copyToInput)

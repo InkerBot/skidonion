@@ -45,6 +45,7 @@ jar {
 
 processResources.dependsOn(':phantomshield-loader:copyToObfuscator')
 processResources.dependsOn(':phantomshield-verification:copyToObfuscator')
+processResources.dependsOn(':phantomshield-bench:copyToInput')
 
 task copyDenpendecies(type: Copy) {
     from configurations.runtimeClasspath
