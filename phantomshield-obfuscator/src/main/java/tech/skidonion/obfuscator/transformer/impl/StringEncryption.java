@@ -38,7 +38,7 @@ public class StringEncryption extends Transformer {
         getFilteredClasses().forEach(cw -> {
             removeAnnotation(cw);
             if (cw.getAccess().isInterface()) return;
-            List<String> strings = new ArrayList<>();
+            Map<String, Integer> strings = new LinkedHashMap<>();
             List<FieldNode> dummys = new ArrayList<>();
             String decryptorMethodName = cw.generateRandomStaticMethodName();
             String decryptedStringsFieldName = cw.generateRandomStaticFieldName();
@@ -50,9 +50,7 @@ public class StringEncryption extends Transformer {
                     if (ASMUtils.isStringInsn(inst)) {
                         String value = ASMUtils.getStringFromInsn(inst);
                         iter.remove();
-                        if (!strings.contains(value))
-                            strings.add(value);
-                        int index = strings.indexOf(value);
+                        int index = strings.computeIfAbsent(value, k -> strings.size());
                         iter.add(ASMUtils.getNumberInsn(index | (RandomUtils.getRandomInt() & 0xFFFF0000)));
                         iter.add(new InsnNode(I2C));
                         iter.add(new MethodInsnNode(INVOKESTATIC, cw.getName(), decryptorMethodName, "(C)Ljava/lang/Object;"));
@@ -114,10 +112,10 @@ public class StringEncryption extends Transformer {
         return methodNode;
     }
 
-    private void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, List<String> strings, List<FieldNode> dummys) {
+    private static void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, Map<String, Integer> strings, List<FieldNode> dummys) {
         final int startIndex = method.maxLocals + 1;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final List<String> shuffled = shuffleString(strings);
+        final List<String> shuffled = shuffleString(strings.keySet());
         for (String string : shuffled) {
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             int length = b.length;
@@ -324,13 +322,13 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 3));
         decryptInsts.add(new JumpInsnNode(IF_ICMPNE, start));
 
-        decryptInsts.add(generateDummy(dummys, shuffled, ownerName, decryptedStringsFieldName, startIndex));
+        decryptInsts.add(generateDummy(dummys, shuffled, strings, ownerName, decryptedStringsFieldName, startIndex));
 
         decryptInsts.add(realMethodStart);
         method.instructions.insertBefore(method.instructions.getFirst(), decryptInsts);
     }
 
-    private InsnList generateSwitchCase(byte[] swp, Random rand) {
+    private static InsnList generateSwitchCase(byte[] swp, Random rand) {
         InsnList insts = new InsnList();
         LabelNode[] idx = new LabelNode[256];
         LabelNode end = new LabelNode();
@@ -349,9 +347,15 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, String owner, String fieldName, int startIndex) {
+    private static InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, Map<String, Integer> origin, String owner, String fieldName, int startIndex) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
+
+        Map<String, Integer> shuffledMap = new HashMap<>();
+        for (String s : shuffle) {
+            shuffledMap.put(s, shuffledMap.size());
+        }
+
         Collections.shuffle(dummys); // dummy field也打乱 防止鉴定
 
         List<List<String>> restore = new ArrayList<>();
@@ -366,35 +370,10 @@ public class StringEncryption extends Transformer {
         final int realVar = RandomUtils.getRandomInt(0, Math.min(shuffle.size() - 1, 7));
         for (List<String> strings : restore) {
             if (realVar == varIn) { // insert real local
-                insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
-                insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
-                insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
-                int conVar = 0;
-                for (int i = 0; i < shuffle.size(); i++) {
-                    insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
-                    insnList.add(ASMUtils.getNumberInsn(conVar));
-                    insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
-                    insnList.add(ASMUtils.getNumberInsn(i));
-                    insnList.add(new InsnNode(AALOAD));
-                    insnList.add(new InsnNode(AASTORE));
-                    conVar++;
-                }
+                insnList.add(orderBackStrings(startIndex, varIn, shuffledMap, origin.keySet()));
                 varIn++;
             }
-            insnList.add(ASMUtils.getNumberInsn(shuffle.size()));
-            insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
-            insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
-            int conVar = 0;
-            for (String string : strings) {
-                final int i = shuffle.indexOf(string);
-                insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
-                insnList.add(ASMUtils.getNumberInsn(conVar));
-                insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
-                insnList.add(ASMUtils.getNumberInsn(i));
-                insnList.add(new InsnNode(AALOAD));
-                insnList.add(new InsnNode(AASTORE));
-                conVar++;
-            }
+            insnList.add(orderBackStrings(startIndex, varIn, shuffledMap, strings));
             varIn++;
         }
 
@@ -413,7 +392,26 @@ public class StringEncryption extends Transformer {
         return insnList;
     }
 
-    private List<String> shuffleString(List<String> origin) {
+    private static InsnList orderBackStrings(int startIndex, int varIn, Map<String, Integer> shuffledMap, Collection<String> origin) {
+        InsnList insnList = new InsnList();
+        insnList.add(ASMUtils.getNumberInsn(origin.size()));
+        insnList.add(new TypeInsnNode(ANEWARRAY, Type.getInternalName(Object.class)));
+        insnList.add(new VarInsnNode(ASTORE, startIndex + varIn + 7));
+        int conVar = 0;
+        for (String string : origin) {
+            final int i = shuffledMap.get(string);
+            insnList.add(new VarInsnNode(ALOAD, startIndex + varIn + 7));
+            insnList.add(ASMUtils.getNumberInsn(conVar));
+            insnList.add(new VarInsnNode(ALOAD, startIndex + 1));
+            insnList.add(ASMUtils.getNumberInsn(i));
+            insnList.add(new InsnNode(AALOAD));
+            insnList.add(new InsnNode(AASTORE));
+            conVar++;
+        }
+        return insnList;
+    }
+
+    private static List<String> shuffleString(Collection<String> origin) {
         final List<String> shuffle = new ArrayList<>(origin);
         Collections.shuffle(shuffle);
         return shuffle;
