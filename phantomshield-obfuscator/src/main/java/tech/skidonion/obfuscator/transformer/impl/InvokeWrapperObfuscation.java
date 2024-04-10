@@ -46,7 +46,7 @@ public class InvokeWrapperObfuscation extends Transformer {
             if (!inject_to_other_class.isEnable()) {
                 ClassNode targetNode = new ClassNode();
 
-                String packageName = null;
+                String packageName;
                 Dictionary classDictionary;
                 if (package_mode.is("root")) {
                     packageName = "";
@@ -59,6 +59,9 @@ public class InvokeWrapperObfuscation extends Transformer {
                     ClassWrapper classWrapper = wrappers.get(RandomUtils.getRandomInt(wrappers.size()));
                     packageName = classWrapper.getPackageName();
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(classWrapper.getOriginPackageName(), name -> obfuscator.getDictionary().copy());
+                } else {
+                    packageName = "";
+                    classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 }
 
                 String name = packageName + classDictionary.nextUniqueString();
@@ -89,7 +92,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                         MethodNode targetMethod = wrapper.getMethod(methodInsnNode.name, methodInsnNode.desc);
                         if (targetMethod == null) continue;
                         AccessFlags flag = new AccessFlags(targetMethod.access);
-                        if ( flag.isPrivate() || flag.isProtected() || Objects.equals(methodWrapper.getOriginalName(),"tech/skidonion/obfuscator/inline/Inline"))
+                        if (flag.isPrivate() || flag.isProtected() || Objects.equals(methodWrapper.getOriginalName(), "tech/skidonion/obfuscator/inline/Inline"))
                             continue;
 
                         if (methodInsnNode.getOpcode() == INVOKESTATIC) {
