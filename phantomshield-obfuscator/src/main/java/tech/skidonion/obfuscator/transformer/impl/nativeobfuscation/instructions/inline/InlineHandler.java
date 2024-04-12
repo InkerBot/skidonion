@@ -51,11 +51,8 @@ public class InlineHandler {
                     System.exit(0);
                 } else {
                     if (sort == Type.ARRAY || sort == Type.OBJECT || sort == Type.METHOD) {
-                        context.output.append("{\n");
-                        context.output.append("jobject temp = (jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l];\n");
-                        context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                        context.output.append("env->DeleteGlobalRef((jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l]);\n");
                         context.output.append("inlines::").append(cname).append(".erase((uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l);\n");
-                        context.output.append("}\n");
                     } else {
                         context.output.append("inlines::").append(cname).append(".erase((uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l);\n");
                     }
@@ -133,19 +130,13 @@ public class InlineHandler {
                     case Type.METHOD:
                         if (isSet) {
                             if (isStatic) {
-                                context.output.append("{\n");
-                                context.output.append("jobject temp = (jobject) inlines::").append(cname).append(";\n");
-                                context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                                context.output.append("env->DeleteGlobalRef((jobject) inlines::").append(cname).append(");\n");
                                 context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
                                 context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
-                                context.output.append("}\n");
                             } else {
-                                context.output.append("{\n");
-                                context.output.append("jobject temp = (jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l];\n");
-                                context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                                context.output.append("env->DeleteGlobalRef((jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l]);\n");
                                 context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
                                 context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
-                                context.output.append("}\n");
                             }
                         } else {
                             if (isStatic) {
