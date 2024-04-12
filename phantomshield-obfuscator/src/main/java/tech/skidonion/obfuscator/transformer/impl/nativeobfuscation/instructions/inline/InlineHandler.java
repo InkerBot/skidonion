@@ -12,8 +12,7 @@ import tech.skidonion.obfuscator.utils.commons.Pair;
 
 import java.util.Objects;
 
-import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
-import static tech.skidonion.obfuscator.PhantomShield.WARN;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class InlineHandler {
     public static void process(MethodContext context, MethodInsnNode node, String trimmedTryCatchBlock) {
@@ -38,66 +37,127 @@ public class InlineHandler {
             }
         } else if (node.name.startsWith("_field_")) {
             String key = node.name.substring(7);
-            Pair<String, FieldWrapper> pair = context.obfuscator.inlineStaticFields.get(key);
+            Pair<String, FieldWrapper> pair = context.obfuscator.inlineFields.get(key);
             Type returnType = Type.getReturnType(node.desc);
             boolean isSet = returnType.getSort() == Type.VOID;
-
-            String desc = pair.getSecond().getDescription();
+            FieldWrapper fw = pair.getSecond();
+            String desc = fw.getDescription();
+            boolean isStatic = fw.getAccess().isStatic();
             int sort = Type.getType(desc).getSort();
-            switch (sort) {
-                case Type.VOID:
-                    throw new UnsupportedOperationException("invalid field desc");
-                case Type.BOOLEAN:
-                case Type.CHAR:
-                case Type.BYTE:
-                case Type.SHORT:
-                case Type.INT:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".i;\n");
+            String cname = pair.getFirst();
+            if (Objects.equals("(Ljava/lang/Object;)V", node.desc)) {
+                if (isStatic) {
+                    ERROR(TRANSLATION("phantom-shield-x.native.inline-static-error"));
+                    System.exit(0);
+                } else {
+                    if (sort == Type.ARRAY || sort == Type.OBJECT || sort == Type.METHOD) {
+                        context.output.append("{\n");
+                        context.output.append("jobject temp = (jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l];\n");
+                        context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                        context.output.append("inlines::").append(cname).append(".erase((uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l);\n");
+                        context.output.append("}\n");
                     } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".i = (jint) inlines::").append(pair.getFirst()).append(";\n");
+                        context.output.append("inlines::").append(cname).append(".erase((uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l);\n");
                     }
-                    break;
-                case Type.FLOAT:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".f;\n");
-                    } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".f = inlines::").append(pair.getFirst()).append(";\n");
-                    }
-                    break;
-                case Type.LONG:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".j;\n");
-                    } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".j = inlines::").append(pair.getFirst()).append(";\n");
-                    }
-                    break;
-                case Type.DOUBLE:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".d;\n");
-                    } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".d = inlines::").append(pair.getFirst()).append(";\n");
-                    }
-                    break;
-                case Type.ARRAY:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
-                        context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
-                    } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".l = (jobject) inlines::").append(pair.getFirst()).append(";\n");
-                        context.output.append("refs.insert(cstack").append(context.stackPointer).append(".l);\n");
-                    }
-                    break;
-                case Type.OBJECT:
-                case Type.METHOD:
-                    if (isSet) {
-                        context.output.append("inlines::").append(pair.getFirst()).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
-                        context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
-                    } else {
-                        context.output.append("cstack").append(context.stackPointer).append(".l = inlines::").append(pair.getFirst()).append(";\n");
-                        context.output.append("refs.insert(cstack").append(context.stackPointer).append(".l);\n");
-                    }
-                    break;
+                }
+            } else {
+                switch (sort) {
+                    case Type.VOID:
+                        throw new UnsupportedOperationException("invalid field desc");
+                    case Type.BOOLEAN:
+                    case Type.CHAR:
+                    case Type.BYTE:
+                    case Type.SHORT:
+                    case Type.INT:
+                        if (isSet) {
+                            if (isStatic) {
+                                context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".i;\n");
+                            } else {
+                                context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".i;\n");
+                            }
+                        } else {
+                            if (isStatic) {
+                                context.output.append("cstack").append(context.stackPointer).append(".i = (jint) inlines::").append(cname).append(";\n");
+                            } else {
+                                context.output.append("cstack").append(context.stackPointer - 1).append(".i = (jint) inlines::").append(cname).append("[(uintptr_t)*(void**) cstack").append(context.stackPointer - 1).append(".l];\n");
+                            }
+                        }
+                        break;
+                    case Type.FLOAT:
+                        if (isSet) {
+                            if (isStatic) {
+                                context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".f;\n");
+                            } else {
+                                context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 1).append(".f;\n");
+                            }
+                        } else {
+                            if (isStatic) {
+                                context.output.append("cstack").append(context.stackPointer).append(".f = inlines::").append(cname).append(";\n");
+                            } else {
+                                context.output.append("cstack").append(context.stackPointer - 1).append(".f = inlines::").append(cname).append("[(uintptr_t)*(void**) cstack").append(context.stackPointer - 1).append(".l];\n");
+                            }
+                        }
+                        break;
+                    case Type.LONG:
+                        if (isSet) {
+                            if (isStatic) {
+                                context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".j;\n");
+                            } else {
+                                context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 3).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".j;\n");
+                            }
+                        } else {
+                            if (isStatic) {
+                                context.output.append("cstack").append(context.stackPointer).append(".j = inlines::").append(cname).append(";\n");
+                            } else {
+                                context.output.append("cstack").append(context.stackPointer - 1).append(".j = inlines::").append(cname).append("[(uintptr_t)*(void**) cstack").append(context.stackPointer - 1).append(".l];\n");
+                            }
+                        }
+                        break;
+                    case Type.DOUBLE:
+                        if (isSet) {
+                            if (isStatic) {
+                                context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".d;\n");
+                            } else {
+                                context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 3).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") cstack").append(context.stackPointer - 2).append(".d;\n");
+                            }
+                        } else {
+                            if (isStatic) {
+                                context.output.append("cstack").append(context.stackPointer).append(".d = inlines::").append(cname).append(";\n");
+                            } else {
+                                context.output.append("cstack").append(context.stackPointer - 1).append(".d = inlines::").append(cname).append("[(uintptr_t)*(void**) cstack").append(context.stackPointer - 1).append(".l];\n");
+                            }
+                        }
+                        break;
+                    case Type.ARRAY:
+                    case Type.OBJECT:
+                    case Type.METHOD:
+                        if (isSet) {
+                            if (isStatic) {
+                                context.output.append("{\n");
+                                context.output.append("jobject temp = (jobject) inlines::").append(cname).append(";\n");
+                                context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                                context.output.append("inlines::").append(cname).append(" = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
+                                context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
+                                context.output.append("}\n");
+                            } else {
+                                context.output.append("{\n");
+                                context.output.append("jobject temp = (jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l];\n");
+                                context.output.append("if(!temp) env->DeleteGlobalRef(temp);\n");
+                                context.output.append("inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 2).append(".l] = (").append(MethodProcessor.CPP_TYPES[sort]).append(") env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
+                                context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
+                                context.output.append("}\n");
+                            }
+                        } else {
+                            if (isStatic) {
+                                context.output.append("cstack").append(context.stackPointer).append(".l = (jobject) inlines::").append(cname).append(";\n");
+                                context.output.append("refs.insert(cstack").append(context.stackPointer).append(".l);\n");
+                            } else {
+                                context.output.append("cstack").append(context.stackPointer - 1).append(".l = (jobject) inlines::").append(cname).append("[(uintptr_t)*(void**) cstack").append(context.stackPointer - 1).append(".l];\n");
+                                context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
+                            }
+                        }
+                        break;
+                }
             }
         } else if (Objects.equals("trycatch", node.name)) {
             context.output.append(trimmedTryCatchBlock).append("\n");

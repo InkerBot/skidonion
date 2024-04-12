@@ -34,9 +34,11 @@ public class InlineSourceBuilder {
     }
 
 
-    public String buildCpp() {
+    public void buildHeader() {
+        // cpp
         cpp.append("#include \"native_jvm.hpp\"\n");
         cpp.append("#include \"native_jvm_inline.hpp\"\n");
+        cpp.append("#include <unordered_map>\n");
         Set<String> headers = new HashSet<>();
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
             String[] header = abstractInlineMethodBuilder.injectHeader();
@@ -49,15 +51,44 @@ public class InlineSourceBuilder {
         }
         cpp.append("namespace native_jvm::inlines {\n");
 
-        obfuscation.inlineStaticFields.forEach(((key, pair) -> {
+
+        // hpp
+        hpp.append("#include \"native_jvm.hpp\"\n");
+        hpp.append("#include <unordered_map>\n");
+        hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
+        hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
+        hpp.append("namespace native_jvm::inlines {\n");
+    }
+
+    public void buildInlineFields() {
+        obfuscation.inlineFields.forEach(((key, pair) -> {
             String cppName = pair.getFirst();
             FieldWrapper fw = pair.getSecond();
-            cpp.append(MethodProcessor.CPP_TYPES[Type.getType(fw.getDescription()).getSort()]).append(" ").append(cppName).append(";\n");
+            String ctype = MethodProcessor.CPP_TYPES[Type.getType(fw.getDescription()).getSort()];
+            if (fw.getAccess().isStatic()) {
+                cpp.append(ctype).append(" ").append(cppName).append(";\n");
+                hpp.append("extern ").append(ctype).append(" ").append(cppName).append(";\n");
+            } else {
+                cpp.append("std::unordered_map<uintptr_t, ")
+                        .append(ctype)
+                        .append("> ")
+                        .append(cppName)
+                        .append(";\n");
+                hpp.append("extern ").append("std::unordered_map<uintptr_t, ")
+                        .append(ctype)
+                        .append("> ")
+                        .append(cppName)
+                        .append(";\n");
+                //std::unordered_map<uintptr_t, int> map;
+            }
         }));
+    }
 
+    public void buildVerificationField() {
         if (obfuscation.isVerificationEnable()) {
             if (obfuscation.isUseInternalVerificationInterface()) {
                 cpp.append("bool licenced = 0;\n");
+                hpp.append("extern bool licenced;\n");
             }
             cpp.append("jbyteArray nonce;\n");
             cpp.append("jobject crypto;\n");
@@ -66,40 +97,7 @@ public class InlineSourceBuilder {
             cpp.append("jobject username;\n");
             cpp.append("jlong user_id;\n");
             cpp.append("jbyteArray magic_key;\n");
-//            private static byte[] NONCE;
-//            private static ChaCha20 CRYPTO;
-//            private static String VERIFY_TOKEN;
-//            private static byte[] KEY;
-//            private static String USERNAME;
-//            private static long USER_ID;
-//            private static byte[] MAGIC_KEY;
-        }
 
-        for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
-            String method = abstractInlineMethodBuilder.buildCpp();
-            if (method != null) cpp.append(method);
-        }
-
-        cpp.append("}\n");
-        return cpp.toString();
-    }
-
-    public String buildHpp() {
-        hpp.append("#include \"native_jvm.hpp\"\n");
-        hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
-        hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
-        hpp.append("namespace native_jvm::inlines {\n");
-
-        obfuscation.inlineStaticFields.forEach(((key, pair) -> {
-            String cppName = pair.getFirst();
-            FieldWrapper fw = pair.getSecond();
-            hpp.append("extern ").append(MethodProcessor.CPP_TYPES[Type.getType(fw.getDescription()).getSort()]).append(" ").append(cppName).append(";\n");
-        }));
-
-        if (obfuscation.isVerificationEnable()) {
-            if (obfuscation.isUseInternalVerificationInterface()) {
-                hpp.append("extern bool licenced;\n");
-            }
             hpp.append("extern jbyteArray nonce;\n");
             hpp.append("extern jobject crypto;\n");
             hpp.append("extern jobject verify_token;\n");
@@ -108,12 +106,31 @@ public class InlineSourceBuilder {
             hpp.append("extern jlong user_id;\n");
             hpp.append("extern jbyteArray magic_key;\n");
         }
+
+    }
+
+    public void buildInjectInlines() {
         for (AbstractInlineMethodBuilder abstractInlineMethodBuilder : this.inlinesInjector) {
-            String method = abstractInlineMethodBuilder.buildHpp();
-            if (method != null) hpp.append(method);
+            String _cpp = abstractInlineMethodBuilder.buildCpp();
+            if (_cpp != null) cpp.append(_cpp);
+            String _hpp = abstractInlineMethodBuilder.buildHpp();
+            if (_hpp != null) hpp.append(_hpp);
         }
+    }
+
+    public void buildTail() {
+        cpp.append("}\n");
+
         hpp.append("}\n");
         hpp.append("#endif\n");
+    }
+
+
+    public String buildCpp() {
+        return cpp.toString();
+    }
+
+    public String buildHpp() {
         return hpp.toString();
     }
 }

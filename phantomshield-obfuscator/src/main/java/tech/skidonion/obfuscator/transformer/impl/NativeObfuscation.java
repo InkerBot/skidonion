@@ -53,7 +53,7 @@ import static tech.skidonion.obfuscator.PhantomShield.*;
 public class NativeObfuscation extends Transformer {
     public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
-    public final Map<String, Pair<String, FieldWrapper>> inlineStaticFields = new HashMap<>();
+    public final Map<String, Pair<String, FieldWrapper>> inlineFields = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
@@ -322,6 +322,12 @@ public class NativeObfuscation extends Transformer {
 
         Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId).getBytes(StandardCharsets.UTF_8));
 
+        inlineSourceBuilder.buildHeader();
+        inlineSourceBuilder.buildInlineFields();
+        inlineSourceBuilder.buildVerificationField();
+        inlineSourceBuilder.buildInjectInlines();
+        inlineSourceBuilder.buildTail();
+
         Files.write(cppDir.resolve("native_jvm_inline.cpp"), inlineSourceBuilder.buildCpp().getBytes(StandardCharsets.UTF_8));
         Files.write(cppDir.resolve("native_jvm_inline.hpp"), inlineSourceBuilder.buildHpp().getBytes(StandardCharsets.UTF_8));
 
@@ -479,18 +485,45 @@ public class NativeObfuscation extends Transformer {
         addInternalInclusion(wrapper.name, "*");
         AtomicInteger inlineFieldIndex = new AtomicInteger();
         getClassWrappers().forEach(classWrapper -> {
+            boolean isCloseable;
+            if (classWrapper.getInterfaces() != null) {
+                Set<String> interfaces = new HashSet<>(classWrapper.getInterfaces());
+                isCloseable = interfaces.contains("java/lang/AutoCloseable") || interfaces.contains("java/io/Closeable");
+            } else {
+                isCloseable = false;
+            }
+
+            Set<String> inlineVirtualFields = new HashSet<>();
             int i = 0;
             for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
                 FieldWrapper fieldWrapper = iterator.next();
                 if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_DESC)) {
+                    String key = fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription();
                     if (!fieldWrapper.getAccess().isStatic()) {
-                        ERROR(TRANSLATION("phantom-shield-x.native.static"), classWrapper.getOriginalName() + "." + fieldWrapper.getOriginalName());
-                        System.exit(0);
-                        continue;
+                        inlineVirtualFields.add(key);
                     }
-                    inlineStaticFields.put(fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription(), new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));
+                    inlineFields.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));
                     iterator.remove();
                     classWrapper.getClassNode().fields.remove(i--);
+                }
+            }
+
+            boolean shouldAddGarbageCollection = isCloseable && !inlineVirtualFields.isEmpty();
+            if (shouldAddGarbageCollection) {
+                addInternalInclusion(classWrapper.getOriginalName(), "close()V");
+            }
+
+            i = 0;
+            for (Iterator<MethodWrapper> iterator = classWrapper.getMethods().iterator(); iterator.hasNext(); i++) {
+                MethodWrapper methodWrapper = iterator.next();
+                if (shouldAddGarbageCollection && Objects.equals("close()V", methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription())) {
+                    InsnList instructions = methodWrapper.getInstructions();
+                    for (String inlineVirtualField : inlineVirtualFields) {
+                        InsnList insnList = new InsnList();
+                        insnList.add(new VarInsnNode(ALOAD, 0));
+                        insnList.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
+                        instructions.insert(insnList);
+                    }
                 }
             }
         });
@@ -505,7 +538,7 @@ public class NativeObfuscation extends Transformer {
                     if (instruction instanceof FieldInsnNode) {
                         FieldInsnNode fieldInsnNode = (FieldInsnNode) instruction;
                         String key = fieldInsnNode.owner + "." + fieldInsnNode.name + "." + fieldInsnNode.desc;
-                        Pair<String, FieldWrapper> pair = inlineStaticFields.get(key);
+                        Pair<String, FieldWrapper> pair = inlineFields.get(key);
                         if (pair != null) {
                             int opcode = instruction.getOpcode();
                             MethodInsnNode injectedNode = null;
@@ -515,6 +548,12 @@ public class NativeObfuscation extends Transformer {
                             } else if (opcode == PUTSTATIC) {
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(" + fieldInsnNode.desc + ")V", false);
+                            } else if (opcode == GETFIELD) {
+                                iterator.remove();
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
+                            } else if (opcode == PUTFIELD) {
+                                iterator.remove();
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
                             }
 
                             if (injectedNode != null) {
