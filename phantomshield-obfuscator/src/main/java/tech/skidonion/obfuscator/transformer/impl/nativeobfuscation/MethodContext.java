@@ -40,13 +40,9 @@ public class MethodContext {
     private final LabelPool labelPool = new LabelPool();
     public String cppNativeMethodName;
     public String virtualization = "NONE";
-
     public boolean ignoreTryCatch = false;
-
     public final String prefixVM;
-
     public boolean shouldVirtualize = false;
-
     public Set<String> headers = new HashSet<>();
 
 

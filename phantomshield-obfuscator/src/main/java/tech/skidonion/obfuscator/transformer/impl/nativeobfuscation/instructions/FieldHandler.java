@@ -22,28 +22,24 @@ public class FieldHandler extends GenericInstructionHandler<FieldInsnNode> {
 
         int classId = context.getCachedClasses().getId(node.owner);
 
-        context.output.append(String.format("if (!cclasses[%d]  || env->IsSameObject(cclasses[%d], NULL)) { cclasses_mtx[%d].lock(); if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { if (jclass clazz = %s) { cclasses[%d] = (jclass) env->NewWeakGlobalRef(clazz); env->DeleteLocalRef(clazz); } } cclasses_mtx[%d].unlock(); %s } ",
-                classId,
-                classId,
-                classId,
-                classId,
-                classId,
-                MethodProcessor.getClassGetter(context, node.owner),
-                classId,
-                classId,
-                trimmedTryCatchBlock));
+        context.output.append(MethodProcessor.getClassCacher(context, classId, node.owner, trimmedTryCatchBlock));
 
         int fieldId = context.getCachedFields().getId(info);
         props.put("fieldid", context.getCachedFields().getPointer(info));
 
-        context.output.append(String.format("if (!cfields[%d]) { cfields[%d] = env->Get%sFieldID(%s, %s, %s); %s  } ",
-                fieldId,
-                fieldId,
-                isStatic ? "Static" : "",
-                context.getCachedClasses().getPointer(node.owner),
-                context.getStringPool().get(node.name),
-                context.getStringPool().get(node.desc),
-                trimmedTryCatchBlock));
+        if (isStatic) {
+            if (context.ignoreTryCatch) {
+                context.output.append("_CacheStaticField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+            } else {
+                context.output.append("if(_CacheStaticField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+            }
+        } else {
+            if (context.ignoreTryCatch) {
+                context.output.append("_CacheField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+            } else {
+                context.output.append("if(_CacheField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+            }
+        }
     }
 
     @Override

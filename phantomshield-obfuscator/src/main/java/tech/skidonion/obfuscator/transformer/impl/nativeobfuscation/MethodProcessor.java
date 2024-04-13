@@ -94,18 +94,36 @@ public class MethodProcessor {
 
     public static boolean shouldProcess(MethodNode method) {
         return !ASMUtils.getFlag(method.access, Opcodes.ACC_ABSTRACT) &&
-                !ASMUtils.getFlag(method.access, Opcodes.ACC_NATIVE) &&
-                !method.name.equals("<init>");
+               !ASMUtils.getFlag(method.access, Opcodes.ACC_NATIVE) &&
+               !method.name.equals("<init>");
     }
 
-    public static String getClassGetter(MethodContext context, String desc) {
+//    public static String getClassGetter(MethodContext context, String desc) {
+//        if (desc.startsWith("[")) {
+//            return "env->FindClass(" + context.getStringPool().get(desc) + ")";
+//        }
+//        if (desc.endsWith(";")) {
+//            desc = desc.substring(1, desc.length() - 1);
+//        }
+//        return "utils::find_class_wo_static(env, classloader, " + context.getCachedStrings().getPointer(desc.replace('/', '.')) + ")";
+//    }
+
+    public static String getClassCacher(MethodContext context, int classId, String desc, String trycatch) {
         if (desc.startsWith("[")) {
-            return "env->FindClass(" + context.getStringPool().get(desc) + ")";
+            if (context.ignoreTryCatch) {
+                return "_CacheClass1(env, " + classId + ", " + context.getStringPool().getOffset(desc) + ");";
+            } else {
+                return "if (_CacheClass1(env, " + classId + ", " + context.getStringPool().getOffset(desc) + ")) " + trycatch;
+            }
         }
         if (desc.endsWith(";")) {
             desc = desc.substring(1, desc.length() - 1);
         }
-        return "utils::find_class_wo_static(env, classloader, " + context.getCachedStrings().getPointer(desc.replace('/', '.')) + ")";
+        if (context.ignoreTryCatch) {
+            return "_CacheClass0(env, classloader, " + classId + ", " + context.getCachedStrings().getId(desc.replace('/', '.')) + ");";
+        } else {
+            return "if (_CacheClass0(env, classloader, " + classId + ", " + context.getCachedStrings().getId(desc.replace('/', '.')) + ")) " + trycatch;
+        }
     }
 
     public void processMethod(MethodContext context) {
@@ -121,9 +139,13 @@ public class MethodProcessor {
 //        output.append("// ").append(StringUtils.escapeCommentString(method.name)).append(StringUtils.escapeCommentString(method.desc)).append("\n");
 
         String methodName = specialMethodProcessor.preProcess(context);
-        methodName = "__ngen_" + methodName.replace('/', '_');
-        methodName = StringUtils.escapeCppNameString(methodName);
-        context.cppNativeMethodName = methodName;
+        if (context.cppNativeMethodName == null) {
+            methodName = "__ngen_" + methodName.replace('/', '_');
+            methodName = StringUtils.escapeCppNameString(methodName);
+            context.cppNativeMethodName = methodName;
+        } else {
+            methodName = context.cppNativeMethodName;
+        }
 
         boolean isStatic = ASMUtils.getFlag(method.access, Opcodes.ACC_STATIC);
         context.ret = Type.getReturnType(method.desc);
@@ -198,18 +220,7 @@ public class MethodProcessor {
                 int classId = context.getCachedClasses().getId(clazz);
 
 //                context.output.append(String.format("    // try-catch-class %s\n", StringUtils.escapeCommentString(clazz)));
-                context.output.append(String.format("    if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { cclasses_mtx[%d].lock(); "
-                                + "if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { if (jclass clazz = %s) { cclasses[%d] = (jclass) env->NewWeakGlobalRef(clazz); env->DeleteLocalRef(clazz); } } "
-                                + "cclasses_mtx[%d].unlock(); if (env->ExceptionCheck()) { return (%s) 0; } }\n",
-                        classId,
-                        classId,
-                        classId,
-                        classId,
-                        classId,
-                        getClassGetter(context, clazz),
-                        classId,
-                        classId,
-                        CPP_TYPES[context.ret.getSort()]));
+                context.output.append(getClassCacher(context, classId, clazz, "if (env->ExceptionCheck()) { return (" + CPP_TYPES[context.ret.getSort()] + ") 0; }"));
             });
         }
 

@@ -27,6 +27,15 @@ public class StringPool {
         return String.format("((char *)(string_pool + %dLL))", pool.get(value));
     }
 
+    public String getOffset(String value)
+    {
+        if (!pool.containsKey(value)) {
+            pool.put(value, length);
+            length += getModifiedUtf8Bytes(value).length + 1;
+        }
+        return String.valueOf(pool.get(value));
+    }
+
     private static byte[] getModifiedUtf8Bytes(String str) {
         int strlen = str.length();
         int utflen = 0;

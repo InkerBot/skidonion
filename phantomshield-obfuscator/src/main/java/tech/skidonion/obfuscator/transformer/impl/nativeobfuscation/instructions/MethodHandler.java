@@ -198,33 +198,28 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             props.put("class_ptr", context.getCachedClasses().getPointer(node.owner));
         }
 
+
         int classId = context.getCachedClasses().getId(node.owner);
 
-        context.output.append(String.format("if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { cclasses_mtx[%d].lock(); if (!cclasses[%d] || env->IsSameObject(cclasses[%d], NULL)) { if (jclass clazz = %s) { cclasses[%d] = (jclass) env->NewWeakGlobalRef(clazz); env->DeleteLocalRef(clazz); } } cclasses_mtx[%d].unlock(); %s } ",
-                classId,
-                classId,
-                classId,
-                classId,
-                classId,
-                MethodProcessor.getClassGetter(context, node.owner),
-                classId,
-                classId,
-                trimmedTryCatchBlock));
+        context.output.append(MethodProcessor.getClassCacher(context, classId, node.owner, trimmedTryCatchBlock));
 
         CachedMethodInfo methodInfo = new CachedMethodInfo(node.owner, node.name, node.desc, isStatic);
         int methodId = context.getCachedMethods().getId(methodInfo);
         props.put("methodid", context.getCachedMethods().getPointer(methodInfo));
 
-        context.output.append(
-                String.format("if (!cmethods[%d]) { cmethods[%d] = env->Get%sMethodID(%s, %s, %s); %s  } ",
-                        methodId,
-                        methodId,
-                        isStatic ? "Static" : "",
-                        context.getCachedClasses().getPointer(node.owner),
-                        context.getStringPool().get(node.name),
-                        context.getStringPool().get(node.desc),
-                        trimmedTryCatchBlock));
-
+        if (isStatic) {
+            if (context.ignoreTryCatch) {
+                context.output.append("_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+            } else {
+                context.output.append("if(_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+            }
+        } else {
+            if (context.ignoreTryCatch) {
+                context.output.append("_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+            } else {
+                context.output.append("if(_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+            }
+        }
         props.put("args", argsBuilder.toString());
     }
 
