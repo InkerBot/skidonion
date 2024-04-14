@@ -49,15 +49,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class NativeObfuscation extends Transformer {
     public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
     public final Map<String, Pair<String, FieldWrapper>> inlineFields = new HashMap<>();
+    public final Map<String, Pair<String, MethodWrapper>> inlineMethods = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
-
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("use_internal_user_interface", true);
     private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
@@ -82,6 +83,8 @@ public class NativeObfuscation extends Transformer {
     private HiddenMethodsPool hiddenMethodsPool;
     private int currentClassId;
     private String nativeDir;
+
+    private ClassWrapper dummyInlineClassWrapper;
 
     private void init() {
         stringPool = new StringPool();
@@ -124,7 +127,7 @@ public class NativeObfuscation extends Transformer {
 
         MainSourceBuilder mainSourceBuilder = new MainSourceBuilder();
 
-        InlineSourceBuilder inlineSourceBuilder = new InlineSourceBuilder(this, compiler);
+        InlineSourceBuilder inlineSourceBuilder = new InlineSourceBuilder(this, compiler, stringPool);
 
         hiddenMethodsPool = new HiddenMethodsPool(nativeDir + "/___");
 
@@ -145,7 +148,7 @@ public class NativeObfuscation extends Transformer {
                         clinitVirtualization = ((String[]) virtualize)[1];
                         compiler.getVirtualizeMacroCount().getAndIncrement();
                     }
-                    Object ignoreTryCatch = map.get("ignoreTryCatch");
+                    Object ignoreTryCatch = map.get("manualTryCatch");
                     if (ignoreTryCatch instanceof Boolean) {
                         clinitIgnoreTryCatch = (boolean) ignoreTryCatch;
                     }
@@ -219,9 +222,9 @@ public class NativeObfuscation extends Transformer {
                                 context.virtualization = ((String[]) virtualize)[1];
                                 compiler.getVirtualizeMacroCount().getAndIncrement();
                             }
-                            Object ignoreTryCatch = map.get("ignoreTryCatch");
+                            Object ignoreTryCatch = map.get("manualTryCatch");
                             if (ignoreTryCatch instanceof Boolean) {
-                                context.ignoreTryCatch = (boolean) ignoreTryCatch;
+                                context.manualTryCatch = (boolean) ignoreTryCatch;
                             }
                         }
                         if ("<clinit>".equals(method.getName())) {
@@ -229,7 +232,7 @@ public class NativeObfuscation extends Transformer {
                                 shouldVirtualize = true;
                                 context.virtualization = clinitVirtualization;
                             }
-                            context.ignoreTryCatch = clinitIgnoreTryCatch;
+                            context.manualTryCatch = clinitIgnoreTryCatch;
                         }
                         if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                             methodProcessor.processMethod(context);
@@ -269,6 +272,77 @@ public class NativeObfuscation extends Transformer {
             }
 
         });
+
+        Set<String> headers = new HashSet<>();
+        StringBuilder instructions = new StringBuilder();
+        StringBuilder declarations = new StringBuilder();
+        boolean shouldVirtualize = false;
+
+        cachedStrings.clear();
+        cachedClasses.clear();
+        cachedMethods.clear();
+        cachedFields.clear();
+        cachedCallSitesIndex = new AtomicInteger();
+
+        if (!inlineMethods.isEmpty()) {
+            INFO(TRANSLATION("phantom-shield-x.native.inline-methods"));
+
+
+            inlineMethods.values().stream()
+                    .map(Pair::getSecond)
+                    .forEach(mw -> PreprocessorRunner.preprocess(mw.getMethodNode()));
+
+
+            CustomClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
+            dummyInlineClassWrapper.getClassNode().accept(computedWriter);
+
+            ClassReader computedReader = new ClassReader(computedWriter.toByteArray());
+            ClassNode computedClassNode = new ClassNode(Opcodes.ASM9);
+            computedReader.accept(computedClassNode, 0);
+
+            if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537) {
+                IntStream.range(0, computedClassNode.methods.size())
+                        .forEach(i -> dummyInlineClassWrapper.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
+            }
+
+            for (int i = 0; i < dummyInlineClassWrapper.getMethods().size(); i++) {
+                MethodWrapper method = dummyInlineClassWrapper.getMethods().get(i);
+                MethodContext context = new MethodContext(this, method, i, method.getOwner(), currentClassId);
+                Map<String, Object> map = getAnnotationValues(method);
+                removeAnnotation(method);
+                if (map != null) {
+                    Object virtualize = map.get("virtualize");
+                    if (virtualize instanceof String[]) {
+                        shouldVirtualize = true;
+                        context.virtualization = ((String[]) virtualize)[1];
+                        compiler.getVirtualizeMacroCount().getAndIncrement();
+                    }
+                    Object ignoreTryCatch = map.get("manualTryCatch");
+                    if (ignoreTryCatch instanceof Boolean) {
+                        context.manualTryCatch = (boolean) ignoreTryCatch;
+                    }
+                }
+                Pair<String, MethodWrapper> inlineInfo;
+                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getName() + "." + method.getName() + method.getDescription())) != null ? inlineInfo.getFirst() : null;
+                if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
+                    methodProcessor.processMethod(context);
+                shouldVirtualize |= context.shouldVirtualize;
+
+                headers.addAll(context.headers);
+
+                instructions.append(context.output.toString().replace("\n", "\n    "));
+                declarations.append(context.export.toString());
+            }
+
+            shouldVirtualize |= isVerificationEnable();
+
+        }
+
+        inlineSourceBuilder.buildHeader(headers, shouldVirtualize);
+        inlineSourceBuilder.buildInlineFields();
+        inlineSourceBuilder.buildInlineMethods(instructions.toString(), declarations.toString(), cachedStrings, cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
+        inlineSourceBuilder.buildVerificationField();
+        inlineSourceBuilder.buildTail();
 
         if (hidden_stack_trace.isEnable()) {
             for (ClassNode hiddenClass : hiddenMethodsPool.getClasses()) {
@@ -319,17 +393,11 @@ public class NativeObfuscation extends Transformer {
         }
 
         Files.write(cppDir.resolve("string_pool.cpp"), stringPool.build().getBytes(StandardCharsets.UTF_8));
-
-        Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId).getBytes(StandardCharsets.UTF_8));
-
-        inlineSourceBuilder.buildHeader();
-        inlineSourceBuilder.buildInlineFields();
-        inlineSourceBuilder.buildVerificationField();
-        inlineSourceBuilder.buildInjectInlines();
-        inlineSourceBuilder.buildTail();
-
         Files.write(cppDir.resolve("native_jvm_inline.cpp"), inlineSourceBuilder.buildCpp().getBytes(StandardCharsets.UTF_8));
         Files.write(cppDir.resolve("native_jvm_inline.hpp"), inlineSourceBuilder.buildHpp().getBytes(StandardCharsets.UTF_8));
+
+        mainSourceBuilder.addCode("        inlines::init(env);");
+        Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId).getBytes(StandardCharsets.UTF_8));
 
         compiler.addCppFile(cppDir.resolve("native_jvm_inline.cpp").toAbsolutePath().toString());
 
@@ -484,6 +552,8 @@ public class NativeObfuscation extends Transformer {
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
         AtomicInteger inlineFieldIndex = new AtomicInteger();
+
+
         getClassWrappers().forEach(classWrapper -> {
             boolean isCloseable;
             if (classWrapper.getInterfaces() != null) {
@@ -498,7 +568,7 @@ public class NativeObfuscation extends Transformer {
             for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
                 FieldWrapper fieldWrapper = iterator.next();
                 if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_DESC)) {
-                    String key = fieldWrapper.getOwner().getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription();
+                    String key = classWrapper.getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription();
                     if (!fieldWrapper.getAccess().isStatic()) {
                         inlineVirtualFields.add(key);
                     }
@@ -516,6 +586,7 @@ public class NativeObfuscation extends Transformer {
             i = 0;
             for (Iterator<MethodWrapper> iterator = classWrapper.getMethods().iterator(); iterator.hasNext(); i++) {
                 MethodWrapper methodWrapper = iterator.next();
+
                 if (shouldAddGarbageCollection && Objects.equals("close()V", methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription())) {
                     InsnList instructions = methodWrapper.getInstructions();
                     for (String inlineVirtualField : inlineVirtualFields) {
@@ -524,36 +595,66 @@ public class NativeObfuscation extends Transformer {
                         insnList.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
                         instructions.insert(insnList);
                     }
+                } else if (ASMUtils.hasAnnotation(methodWrapper, INLINE_DESC)) {
+                    if (classWrapper.getAccess().isInterface()) {
+                        ERROR(TRANSLATION("phantom-shield-x.native.inline-methods-interface-error"));
+                        System.exit(0);
+                        return;
+                    }
+                    String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
+                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
+                    iterator.remove();
+                    classWrapper.getClassNode().methods.remove(i--);
                 }
             }
         });
-        getClassWrappers().forEach(classWrapper -> {
+
+        ClassNode dummyClass = new ClassNode();
+        dummyClass.name = "_PHANTOMSHIELD_X_INLINE_DUMMY";
+        dummyClass.version = V1_8;
+        dummyClass.superName = "java/lang/Object";
+        dummyClass.access = ACC_PUBLIC | ACC_SUPER;
+        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false);
+
+        inlineMethods.values().stream()
+                .map(Pair::getSecond)
+                .forEach(dummyInlineClassWrapper::addMethod);
+
+
+        addInternalInclusion(dummyClass.name, "*");
+
+        new ArrayList<ClassWrapper>(getClassWrappers()) {
+            {
+                add(dummyInlineClassWrapper);
+            }
+        }.forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
                 final boolean obfuscated = classMatch && methodMatch;
+                System.out.println(classWrapper.getName());
 
                 for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
                     AbstractInsnNode instruction = iterator.next();
                     if (instruction instanceof FieldInsnNode) {
                         FieldInsnNode fieldInsnNode = (FieldInsnNode) instruction;
-                        String key = fieldInsnNode.owner + "." + fieldInsnNode.name + "." + fieldInsnNode.desc;
-                        Pair<String, FieldWrapper> pair = inlineFields.get(key);
+                        String reference = fieldInsnNode.owner + "." + fieldInsnNode.name + "." + fieldInsnNode.desc;
+                        Pair<String, FieldWrapper> pair = inlineFields.get(reference);
                         if (pair != null) {
                             int opcode = instruction.getOpcode();
                             MethodInsnNode injectedNode = null;
                             if (opcode == GETSTATIC) {
                                 iterator.remove();
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "()" + fieldInsnNode.desc, false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
                                 iterator.remove();
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(" + fieldInsnNode.desc + ")V", false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
                             } else if (opcode == GETFIELD) {
                                 iterator.remove();
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTFIELD) {
                                 iterator.remove();
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + key, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
                             }
 
                             if (injectedNode != null) {
@@ -580,105 +681,155 @@ public class NativeObfuscation extends Transformer {
                     } else if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
                         String reference = methodInsnNode.owner + "." + methodInsnNode.name + methodInsnNode.desc;
-                        switch (reference) {
-                            case "tech/skidonion/obfuscator/inline/Inline._verification_checkHardwareID([Ljava/lang/Object;)V":
-                            case "tech/skidonion/obfuscator/inline/Inline._verification_generateHardwareID([Ljava/lang/Object;)V": {
+
+                        Pair<String, MethodWrapper> pair = inlineMethods.get(reference);
+
+                        if (pair != null) {
+                            int opcode = instruction.getOpcode();
+                            MethodInsnNode injectedNode = null;
+                            if (opcode == INVOKESTATIC) {
+                                iterator.remove();
+                                StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
+                                descBuilder.insert(1, "Ljava/lang/Class;");
+                                iterator.add(new LdcInsnNode(Type.getObjectType(methodInsnNode.owner)));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, descBuilder.toString(), false);
+                            } else if (opcode == INVOKEVIRTUAL) {
+                                iterator.remove();
+                                StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
+                                descBuilder.insert(1, "Ljava/lang/Object;");
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, descBuilder.toString(), false);
+                            } else if (opcode == INVOKESPECIAL) {
+                                ERROR(TRANSLATION("phantom-shield-x.native.inline-method-error1"));
+                                System.exit(0);
+                                return;
+                            } else if (opcode == INVOKEINTERFACE) {
+                                ERROR(TRANSLATION("phantom-shield-x.native.inline-method-error2"));
+                                System.exit(0);
+                                return;
+                            }
+
+                            if (injectedNode != null) {
+                                if (obfuscated) {
+                                    iterator.add(injectedNode);
+                                } else {
+                                    MethodNode inlineMethod = new MethodNode();
+                                    inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
+                                    inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
+                                    inlineMethod.desc = injectedNode.desc;
+                                    Type[] arguments = Type.getArgumentTypes(injectedNode.desc);
+                                    for (int i = 0; i < arguments.length; i++) {
+                                        Type argument = arguments[i];
+                                        inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
+                                    }
+                                    inlineMethod.instructions.add(injectedNode);
+                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(injectedNode.desc))));
+                                    inline.addMethod(inlineMethod);
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                }
+                            }
+                        } else {
+                            switch (reference) {
+                                case "tech/skidonion/obfuscator/inline/Inline._verification_checkHardwareID([Ljava/lang/Object;)V":
+                                case "tech/skidonion/obfuscator/inline/Inline._verification_generateHardwareID([Ljava/lang/Object;)V": {
 //                                2082061244
 //                                173359771
 //                                1984756007
-                                if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                    if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                        break;
+                                    MethodNode inlineMethod = new MethodNode();
+                                    inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
+                                    inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
+                                    inlineMethod.desc = methodInsnNode.desc;
+                                    Type[] arguments = Type.getArgumentTypes(methodInsnNode.desc);
+                                    for (int i = 0; i < arguments.length; i++) {
+                                        Type argument = arguments[i];
+                                        inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
+                                    }
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
+                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(methodInsnNode.desc))));
+                                    iterator.remove();
+                                    inline.addMethod(inlineMethod);
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
                                     break;
-                                MethodNode inlineMethod = new MethodNode();
-                                inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
-                                inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
-                                inlineMethod.desc = methodInsnNode.desc;
-                                Type[] arguments = Type.getArgumentTypes(methodInsnNode.desc);
-                                for (int i = 0; i < arguments.length; i++) {
-                                    Type argument = arguments[i];
-                                    inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
                                 }
-                                inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
-                                inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(methodInsnNode.desc))));
-                                iterator.remove();
-                                inline.addMethod(inlineMethod);
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
-                                break;
-                            }
-                            case "tech/skidonion/obfuscator/inline/Inline.trycatch()V": {
-                                if (!obfuscated) {
-                                    ERROR(TRANSLATION("phantom-shield-x.native.trycatch"));
+                                case "tech/skidonion/obfuscator/inline/Inline.trycatch()V": {
+                                    if (!obfuscated) {
+                                        ERROR(TRANSLATION("phantom-shield-x.native.trycatch"));
+                                        System.exit(0);
+                                        return;
+                                    }
+                                    break;
+                                }
+                                case "tech/skidonion/obfuscator/inline/Inline._advanced_checkProtection(I)I":
+                                case "tech/skidonion/obfuscator/inline/Inline._advanced_checkCRCImage(I)I":
+                                case "tech/skidonion/obfuscator/inline/Inline._advanced_checkIsVirtualPC(I)I":
+                                case "tech/skidonion/obfuscator/inline/Inline._advanced_checkIsDebuggerPresent(I)I": {
+                                    if (obfuscated) break;
+                                    MethodNode inlineMethod = new MethodNode();
+                                    inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
+                                    inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
+                                    iterator.previous();
+                                    AbstractInsnNode previous = iterator.previous();
+                                    int constant;
+                                    try {
+                                        constant = ASMUtils.getIntegerFromInsn(previous);
+                                    } catch (Exception exception) {
+                                        throw new RuntimeException("Advanced Inline Method need a const argument...");
+                                    }
+                                    iterator.remove();
+                                    iterator.next();
+                                    inlineMethod.desc = "()I";
+                                    inlineMethod.instructions.add(new LdcInsnNode(constant));
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
+                                    inlineMethod.instructions.add(new InsnNode(IRETURN));
+                                    iterator.remove();
+                                    inline.addMethod(inlineMethod);
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.verificationServer()Ljava/lang/String;": {
+                                    iterator.remove();
+                                    iterator.add(new LdcInsnNode(this.verification_server.getValue()));
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.publicKey()Ljava/lang/String;": {
+                                    iterator.remove();
+                                    iterator.add(new LdcInsnNode(verifyPublicKey));
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.softwareId()J": {
+                                    iterator.remove();
+                                    iterator.add(new LdcInsnNode(verifySoftwareId));
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.version()Ljava/lang/String;": {
+                                    iterator.remove();
+                                    iterator.add(new LdcInsnNode(verifyVersion));
+                                    break;
+                                }
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
+                                case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
+                                    if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                        break;
+                                    iterator.remove();
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
+                                    break;
+                                }
+                                case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant(Ljava/lang/String;Ljava/lang/String;)V":
+                                    ERROR(TRANSLATION("phantom-shield-x.native.you"));
                                     System.exit(0);
-                                    return;
-                                }
-                                break;
-                            }
-                            case "tech/skidonion/obfuscator/inline/Inline._advanced_checkProtection(I)I":
-                            case "tech/skidonion/obfuscator/inline/Inline._advanced_checkCRCImage(I)I":
-                            case "tech/skidonion/obfuscator/inline/Inline._advanced_checkIsVirtualPC(I)I":
-                            case "tech/skidonion/obfuscator/inline/Inline._advanced_checkIsDebuggerPresent(I)I": {
-                                if (obfuscated) break;
-                                MethodNode inlineMethod = new MethodNode();
-                                inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
-                                inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
-                                iterator.previous();
-                                AbstractInsnNode previous = iterator.previous();
-                                int constant;
-                                try {
-                                    constant = ASMUtils.getIntegerFromInsn(previous);
-                                } catch (Exception exception) {
-                                    throw new RuntimeException("Advanced Inline Method need a const argument...");
-                                }
-                                iterator.remove();
-                                iterator.next();
-                                inlineMethod.desc = "()I";
-                                inlineMethod.instructions.add(new LdcInsnNode(constant));
-                                inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
-                                inlineMethod.instructions.add(new InsnNode(IRETURN));
-                                iterator.remove();
-                                inline.addMethod(inlineMethod);
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
-                                break;
-                            }
-                            case "tech/skidonion/verification/utils/Internals.verificationServer()Ljava/lang/String;": {
-                                iterator.remove();
-                                iterator.add(new LdcInsnNode(this.verification_server.getValue()));
-                                break;
-                            }
-                            case "tech/skidonion/verification/utils/Internals.publicKey()Ljava/lang/String;": {
-                                iterator.remove();
-                                iterator.add(new LdcInsnNode(verifyPublicKey));
-                                break;
-                            }
-                            case "tech/skidonion/verification/utils/Internals.softwareId()J": {
-                                iterator.remove();
-                                iterator.add(new LdcInsnNode(verifySoftwareId));
-                                break;
-                            }
-                            case "tech/skidonion/verification/utils/Internals.version()Ljava/lang/String;": {
-                                iterator.remove();
-                                iterator.add(new LdcInsnNode(verifyVersion));
-                                break;
-                            }
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
-                                if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
                                     break;
-                                iterator.remove();
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
-                                break;
                             }
-                            case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant(Ljava/lang/String;Ljava/lang/String;)V":
-                                ERROR(TRANSLATION("phantom-shield-x.native.you"));
-                                System.exit(0);
-                                break;
                         }
+
+
                     }
                 }
             });

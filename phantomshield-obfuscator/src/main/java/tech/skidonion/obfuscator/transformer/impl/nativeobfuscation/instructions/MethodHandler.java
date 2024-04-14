@@ -208,13 +208,13 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
         props.put("methodid", context.getCachedMethods().getPointer(methodInfo));
 
         if (isStatic) {
-            if (context.ignoreTryCatch) {
+            if (context.manualTryCatch) {
                 context.output.append("_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
                 context.output.append("if(_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
             }
         } else {
-            if (context.ignoreTryCatch) {
+            if (context.manualTryCatch) {
                 context.output.append("_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
                 context.output.append("if(_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);

@@ -23,6 +23,7 @@ public class MethodContext {
     public final int classIndex;
 
     public final StringBuilder output;
+    public final StringBuilder export;
     public final StringBuilder nativeMethods;
 
     public Type ret;
@@ -40,7 +41,7 @@ public class MethodContext {
     private final LabelPool labelPool = new LabelPool();
     public String cppNativeMethodName;
     public String virtualization = "NONE";
-    public boolean ignoreTryCatch = false;
+    public boolean manualTryCatch = false;
     public final String prefixVM;
     public boolean shouldVirtualize = false;
     public Set<String> headers = new HashSet<>();
@@ -56,6 +57,7 @@ public class MethodContext {
         this.prefixVM = obfuscator.obfuscator.getCompiler().isAdvancedModuleEnable() ? "VM" : "VIRTUALIZER";
 
         this.output = new StringBuilder();
+        this.export = new StringBuilder();
         this.nativeMethods = new StringBuilder();
 
         this.line = -1;

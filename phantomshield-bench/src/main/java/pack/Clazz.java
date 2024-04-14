@@ -36,6 +36,7 @@ public class Clazz implements AutoCloseable {
         print(gc);
     }
 
+    @NativeObfuscation.Inline
     public static Clazz allocate() {
         Clazz clazz = new Clazz();
         clazz.test = String.valueOf(a++);
@@ -44,6 +45,7 @@ public class Clazz implements AutoCloseable {
     }
 
     public static void print(Clazz clazz) {
+        System.out.println(123);
         System.out.println(clazz.test);
         System.out.println(clazz.test2);
     }

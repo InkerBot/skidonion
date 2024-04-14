@@ -4,6 +4,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.utils.IOUtils;
 
 import java.util.Arrays;
@@ -36,6 +37,10 @@ public class PreprocessorRunner {
                 processIndy(methodNode, (InvokeDynamicInsnNode) insnNode, iterator);
             }
         }
+    }
+
+    public static void preprocess(MethodWrapper methodWrapper) {
+        preprocess(methodWrapper.getMethodNode());
     }
 
     private static void processIndy(MethodNode methodNode, InvokeDynamicInsnNode invokeDynamicInsnNode, ListIterator<AbstractInsnNode> iterator) {

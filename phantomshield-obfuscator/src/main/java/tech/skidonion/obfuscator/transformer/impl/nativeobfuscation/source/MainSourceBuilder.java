@@ -32,6 +32,10 @@ public class MainSourceBuilder {
         ));
     }
 
+    public void addCode(String code) {
+        registerMethods.append(code);
+    }
+
     public String build(String nativeDir, int classCount) {
         String template = FileUtils.readResource("sources/native_jvm_output.cpp");
         return StringUtils.dynamicFormat(template, StringUtils.createStringMap(

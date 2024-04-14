@@ -1,5 +1,6 @@
 #include "native_jvm.hpp"
 #include "native_jvm_output.hpp"
+#include "native_jvm_inline.hpp"
 #include "string_pool.hpp"
 
 $includes

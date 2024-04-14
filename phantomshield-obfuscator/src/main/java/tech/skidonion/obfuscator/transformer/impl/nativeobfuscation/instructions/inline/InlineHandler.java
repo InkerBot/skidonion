@@ -1,16 +1,22 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
+import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.utils.ASMUtils;
+import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.utils.commons.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
@@ -149,6 +155,85 @@ public class InlineHandler {
                         }
                         break;
                 }
+            }
+        } else if (node.name.startsWith("_method_")) {
+            String key = node.name.substring(8);
+            Pair<String, MethodWrapper> pair = context.obfuscator.inlineMethods.get(key);
+            String cname = pair.getFirst();
+
+            Type returnType = Type.getReturnType(node.desc);
+            Type[] args = Type.getArgumentTypes(node.desc);
+
+            StringBuilder argsBuilder = new StringBuilder();
+            List<Integer> argOffsets = new ArrayList<>();
+
+            int stackOffset = context.stackPointer;
+            for (Type argType : args) {
+                stackOffset -= argType.getSize();
+            }
+            int argumentOffset = stackOffset;
+            for (Type argType : args) {
+                argOffsets.add(argumentOffset);
+                argumentOffset += argType.getSize();
+            }
+
+            boolean isStatic = node.getOpcode() == Opcodes.INVOKESTATIC;
+            int objectOffset = isStatic ? 0 : 1;
+
+            for (int i = 0; i < argOffsets.size(); i++) {
+                argsBuilder.append(", ");
+                if (i == 0 && isStatic) {
+                    argsBuilder.append("(jclass)");
+                }
+                argsBuilder.append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[i].getSort(),
+                        StringUtils.createStringMap("index", argOffsets.get(i))));
+            }
+
+            int returnStackIndex = stackOffset - objectOffset;
+
+            switch (returnType.getSort()) {
+                case Type.BOOLEAN:
+                case Type.CHAR:
+                case Type.BYTE:
+                case Type.SHORT:
+                case Type.INT:
+                    // cstack$returnstackindex.i = (jint)
+                    context.output.append("cstack").append(returnStackIndex).append(".i = (jint) ");
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append(");\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
+                case Type.FLOAT:
+                    context.output.append("cstack").append(returnStackIndex).append(".f = ");
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append(");\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
+                case Type.LONG:
+                    context.output.append("cstack").append(returnStackIndex).append(".j = ");
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append(");\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
+                case Type.DOUBLE:
+                    context.output.append("cstack").append(returnStackIndex).append(".d = ");
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append(");\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
+                case Type.ARRAY:
+                case Type.OBJECT:
+                case Type.METHOD:
+                    context.output.append("cstack").append(returnStackIndex).append(".l = ");
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append("); refs.insert(cstack").append(returnStackIndex).append(".l);\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
             }
         } else if (Objects.equals("trycatch", node.name)) {
             context.output.append(trimmedTryCatchBlock).append("\n");

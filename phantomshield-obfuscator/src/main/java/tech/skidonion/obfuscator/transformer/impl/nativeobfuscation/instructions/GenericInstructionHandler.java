@@ -49,7 +49,7 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
         String tryCatchString = tryCatch.toString();
         originTryCatchBlock = tryCatchString.trim().replace('\n', ' ');
         props.put("origintrycatchhandler", tryCatchString);
-        if (!context.ignoreTryCatch) {
+        if (!context.manualTryCatch) {
             props.put("trycatchhandler", tryCatchString);
             trimmedTryCatchBlock = originTryCatchBlock;
         } else {

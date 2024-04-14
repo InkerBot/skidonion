@@ -110,7 +110,7 @@ public class MethodProcessor {
 
     public static String getClassCacher(MethodContext context, int classId, String desc, String trycatch) {
         if (desc.startsWith("[")) {
-            if (context.ignoreTryCatch) {
+            if (context.manualTryCatch) {
                 return "_CacheClass1(env, " + classId + ", " + context.getStringPool().getOffset(desc) + ");";
             } else {
                 return "if (_CacheClass1(env, " + classId + ", " + context.getStringPool().getOffset(desc) + ")) " + trycatch;
@@ -119,7 +119,7 @@ public class MethodProcessor {
         if (desc.endsWith(";")) {
             desc = desc.substring(1, desc.length() - 1);
         }
-        if (context.ignoreTryCatch) {
+        if (context.manualTryCatch) {
             return "_CacheClass0(env, classloader, " + classId + ", " + context.getCachedStrings().getId(desc.replace('/', '.')) + ");";
         } else {
             return "if (_CacheClass0(env, classloader, " + classId + ", " + context.getCachedStrings().getId(desc.replace('/', '.')) + ")) " + trycatch;
@@ -165,21 +165,27 @@ public class MethodProcessor {
                     obfuscator.getStringPool().get(method.desc), methodName));
         }
 
-        output.append(String.format("%s JNICALL %s(JNIEnv *env, ", CPP_TYPES[context.ret.getSort()], methodName));
+        StringBuilder declare = new StringBuilder();
+
+        declare.append(String.format("%s JNICALL %s(JNIEnv *env, ", CPP_TYPES[context.ret.getSort()], methodName));
+
         if (context.proxyMethod != null) {
-            output.append("jobject ignored_hidden, ");
+            declare.append("jobject ignored_hidden, ");
         }
-        output.append(isStatic ? "jclass clazz" : "jobject obj");
+        declare.append(isStatic ? "jclass clazz" : "jobject obj");
 
         ArrayList<String> argNames = new ArrayList<>();
         if (!isStatic) argNames.add("obj");
 
         for (int i = 0; i < args.length; i++) {
             argNames.add("arg" + i);
-            output.append(String.format(", %s arg%d", CPP_TYPES[args[i].getSort()], i));
+            declare.append(String.format(", %s arg%d", CPP_TYPES[args[i].getSort()], i));
         }
+        declare.append(")");
 
-        output.append(") {").append("\n");
+        context.export.append("    ").append(declare).append(";\n");
+
+        output.append(declare).append(" {").append("\n");
 
         context.injectHeader();
 

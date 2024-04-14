@@ -193,7 +193,7 @@ public class StringUtils {
         }
 
         return replaceTokens(string, tokens, "(" +
-                tokens.keySet().stream().map(StringUtils::unicodify).collect(Collectors.joining("|")) + ")");
+                                             tokens.keySet().stream().map(StringUtils::unicodify).collect(Collectors.joining("|")) + ")");
     }
 
     private static String replaceTokens(String string, Map<String, String> tokens, String patternString) {
