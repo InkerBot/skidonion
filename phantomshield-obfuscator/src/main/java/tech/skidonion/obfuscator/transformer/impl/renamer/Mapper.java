@@ -36,6 +36,7 @@ public class Mapper {
     private final Map<String, String> dummy = new HashMap<>();
     private final Map<String, String> mappings = new HashMap<>();
     private final Collection<ClassWrapper> classes;
+    private final Collection<ClassWrapper> additionalClasses;
     private final Renamer renamer;
 
     private String prefix_name = "";
@@ -43,12 +44,17 @@ public class Mapper {
     private String repakage_name = "";
 
     public Mapper(PhantomShield obfuscator, Collection<ClassWrapper> classes) {
-        this(obfuscator, classes, null);
+        this(obfuscator, classes, Collections.emptyList());
     }
 
-    public Mapper(PhantomShield obfuscator, Collection<ClassWrapper> classes, Renamer renamer) {
+    public Mapper(PhantomShield obfuscator, Collection<ClassWrapper> classes, Collection<ClassWrapper> additionalClasses) {
+        this(obfuscator, classes, additionalClasses, null);
+    }
+
+    public Mapper(PhantomShield obfuscator, Collection<ClassWrapper> classes, Collection<ClassWrapper> additionalClasses, Renamer renamer) {
         this.obfuscator = obfuscator;
         this.classes = classes;
+        this.additionalClasses = additionalClasses;
         this.renamer = renamer;
     }
 
@@ -147,6 +153,18 @@ public class Mapper {
             obfuscator.classes.remove(classWrapper.getOriginalName());
             obfuscator.classes.put(classWrapper.getName(), classWrapper);
             obfuscator.classpath.put(classWrapper.getName(), classWrapper);
+        });
+
+        new ArrayList<>(additionalClasses).forEach(classWrapper -> {
+            ClassNode classNode = classWrapper.getClassNode();
+
+            ClassNode copy = new ClassNode();
+            classNode.accept(new ClassRemapper(copy, simpleRemapper));
+
+            IntStream.range(0, copy.methods.size()).forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
+            IntStream.range(0, copy.fields.size()).forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
+            classWrapper.setClassNode(copy);
+            classWrapper.updateMemberNames();
         });
     }
 

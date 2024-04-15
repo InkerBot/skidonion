@@ -1,8 +1,11 @@
 package pack.tests.basics.runable;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 import java.util.concurrent.RejectedExecutionException;
 
 public class Task {
+    @NativeObfuscation.Inline
     public void run() throws Exception {
         Exec e1 = new Exec(2);
         Exec e2 = new Exec(3);

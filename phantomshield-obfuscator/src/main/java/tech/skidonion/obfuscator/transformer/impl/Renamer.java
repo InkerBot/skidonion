@@ -11,6 +11,7 @@ import tech.skidonion.obfuscator.value.impls.StringValue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -107,7 +108,7 @@ public class Renamer extends Transformer {
 
     @Override
     public void preprocess() throws Exception {
-        mapper = new Mapper(obfuscator, getClassWrappers(), this);
+        mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
         mapper.setPrefixName(prefix_name.getValue());
         mapper.setRepackage(repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());

@@ -161,6 +161,8 @@ public class InlineHandler {
             Pair<String, MethodWrapper> pair = context.obfuscator.inlineMethods.get(key);
             String cname = pair.getFirst();
 
+            boolean isStatic = node.getOpcode() == Opcodes.INVOKESTATIC;
+
             Type returnType = Type.getReturnType(node.desc);
             Type[] args = Type.getArgumentTypes(node.desc);
 
@@ -172,26 +174,39 @@ public class InlineHandler {
                 stackOffset -= argType.getSize();
             }
             int argumentOffset = stackOffset;
-            for (Type argType : args) {
+
+            Type[] _args = new Type[args.length];
+            System.arraycopy(args, 1, _args, 0, args.length - 1);
+            _args[args.length - 1] = args[0];
+
+            for (Type argType : _args) {
                 argOffsets.add(argumentOffset);
                 argumentOffset += argType.getSize();
             }
 
-            boolean isStatic = node.getOpcode() == Opcodes.INVOKESTATIC;
             int objectOffset = isStatic ? 0 : 1;
+            int argSize = argOffsets.size() - (isStatic ? 1 : 0);
 
-            for (int i = 0; i < argOffsets.size(); i++) {
+            if (isStatic) {
+                argsBuilder.append(", (jclass) ").append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[argSize].getSort(),
+                        StringUtils.createStringMap("index", argOffsets.get(argSize))));
+            }
+
+            for (int i = 0; i < argSize; i++) {
                 argsBuilder.append(", ");
-                if (i == 0 && isStatic) {
-                    argsBuilder.append("(jclass)");
-                }
-                argsBuilder.append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[i].getSort(),
+                argsBuilder.append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[i].getSort(),
                         StringUtils.createStringMap("index", argOffsets.get(i))));
             }
 
             int returnStackIndex = stackOffset - objectOffset;
 
             switch (returnType.getSort()) {
+                case Type.VOID:
+                    context.output.append("inlines::").append(cname).append("(env").append(argsBuilder).append(");\n");
+                    if (!context.manualTryCatch) {
+                        context.output.append(trimmedTryCatchBlock);
+                    }
+                    break;
                 case Type.BOOLEAN:
                 case Type.CHAR:
                 case Type.BYTE:

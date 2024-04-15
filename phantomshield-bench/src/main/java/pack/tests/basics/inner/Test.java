@@ -1,6 +1,9 @@
 package pack.tests.basics.inner;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class Test {
+    @NativeObfuscation.Inline
     public void run() {
         Exec exec = new Exec();
         Exec.Inner inner1 = exec.new Inner(3);

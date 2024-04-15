@@ -15,10 +15,13 @@ import pack.tests.reflects.loader.LRun;
 import pack.tests.reflects.res.Accesor;
 import pack.tests.reflects.retrace.Tracer;
 import pack.tests.security.SecTest;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 
 import java.io.File;
 
+@NativeObfuscation
 public class Main {
+    @NativeObfuscation
     public static void main(String[] args) throws Exception {
         System.out.println("Obfuscator Test Program");
         System.out.println("Author: huzpsb");

@@ -603,6 +603,7 @@ public class NativeObfuscation extends Transformer {
                     }
                     String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
                     inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
+                    addInternalInclusion(classWrapper.getOriginalName(), methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription());
                     iterator.remove();
                     classWrapper.getClassNode().methods.remove(i--);
                 }
@@ -632,7 +633,6 @@ public class NativeObfuscation extends Transformer {
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
                 final boolean obfuscated = classMatch && methodMatch;
-                System.out.println(classWrapper.getName());
 
                 for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
                     AbstractInsnNode instruction = iterator.next();
@@ -681,7 +681,6 @@ public class NativeObfuscation extends Transformer {
                     } else if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
                         String reference = methodInsnNode.owner + "." + methodInsnNode.name + methodInsnNode.desc;
-
                         Pair<String, MethodWrapper> pair = inlineMethods.get(reference);
 
                         if (pair != null) {
@@ -843,12 +842,13 @@ public class NativeObfuscation extends Transformer {
         if (!injected.isEmpty()) {
             Collections.shuffle(injected);
             Renamer renamer = (Renamer) obfuscator.getRegister().get("renamer");
-            Mapper mapper = new Mapper(obfuscator, injected);
+            Mapper mapper = new Mapper(obfuscator, injected, Collections.singleton(dummyInlineClassWrapper));
             mapper.setRepackage(true);
             mapper.setPrefixName(renamer.prefix_name.getValue());
             mapper.setRepakageName(renamer.repackage_name.getValue());
             mapper.generateMappings();
             mapper.apply();
+            // dummyInlineClassWrapper
         }
         INFO(TRANSLATION("phantom-shield-x.native.preprocess2"), System.currentTimeMillis() - last);
     }

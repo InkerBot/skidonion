@@ -1,8 +1,12 @@
 package pack.tests.basics.ctrl;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class Ctrl {
+    @NativeObfuscation.Inline
     private String ret = "FAIL";
 
+    @NativeObfuscation.Inline
     public void runt() {
         if ("a".equals("b")) {
         } else {
@@ -10,6 +14,7 @@ public class Ctrl {
         }
     }
 
+    @NativeObfuscation.Inline
     public void runf() {
         try {
             runt();
@@ -24,6 +29,7 @@ public class Ctrl {
         }
     }
 
+    @NativeObfuscation.Inline
     public void run() {
         runf();
         System.out.println(ret);

@@ -1,6 +1,5 @@
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
-import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.inline.Wrapper;
 
 import java.io.File;
@@ -13,11 +12,11 @@ public class TestRun {
 //        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
 //         =================
-        debug_information_remover(builder);
-        shuffler(builder);
-        renamer(builder);
-        string_encryption(builder);
-        invoke_wrapper(builder);
+//        debug_information_remover(builder);
+//        shuffler(builder);
+//        renamer(builder);
+//        string_encryption(builder);
+//        invoke_wrapper(builder);
 //        control_flow(builder);
         native_obfuscation(builder);
 //         =================
@@ -48,11 +47,13 @@ public class TestRun {
         builder.setRenamerEnable(true) //
                 .setRepackageSetting(false) //
                 .setRepackageNameSetting("skidonion") //
-                .setPrefixNameSetting("狼牙") //
+//                .setPrefixNameSetting("狼牙") //
                 .setPrintMappingsSetting(false) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
-                .addAdaptResources("META-INF/MANIFEST.MF");
+                .addAdaptResources("META-INF/MANIFEST.MF") //
+//                .addSubFilters("renamer","-dev.sim0n.app.**")
+        ;
     }
 
     private static void string_encryption(ConfigBuilder builder) {
@@ -61,7 +62,7 @@ public class TestRun {
 
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
-                .setPrintInstructionsSetting(false) //
+                .setPrintInstructionsSetting(true) //
                 .addTarget("x86_64-windows.win7-gnu") //
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
@@ -72,11 +73,14 @@ public class TestRun {
                 .setVerificationUserIdSetting("7")//
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
+                .addSubFilter("native_obfuscation","+_")
 //                .addSubFilters("native_obfuscation", //
-//                        "+tech.skidonion.obfuscator.PhantomShield",//
-//                        "+tech.skidonion.obfuscator.PhantomShield * *(*)",//
-//                        "+tech.skidonion.obfuscator.transformaer.**",//
-//                        "+tech.skidonion.obfuscator.transformaer.** * *(*)"//
+//                        "+pack.Clazz",//
+//                        "+pack.Clazz * *(*)",//
+//                        "+pack.tests.basics.**",//
+//                        "+pack.tests.basics.** * *(*)",//
+//                        "+pack.tests.bench.Calc",//
+//                        "+pack.tests.bench.Calc * *(*)"
 //                )
         ;
     }
@@ -89,11 +93,10 @@ public class TestRun {
 
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
-                .setInputJar(new File("test\\input\\obf-test-1.0-SNAPSHOT.jar")) //
-                .setOutputJar(new File("test\\output\\obf-test-1.0-SNAPSHOT.jar")) //
-//                .setInputJar(new File("test\\input\\dummy.jar")) //
-//                .setOutputJar(new File("test\\output\\dummy.jar")) //
+                .setInputJar(new File("test\\input\\bench.jar")) //
+                .setOutputJar(new File("test\\output\\bench.jar")) //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar");
     }
+
 }

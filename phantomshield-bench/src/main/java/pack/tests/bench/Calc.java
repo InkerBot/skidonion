@@ -1,8 +1,12 @@
 package pack.tests.bench;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class Calc {
+    @NativeObfuscation.Inline
     public static int count = 0;
 
+    @NativeObfuscation.Inline
     public static void runAll() {
         long start = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
@@ -22,6 +26,7 @@ public class Calc {
             call(i - 1);
     }
 
+    @NativeObfuscation.Inline
     private static void runAdd() {
         double i = 0d;
         while (i < 100.1d) {
@@ -30,6 +35,7 @@ public class Calc {
         count++;
     }
 
+    @NativeObfuscation.Inline
     private static void runStr() {
         String str = "";
         while (str.length() < 101) {

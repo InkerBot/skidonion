@@ -1,6 +1,9 @@
 package pack.tests.basics.accu;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class Digi {
+    @NativeObfuscation.Inline
     public void run() {
         double fl = 0d;
         int co = 0;
