@@ -13,7 +13,6 @@ public class Exec {
         d = delta;
     }
 
-    @NativeObfuscation.Inline
     void doAdd() {
         try {
             Thread.sleep(200L);
