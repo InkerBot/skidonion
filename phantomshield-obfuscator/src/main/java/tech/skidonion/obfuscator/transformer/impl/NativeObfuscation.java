@@ -603,7 +603,7 @@ public class NativeObfuscation extends Transformer {
                     }
                     String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
                     inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
-                    addInternalInclusion(classWrapper.getOriginalName(), methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription());
+//                    addInternalInclusion(classWrapper.getOriginalName(), methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription());
                     iterator.remove();
                     classWrapper.getClassNode().methods.remove(i--);
                 }
@@ -632,7 +632,7 @@ public class NativeObfuscation extends Transformer {
             final boolean classMatch = match(classWrapper);
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
-                final boolean obfuscated = classMatch && methodMatch;
+                final boolean obfuscated = classMatch && methodMatch || classWrapper == dummyInlineClassWrapper;
 
                 for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
                     AbstractInsnNode instruction = iterator.next();
