@@ -120,7 +120,7 @@ public class ClassSourceBuilder implements AutoCloseable {
         }
 
         if (obfuscation.isVerificationEnable() && !internal && obfuscation.isUseInternalVerificationInterface()) {
-            cppWriter.append("if(!inlines::licenced){\n");
+            cppWriter.append("if(!*inlines::licenced){\n");
             cppWriter.append("jclass _auth_class = env->FindClass(\"");
             cppWriter.append(obfuscation.obfuscator.getClassWrapper("tech/skidonion/verification/Main").getName());
             cppWriter.append("\");\n");
@@ -134,8 +134,8 @@ public class ClassSourceBuilder implements AutoCloseable {
             cppWriter.append(show_verification.getDescription());
             cppWriter.append("\");\n");
             cppWriter.append("if (env->ExceptionCheck())return;\n");
-            cppWriter.append("inlines::licenced = env->CallStaticIntMethod(auth_class ,show_verification_id);\n");
-            cppWriter.append("if(!inlines::licenced)exit(0);\n");
+            cppWriter.append("*inlines::licenced = env->CallStaticIntMethod(auth_class ,show_verification_id);\n");
+            cppWriter.append("if(!*inlines::licenced)exit(0);\n");
             cppWriter.append("}\n");
         }
 
