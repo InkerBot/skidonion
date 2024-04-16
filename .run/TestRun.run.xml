@@ -3,7 +3,7 @@
     <option name="MAIN_CLASS_NAME" value="TestRun" />
     <module name="phantom-shield-x.phantomshield-obfuscator.test" />
     <method v="2">
-      <option name="Make" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build All" run_configuration_type="GradleRunConfiguration" />
     </method>
   </configuration>
 </component>
