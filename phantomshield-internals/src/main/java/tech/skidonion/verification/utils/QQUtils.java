@@ -1,51 +1,81 @@
 package tech.skidonion.verification.utils;
 
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+import tech.skidonion.obfuscator.inline.Inline;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class QQUtils {
-    private final static byte[] header = new byte[]{-1, -40, -1, -32, 0, 16, 74, 70, 73, 70};
-
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static Set<String> getAllQQ() {
         Set<String> qqs = new HashSet<>();
 
         if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-            File ntQQPath = new File(System.getenv("APPDATA") + "\\Tencent\\QQ\\Misc");
+            Pattern pattern = Pattern.compile("^[1-9][0-9]{4,10}$");
 
-            if (ntQQPath.exists() && ntQQPath.isDirectory()) {
-                File[] files = ntQQPath.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        if (!file.isDirectory()) {
-                            String fileName = file.getName();
-                            if (fileName.matches("[0-9]+") && fileName.length() >= 5 && fileName.length() <= 10) {
-                                if (checkNTQQFile(file)) {
-                                    qqs.add(fileName);
-                                }
-                            }
+            Path defaultPath = Paths.get(System.getProperty("user.home"), "AppData", "Roaming", "Tencent", "Users");
+            File defaultPathFile = defaultPath.toFile();
+
+            if (defaultPathFile.exists() && defaultPathFile.isDirectory()) {
+                File[] directoryFiles = defaultPathFile.listFiles();
+                if (directoryFiles != null) {
+                    for (File qqData : directoryFiles) {
+                        String fileName = qqData.getName();
+                        if (pattern.matcher(fileName).matches()) {
+                            qqs.add(fileName);
                         }
                     }
                 }
             }
 
-            File legacyQQPath = new File(System.getenv("PUBLIC") + "\\Documents\\Tencent\\QQ\\UserDataInfo.ini");
-            if (legacyQQPath.exists() && legacyQQPath.isFile()) {
-                try (BufferedReader stream = new BufferedReader(new InputStreamReader(Files.newInputStream(legacyQQPath.toPath())));) {
-                    String qq;
-                    while ((qq = stream.readLine()) != null && !qq.isEmpty()) {
-                        if (qq.startsWith("UserDataSavePath=")) {
-                            File tencentFiles = new File(qq.split("=")[1]);
-                            if (tencentFiles.exists() && tencentFiles.isDirectory()) {
-                                for (File qqData : Objects.requireNonNull(tencentFiles.listFiles())) {
-                                    if (qqData.isDirectory() && qqData.getName().length() >= 6 && qqData.getName().length() <= 11 && qqData.getName().matches("^[0-9]*$")) {
-                                        qqs.add(qqData.getName());
+            Path ntDefaultPath = Paths.get(System.getProperty("user.home"), "Documents", "Tencent Files", "nt_qq", "global", "nt_data", "Login");
+            File ntDefaultPathFile = ntDefaultPath.toFile();
+            if (defaultPathFile.exists() && ntDefaultPathFile.isDirectory()) {
+                File[] directoryFiles = defaultPathFile.listFiles();
+                if (directoryFiles != null) {
+                    for (File qqData : directoryFiles) {
+                        String fileName = qqData.getName().substring(1);
+                        Inline.trycatch();
+                        if (pattern.matcher(fileName).matches()) {
+                            qqs.add(fileName);
+                        }
+                    }
+                }
+            }
+
+            Path customPath = Paths.get(System.getenv("PUBLIC"), "Documents", "Tencent", "QQ", "UserDataInfo.ini");
+            File customPathFile = customPath.toFile();
+
+            if (customPathFile.exists() && customPathFile.isFile()) {
+                try {
+                    InputStream stream = Files.newInputStream(customPath);
+                    Inline.trycatch();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                        Inline.trycatch();
+                        String dataLine;
+                        while ((dataLine = reader.readLine()) != null) {
+                            Inline.trycatch();
+                            String[] keyValue = dataLine.split("=");
+                            if (keyValue.length == 2) {
+                                if (Objects.equals(keyValue[0], "UserDataSavePath")) {
+                                    File directory = new File(keyValue[1]);
+                                    if (directory.exists() && directory.isDirectory()) {
+                                        File[] directoryFiles = directory.listFiles();
+                                        if (directoryFiles != null) {
+                                            for (File qqData : directoryFiles) {
+                                                if (pattern.matcher(qqData.getName()).matches()) {
+                                                    qqs.add(qqData.getName());
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -55,22 +85,7 @@ public class QQUtils {
                 }
             }
         }
-
         return qqs;
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
-    private static boolean checkNTQQFile(File file) {
-        try (FileInputStream stream = new FileInputStream(file)) {
-            byte[] header = new byte[10];
-
-            if (stream.read(header) != 0) {
-                return Arrays.equals(header, QQUtils.header);
-            }
-
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 }
