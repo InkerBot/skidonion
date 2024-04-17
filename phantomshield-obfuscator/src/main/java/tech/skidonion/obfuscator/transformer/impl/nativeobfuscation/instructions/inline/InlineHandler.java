@@ -16,7 +16,6 @@ import tech.skidonion.obfuscator.utils.commons.Pair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
@@ -194,7 +193,7 @@ public class InlineHandler {
 
             for (int i = 0; i < argSize; i++) {
                 argsBuilder.append(", ");
-                argsBuilder.append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[i].getSort(),
+                argsBuilder.append("(").append(MethodProcessor.CPP_TYPES[_args[i].getSort()]).append(")").append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[i].getSort(),
                         StringUtils.createStringMap("index", argOffsets.get(i))));
             }
 
