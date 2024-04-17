@@ -174,11 +174,11 @@ public class InlineHandler {
             }
             int argumentOffset = stackOffset;
 
-            Type[] _args = new Type[args.length];
-            System.arraycopy(args, 1, _args, 0, args.length - 1);
-            _args[args.length - 1] = args[0];
+//            Type[] _args = new Type[args.length];
+//            System.arraycopy(args, 1, _args, 0, args.length - 1);
+//            _args[args.length - 1] = args[0];
 
-            for (Type argType : _args) {
+            for (Type argType : args) {
                 argOffsets.add(argumentOffset);
                 argumentOffset += argType.getSize();
             }
@@ -187,13 +187,13 @@ public class InlineHandler {
             int argSize = argOffsets.size() - (isStatic ? 1 : 0);
 
             if (isStatic) {
-                argsBuilder.append(", (jclass) ").append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[argSize].getSort(),
+                argsBuilder.append(", (jclass) ").append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[argSize].getSort(),
                         StringUtils.createStringMap("index", argOffsets.get(argSize))));
             }
 
             for (int i = 0; i < argSize; i++) {
                 argsBuilder.append(", ");
-                argsBuilder.append("(").append(MethodProcessor.CPP_TYPES[_args[i].getSort()]).append(")").append(context.getSnippets().getSnippet("INVOKE_ARG_" + _args[i].getSort(),
+                argsBuilder.append("(").append(MethodProcessor.CPP_TYPES[args[i].getSort()]).append(")").append(context.getSnippets().getSnippet("INVOKE_ARG_" + args[i].getSort(),
                         StringUtils.createStringMap("index", argOffsets.get(i))));
             }
 

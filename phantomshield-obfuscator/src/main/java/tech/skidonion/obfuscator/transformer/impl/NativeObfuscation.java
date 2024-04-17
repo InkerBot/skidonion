@@ -688,10 +688,16 @@ public class NativeObfuscation extends Transformer {
                             MethodInsnNode injectedNode = null;
                             if (opcode == INVOKESTATIC) {
                                 iterator.remove();
-                                StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
-                                descBuilder.insert(1, "Ljava/lang/Class;");
+//                                StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
+//                                descBuilder.insert(1, "Ljava/lang/Class;");
+
+                                Type returnType = Type.getReturnType(methodInsnNode.desc);
+                                List<Type> arguments = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(methodInsnNode.desc)));
+                                arguments.add(Type.getType("Ljava/lang/Class;"));
+                                String modifiedDesc = Type.getMethodDescriptor(returnType, arguments.toArray(new Type[0]));
+
                                 iterator.add(new LdcInsnNode(Type.getObjectType(methodInsnNode.owner)));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, descBuilder.toString(), false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, modifiedDesc, false);
                             } else if (opcode == INVOKEVIRTUAL) {
                                 iterator.remove();
                                 StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
