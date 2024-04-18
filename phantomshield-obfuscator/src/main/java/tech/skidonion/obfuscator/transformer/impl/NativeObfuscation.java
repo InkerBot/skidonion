@@ -59,6 +59,7 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
+    private final BooleanValue null_safety = new BooleanValue("null_safety", false);
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("use_internal_user_interface", true);
     private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
@@ -69,7 +70,7 @@ public class NativeObfuscation extends Transformer {
 
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, loader_package, hidden_stack_trace, verification);
+        addSettings(print_instructions, loader_package, hidden_stack_trace, null_safety, verification);
     }
 
     private Snippets snippets;
@@ -88,7 +89,7 @@ public class NativeObfuscation extends Transformer {
 
     private void init() {
         stringPool = new StringPool();
-        snippets = new Snippets(stringPool);
+        snippets = new Snippets(stringPool, null_safety.isEnable());
         cachedStrings = new NodeCache<>("(cstrings[%d])");
         cachedClasses = new NodeCache<>("(cclasses[%d])");
         cachedMethods = new NodeCache<>("(cmethods[%d])");

@@ -64,6 +64,8 @@ public class TestRun {
         builder.setNativeObfuscationEnable(true) //
                 .setPrintInstructionsSetting(true) //
                 .addTarget("x86_64-windows.win7-gnu") //
+                .setLegacyCompileModeSetting(false)//
+                .setNullSafetySetting(true)//
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
@@ -73,7 +75,7 @@ public class TestRun {
                 .setVerificationUserIdSetting("7")//
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
-                .addSubFilter("native_obfuscation","+_")
+                .addSubFilter("native_obfuscation", "+_")
 //                .addSubFilters("native_obfuscation", //
 //                        "+pack.Clazz",//
 //                        "+pack.Clazz * *(*)",//

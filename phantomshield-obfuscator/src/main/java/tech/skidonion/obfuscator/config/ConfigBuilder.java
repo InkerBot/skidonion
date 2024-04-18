@@ -34,6 +34,7 @@ public class ConfigBuilder {
     private String loaderPackageSetting = "skidonion/??????";
     private boolean printInstructionsSetting = false;
     private boolean hiddenStackTraceSetting = true;
+    private boolean nullSafetySetting = false;
     private boolean verificationEnableSetting = false;
     private boolean useInternalUserInterfaceSetting = true;
     private String verificationServerSetting = "https://skidonion.tech/";
@@ -133,6 +134,7 @@ public class ConfigBuilder {
             native_obfuscation.put("loader_package", loaderPackageSetting);
             native_obfuscation.put("print_instructions", printInstructionsSetting);
             native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
+            native_obfuscation.put("null_safety", nullSafetySetting);
 
             Map<String, Object> verification = new LinkedHashMap<>();
             verification.put("verification_enable", verificationEnableSetting);
@@ -512,4 +514,8 @@ public class ConfigBuilder {
         return this;
     }
 
+    public ConfigBuilder setNullSafetySetting(boolean nullSafetySetting) {
+        this.nullSafetySetting = nullSafetySetting;
+        return this;
+    }
 }

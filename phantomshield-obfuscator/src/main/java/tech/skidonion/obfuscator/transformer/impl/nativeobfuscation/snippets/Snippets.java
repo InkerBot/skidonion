@@ -16,12 +16,12 @@ public class Snippets {
     private final Properties snippets;
     private final StringPool stringPool;
 
-    public Snippets(StringPool stringPool) {
+    public Snippets(StringPool stringPool, boolean nullSafety) {
         this.stringPool = stringPool;
         snippets = new Properties();
 
         try {
-            snippets.load(new ByteArrayInputStream(CPPProperties.build().getBytes(StandardCharsets.UTF_8)));
+            snippets.load(new ByteArrayInputStream(CPPProperties.build(nullSafety).getBytes(StandardCharsets.UTF_8)));
         } catch (IOException e) {
             throw new RuntimeException("Can't load cpp snippets", e);
         }
