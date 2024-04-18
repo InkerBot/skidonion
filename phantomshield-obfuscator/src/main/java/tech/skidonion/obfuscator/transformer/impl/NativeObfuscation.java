@@ -643,11 +643,15 @@ public class NativeObfuscation extends Transformer {
                         Pair<String, FieldWrapper> pair = inlineFields.get(reference);
                         if (pair != null) {
                             int opcode = instruction.getOpcode();
+                            FieldWrapper inlinedField = pair.getSecond();
                             MethodInsnNode injectedNode = null;
                             if (opcode == GETSTATIC) {
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
+                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName())) {
+                                    WARN("phantom-shield-x.native.inline-static-field-warn", reference);
+                                }
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
                             } else if (opcode == GETFIELD) {
