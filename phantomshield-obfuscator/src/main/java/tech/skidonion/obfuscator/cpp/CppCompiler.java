@@ -7,6 +7,8 @@ import tech.skidonion.obfuscator.utils.StringUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -32,6 +34,7 @@ public class CppCompiler {
     private final AtomicInteger virtualizeMacroCount = new AtomicInteger();
     private final List<String> targets = new ArrayList<>();
     private final List<String> cppFiles = new ArrayList<>();
+    private boolean legacyCompileMode = false;
 
     public CppCompiler(String compiler) {
         this.compiler = compiler;
@@ -93,7 +96,7 @@ public class CppCompiler {
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
                     if (virtualizeMacroCount.get() > 0 && !isDebug) {
-                        virtualize = virtualize(timestamp, compileInfo);
+//                        virtualize = virtualize(timestamp, compileInfo);
                     }
                     return compileValue | strip | virtualize;
                 }));
@@ -229,85 +232,121 @@ public class CppCompiler {
     }
 
 
-    private String[] makeCompileCommandLine(String target, final CompileInfo compileInfo) {
+    private String[] makeCompileCommandLine(String target, final CompileInfo compileInfo) throws IOException {
         List<String> commands = new ArrayList<>();
         commands.add(String.format("\"%s\"", compiler));
-        if (compileInfo != null) {
-            commands.add("c++");
-            commands.add("-target");
-            commands.add(target);
-        }
-        if (extraCommandLine != null) commands.add(extraCommandLine);
-        commands.addAll(Arrays.asList(
-                "-std=c++17",
-                "-shared",
-                "-I", String.format("\"%s\"", outputDir),
-                "-L", String.format("\"%s\"", outputDir),
-                "-l", "c++",
-                "-s",
-                "-fno-sanitize=all",
-                "-fno-sanitize-trap=all",
-                "-fno-optimize-sibling-calls",
-                "-fvisibility-inlines-hidden",
-                "-fvisibility=hidden",
-                "-fPIC"
-        ));
-        // TODO: if you wanna virtualize methods you must stop optimize your shit code
-        //  because optimization will change control flow graph
-        //  it will cause mistakes while virtualizing
-        commands.add("-DNDEBUG");
-        if (virtualizeMacroCount.get() == 0) {
-            commands.add("-O2");
-        }
-        if (compileInfo != null) {
-            if (compileInfo.getOs() == OS.MAC) {
-                commands.add("-Wl,-headerpad_max_install_names");
-                // TODO: why can't strip symbols for macos???(resolved via use llvm-strip.exe)
-                commands.add("-Wl,-s");
+
+        if (legacyCompileMode || target == null) {
+            if (compileInfo != null) {
+                commands.add("c++");
+                commands.add("-target");
+                commands.add(target);
             }
-        }
-        commands.add("-o");
-        if (compileInfo != null) {
-            commands.add("\"" + outputDir + "\\build\\" + compileInfo.output + "\"");
+            if (extraCommandLine != null) commands.add(extraCommandLine);
+            commands.addAll(Arrays.asList(
+                    "-std=c++17",
+                    "-shared",
+                    "-I", String.format("\"%s\"", outputDir),
+                    "-L", String.format("\"%s\"", outputDir),
+                    "-l", "c++",
+                    "-s",
+                    "-fno-sanitize=all",
+                    "-fno-sanitize-trap=all",
+                    "-fno-optimize-sibling-calls",
+                    "-fvisibility-inlines-hidden",
+                    "-fvisibility=hidden",
+                    "-fPIC"
+            ));
+            // TODO: if you wanna virtualize methods you must stop optimize your shit code
+            //  because optimization will change control flow graph
+            //  it will cause mistakes while virtualizing
+            commands.add("-DNDEBUG");
+            if (virtualizeMacroCount.get() == 0) {
+                commands.add("-O2");
+            }
+            if (compileInfo != null) {
+                if (compileInfo.getOs() == OS.MAC) {
+                    commands.add("-Wl,-headerpad_max_install_names");
+                    // TODO: why can't strip symbols for macos???(resolved via use llvm-strip.exe)
+                    commands.add("-Wl,-s");
+                }
+            }
+            commands.add("-o");
+            if (compileInfo != null) {
+                commands.add("\"" + outputDir + "\\build\\" + compileInfo.output + "\"");
+            } else {
+                commands.add("\"" + outputDir + "\\build\\" + defaultOutput + "\"");
+            }
+            commands.addAll(cppFiles);
+            return commands.toArray(new String[0]);
         } else {
-            commands.add("\"" + outputDir + "\\build\\" + defaultOutput + "\"");
+            ZigBuildFileBuilder zigBuildFileBuilder = new ZigBuildFileBuilder();
+            cppFiles.forEach(path -> zigBuildFileBuilder.addCppFile(path.substring(outputDir.getAbsoluteFile().toString().length())));
+            Path build_zig = outputDir.toPath().resolve("build.zig");
+            Files.write(build_zig, zigBuildFileBuilder.build().getBytes(StandardCharsets.UTF_8));
+            commands.add("build");
+            commands.add("-Dtarget=" + target);
+            String suffix;
+            switch (compileInfo.arch) {
+                case X64:
+                    suffix = "64";
+                    break;
+                case X86:
+                    suffix = "32";
+                    break;
+                case ARM64:
+                    suffix = "ARM64";
+                    break;
+                default:
+                    suffix = "";
+                    break;
+            }
+            commands.add("-Doutput_name=PhantomShieldX" + suffix);
+            commands.add("-p");
+            commands.add(String.format("\"%s\"", outputDir.toPath().resolve("build")));
+            commands.add("--prefix-lib-dir");
+            commands.add("\"./\"");
+            commands.add("--build-file");
+            commands.add(String.format("\"%s\"", build_zig.toAbsolutePath()));
+            if (virtualizeMacroCount.get() == 0) {
+                commands.add("-Doptimize=ReleaseFast");
+            }
+            return commands.toArray(new String[0]);
         }
-        commands.addAll(cppFiles);
-        return commands.toArray(new String[0]);
     }
 
     private static CompileInfo buildCompileInfo(String target) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("PhantomShieldX");
         ARCH arch;
         OS os;
         if (target.contains("x86_64") || target.contains("amd64")) {
-            sb.append("x64");
+            sb.append("64");
             arch = ARCH.X64;
         } else if (target.contains("aarch64")) {
-            sb.append("arm64");
+            sb.append("ARM64");
             arch = ARCH.ARM64;
         } else if (target.contains("arm")) {
-            sb.append("arm32");
             arch = ARCH.ARM32;
         } else if (target.contains("x86")) {
-            sb.append("x86");
+            sb.append("32");
             arch = ARCH.X86;
         } else {
-            sb.append("raw").append(target);
             arch = ARCH.RAW;
         }
-        sb.append('-');
         if (target.contains("nix") || target.contains("nux") || target.contains("aix")) {
-            sb.append("linux.so");
+            sb.insert(0, "lib");
+            sb.append(".so");
             os = OS.LINUX;
         } else if (target.contains("win")) {
-            sb.append("windows.dll");
+            sb.append(".dll");
             os = OS.WINDOWS;
         } else if (target.contains("mac")) {
-            sb.append("macos.dylib");
+            sb.insert(0, "lib");
+            sb.append(".dylib");
             os = OS.MAC;
         } else {
-            sb.append("raw").append(target);
+            sb.insert(0, "lib");
+            sb.append(".so");
             os = OS.RAW;
         }
 
@@ -343,6 +382,10 @@ public class CppCompiler {
 
     public void setAarch64(boolean aarch64) {
         isAarch64 = aarch64;
+    }
+
+    public void setLegacyCompileMode(boolean value) {
+        legacyCompileMode = value;
     }
 
     static class CompileInfo {

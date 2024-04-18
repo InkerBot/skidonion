@@ -16,6 +16,7 @@ public class ConfigBuilder {
     private long randomSeedSetting;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private String inputMappingsFileSetting;
+    private boolean legacyCompileModeSetting = false;
     private final List<String> targetsSettings = new ArrayList<>();
     private final List<String> librariesSettings = new ArrayList<>();
     private final List<String> filtersSettings = new ArrayList<>();
@@ -101,6 +102,10 @@ public class ConfigBuilder {
 
         if (cppCompilerIsAarch64) {
             config.add("cpp_compiler_is_aarch64", true);
+        }
+
+        if (legacyCompileModeSetting) {
+            config.add("legacy_compile_mode", true);
         }
 
         if (!targetsSettings.isEmpty()) {
@@ -497,8 +502,14 @@ public class ConfigBuilder {
         return this;
     }
 
+    public ConfigBuilder setLegacyCompileModeSetting(boolean legacyCompileModeSetting) {
+        this.legacyCompileModeSetting = legacyCompileModeSetting;
+        return this;
+    }
+
     public ConfigBuilder setVerificationUserIdSetting(String verificationUserIdSetting) {
         this.verificationUserIdSetting = verificationUserIdSetting;
         return this;
     }
+
 }

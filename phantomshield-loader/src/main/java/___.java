@@ -12,38 +12,28 @@ public class ___ {
         String osName = System.getProperty("os.name").toLowerCase();
         String platform = System.getProperty("os.arch").toLowerCase();
 
-        String platformTypeName;
-        switch (platform) {
-            case "x86_64":
-            case "amd64":
-                platformTypeName = "x64";
-                break;
-            case "aarch64":
-                platformTypeName = "arm64";
-                break;
-            case "arm":
-                platformTypeName = "arm32";
-                break;
-            case "x86":
-                platformTypeName = "x86";
-                break;
-            default:
-                platformTypeName = "raw" + platform;
-                break;
+        StringBuilder libName = new StringBuilder("PhantomShieldX");
+        if (platform.contains("x86_64") || platform.contains("amd64")) {
+            libName.append("64");
+        } else if (platform.contains("aarch64")) {
+            libName.append("ARM64");
+        } else if (platform.contains("x86")) {
+            libName.append("32");
         }
-
-        String osTypeName;
         if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
-            osTypeName = "linux.so";
+            libName.insert(0, "lib");
+            libName.append(".so");
         } else if (osName.contains("win")) {
-            osTypeName = "windows.dll";
+            libName.append(".dll");
         } else if (osName.contains("mac")) {
-            osTypeName = "macos.dylib";
+            libName.insert(0, "lib");
+            libName.append(".dylib");
         } else {
-            osTypeName = "raw" + osName;
+            libName.insert(0, "lib");
+            libName.append(".so");
         }
 
-        String libFileName = String.format("/%s/%s-%s", ___.class.getPackage().getName().replace(".", "/"), platformTypeName, osTypeName);
+        String libFileName = String.format("/%s/%s", ___.class.getPackage().getName().replace(".", "/"), libName);
 
         File libFile;
         try {
