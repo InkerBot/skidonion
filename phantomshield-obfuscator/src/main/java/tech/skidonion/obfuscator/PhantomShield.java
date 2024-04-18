@@ -54,8 +54,9 @@ public class PhantomShield {
     public final Map<String, Dictionary> packageDictionaries = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
     private final TransformerRegister register = new TransformerRegister();
-    private long seed;
     private final Config config;
+    private long seed;
+    private boolean printClassesAsDirectory;
     private Dictionary dictionary;
     private CppCompiler compiler;
 
@@ -95,6 +96,10 @@ public class PhantomShield {
                 WARN(BUNDLE.getString("phantom-shield-x.debug"));
                 WARN(BUNDLE.getString("phantom-shield-x.debug"));
             }
+        }
+
+        if (config.has("print_classes_as_directory")) {
+            printClassesAsDirectory = config.getBoolean("print_classes_as_directory");
         }
 
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
@@ -206,7 +211,7 @@ public class PhantomShield {
                 ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
                 classes.values().forEach(classWrapper -> {
                     try {
-                        ZipEntry entry = new ZipEntry(classWrapper.getEntryName());
+                        ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
                         entry.setTime(timestamp);
                         zos.putNextEntry(entry);
                         zos.write(classWrapper.toByteArray());
@@ -219,6 +224,11 @@ public class PhantomShield {
 
                 resources.forEach((name, bytes) -> {
                     try {
+                        if (name.endsWith(".class")) {
+                            if (isPrintClassesAsDirectory()) {
+                                name += "/";
+                            }
+                        }
                         ZipEntry entry = new ZipEntry(name);
                         zos.putNextEntry(entry);
                         zos.write(bytes);
@@ -462,9 +472,12 @@ public class PhantomShield {
         return register;
     }
 
-
     public long getSeed() {
         return seed;
+    }
+
+    public boolean isPrintClassesAsDirectory() {
+        return printClassesAsDirectory;
     }
 
     public static void INFO(String message, Object... arguments) {

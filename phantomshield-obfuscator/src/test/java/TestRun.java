@@ -95,6 +95,7 @@ public class TestRun {
 
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
+                .setPrintClassesAsDirectorySetting(true)//
                 .setInputJar(new File("test\\input\\bench.jar")) //
                 .setOutputJar(new File("test\\output\\bench.jar")) //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //

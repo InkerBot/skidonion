@@ -14,6 +14,7 @@ public class ConfigBuilder {
     private String cppCompilerOutputSetting;
     private boolean cppCompilerIsAarch64 = false;
     private long randomSeedSetting;
+    private boolean printClassesAsDirectorySetting = false;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private String inputMappingsFileSetting;
     private boolean legacyCompileModeSetting = false;
@@ -83,6 +84,10 @@ public class ConfigBuilder {
 
         if (randomSeedSetting != 0) {
             config.add("random_seed", randomSeedSetting);
+        }
+
+        if (printClassesAsDirectorySetting) {
+            config.add("print_classes_as_directory", true);
         }
 
         if (inputMappingsFileSetting != null) {
@@ -516,6 +521,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setNullSafetySetting(boolean nullSafetySetting) {
         this.nullSafetySetting = nullSafetySetting;
+        return this;
+    }
+
+    public ConfigBuilder setPrintClassesAsDirectorySetting(boolean printClassesAsDirectorySetting) {
+        this.printClassesAsDirectorySetting = printClassesAsDirectorySetting;
         return this;
     }
 }
