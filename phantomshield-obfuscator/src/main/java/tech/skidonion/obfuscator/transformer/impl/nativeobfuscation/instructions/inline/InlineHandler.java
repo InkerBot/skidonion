@@ -32,14 +32,6 @@ public class InlineHandler {
             } else {
                 WARN(TRANSLATION("phantom-shield-x.native.inline1"));
             }
-        } else if (node.name.startsWith("_verification_")) {
-            if (verification) {
-                context.shouldVirtualize = true;
-                compiler.getVirtualizeMacroCount().incrementAndGet();
-                processVerification(context, node);
-            } else {
-                WARN(TRANSLATION("phantom-shield-x.native.inline2"));
-            }
         } else if (node.name.startsWith("_field_")) {
             String key = node.name.substring(7);
             Pair<String, FieldWrapper> pair = context.obfuscator.inlineFields.get(key);
@@ -251,19 +243,6 @@ public class InlineHandler {
             }
         } else if (Objects.equals("trycatch", node.name)) {
             context.output.append(trimmedTryCatchBlock).append("\n");
-        }
-    }
-
-    private static void processVerification(MethodContext context, MethodInsnNode node) {
-        switch (node.name) {
-            case "_verification_checkHardwareID": {
-                context.output.append("inlines::CheckHardwareIDValid(env,clazz,(jarray) cstack").append(context.stackPointer - 1).append(".l);\n");
-                break;
-            }
-            case "_verification_generateHardwareID": {
-                context.output.append("inlines::GenerateHardwareID(env,clazz,(jarray) cstack").append(context.stackPointer - 1).append(".l);\n");
-                break;
-            }
         }
     }
 

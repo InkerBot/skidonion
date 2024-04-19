@@ -117,8 +117,7 @@ public class VerifyUtils {
         p.add("q", q);
         p.add("v", Internals.version());
         String[] hwid = new String[1];
-//        MachineIDUtils.generate(hwid);
-        Inline._verification_generateHardwareID(hwid);
+        MachineIDUtils.generate(hwid);
         p.add("h", hwid[0]);
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
@@ -157,8 +156,7 @@ public class VerifyUtils {
                     array[2] = RANDOM.nextInt();
                     array[3] = rand;
                     array[4] = hwid[0];
-//                    MachineIDUtils.check(array);
-                    Inline._verification_checkHardwareID(array);
+                    MachineIDUtils.check(array);
                     if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1) {
                         return Optional.of((byte) -2);
                     }

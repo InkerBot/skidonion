@@ -739,29 +739,6 @@ public class NativeObfuscation extends Transformer {
                             }
                         } else {
                             switch (reference) {
-                                case "tech/skidonion/obfuscator/inline/Inline._verification_checkHardwareID([Ljava/lang/Object;)V":
-                                case "tech/skidonion/obfuscator/inline/Inline._verification_generateHardwareID([Ljava/lang/Object;)V": {
-//                                2082061244
-//                                173359771
-//                                1984756007
-                                    if (obfuscated || !opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
-                                        break;
-                                    MethodNode inlineMethod = new MethodNode();
-                                    inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
-                                    inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
-                                    inlineMethod.desc = methodInsnNode.desc;
-                                    Type[] arguments = Type.getArgumentTypes(methodInsnNode.desc);
-                                    for (int i = 0; i < arguments.length; i++) {
-                                        Type argument = arguments[i];
-                                        inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
-                                    }
-                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false));
-                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(methodInsnNode.desc))));
-                                    iterator.remove();
-                                    inline.addMethod(inlineMethod);
-                                    iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
-                                    break;
-                                }
                                 case "tech/skidonion/obfuscator/inline/Inline.trycatch()V": {
                                     if (!obfuscated) {
                                         ERROR(TRANSLATION("phantom-shield-x.native.trycatch"));
