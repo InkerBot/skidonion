@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+}
+
+sourceCompatibility = targetCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+group = 'tech.skidonion'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-tree:9.7'
+    implementation 'org.ow2.asm:asm-util:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
+    implementation 'org.ow2.asm:asm-analysis:9.7'
+    implementation 'com.google.guava:guava:33.1.0-jre'
+    implementation 'com.esotericsoftware:reflectasm:1.11.9'
+    implementation 'org.jgrapht:jgrapht-core:1.0.1'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}

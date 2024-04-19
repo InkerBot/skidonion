@@ -8,6 +8,7 @@ public class ConfigBuilder {
     // attributions
     private File inputJarSetting;
     private File outputJarSetting;
+    private boolean generatePhantomClassesSetting = false;
     private String creationDateSetting;
     private String cppCompilerSetting;
     private String cppCompilerArgumentsSetting;
@@ -77,6 +78,10 @@ public class ConfigBuilder {
         config.add("input", Objects.requireNonNull(inputJarSetting, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJarSetting, "output is null").getAbsoluteFile().toString());
         config.add("dictionary", dictionarySetting);
+
+        if (generatePhantomClassesSetting) {
+            config.add("generate_phantom_classes", true);
+        }
 
         if (creationDateSetting != null) {
             config.add("creation_date", creationDateSetting);
@@ -526,6 +531,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setPrintClassesAsDirectorySetting(boolean printClassesAsDirectorySetting) {
         this.printClassesAsDirectorySetting = printClassesAsDirectorySetting;
+        return this;
+    }
+
+    public ConfigBuilder setGeneratePhantomClassesSetting(boolean generatePhantomClassesSetting) {
+        this.generatePhantomClassesSetting = generatePhantomClassesSetting;
         return this;
     }
 }

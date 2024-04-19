@@ -95,11 +95,13 @@ public class TestRun {
 
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
+                .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(true)//
                 .setInputJar(new File("test\\input\\bench.jar")) //
                 .setOutputJar(new File("test\\output\\bench.jar")) //
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //
-                .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar");
+                .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar") //
+                ;
     }
 
 }

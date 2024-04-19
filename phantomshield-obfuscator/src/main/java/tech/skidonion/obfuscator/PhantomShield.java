@@ -1,8 +1,18 @@
 package tech.skidonion.obfuscator;
 
+import org.clyze.jphantom.ClassMembers;
+import org.clyze.jphantom.JPhantom;
+import org.clyze.jphantom.Options;
+import org.clyze.jphantom.Phantoms;
+import org.clyze.jphantom.access.ClassAccessStateMachine;
+import org.clyze.jphantom.access.FieldAccessStateMachine;
+import org.clyze.jphantom.access.MethodAccessStateMachine;
+import org.clyze.jphantom.adapters.ClassPhantomExtractor;
+import org.clyze.jphantom.hier.ClassHierarchy;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.commons.JSRInlinerAdapter;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +30,13 @@ import tech.skidonion.obfuscator.transformer.TransformerRegister;
 import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
+import tech.skidonion.obfuscator.utils.JPhantomUtils;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -35,6 +47,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -305,7 +318,6 @@ public class PhantomShield {
 
     private void loadInput() {
         File input = new File(config.getString("input"));
-
         if (input.exists()) {
             long current = System.currentTimeMillis();
             INFO(BUNDLE.getString("phantom-shield-x.instance.load-input"), input.getAbsolutePath());
@@ -313,6 +325,8 @@ public class PhantomShield {
             Map<String, ClassWrapper> classes = new HashMap<>();
 
             try (ZipFile zipFile = new ZipFile(input)) {
+                Map<String, byte[]> data = new HashMap<>();
+
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
                 while (entries.hasMoreElements()) {
@@ -322,7 +336,9 @@ public class PhantomShield {
                     if (!entry.isDirectory())
                         if (entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(in), false);
+                                byte[] bytes = IOUtils.toByteArray(in);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false);
+                                data.put(cw.getName(), bytes);
 
                                 classpath.put(cw.getName(), cw);
                                 classes.put(cw.getName(), cw);
@@ -337,6 +353,80 @@ public class PhantomShield {
                             }
                         else
                             this.resources.put(entry.getName(), IOUtils.toByteArray(in));
+                }
+
+                if (config.has("generate_phantom_classes") && config.getBoolean("generate_phantom_classes")) {
+
+                    Map<Type, org.objectweb.asm.tree.ClassNode> typeMap = new HashMap<>();
+                    /*
+                     * Set up JPhantom (Recaf matt edition) and read all the classes from our cache.
+                     * Use the copied input to generate a class hierarchy. This can be quite slow
+                     * at times. I'll need to optimize this process.
+                     */
+//                    Options.V().setSoftFail(true);
+//                    Options.V().setJavaVersion(8);
+
+                    long start = System.currentTimeMillis();
+                    INFO(TRANSLATION("phantom-shield-x.jphantom.info1"));
+
+                    ClassHierarchy hierarchy = JPhantomUtils.clsHierarchyFromArchive(new JarFile(input));
+                    ClassMembers members = ClassMembers.fromJar(new JarFile(input), hierarchy);
+
+                    data.values().forEach(c -> {
+                        ClassReader cr = new ClassReader(c);
+                        if (cr.getClassName().contains("$")) {
+                            return;
+                        }
+                        try {
+                            cr.accept(new ClassPhantomExtractor(hierarchy, members), 0);
+                        } catch (Throwable ignored) {
+                        }
+
+                    });
+
+
+                    // Remove duplicate constraints for faster analysis
+                    Set<String> existingConstraints = new HashSet<>();
+                    ClassAccessStateMachine.v().getConstraints().removeIf(c -> {
+                        boolean isDuplicate = existingConstraints.contains(c.toString());
+                        existingConstraints.add(c.toString());
+                        return isDuplicate;
+                    });
+
+                    JPhantom phantom;
+                    // Execute and populate the current resource with generated classes
+                    phantom = new JPhantom(typeMap, hierarchy, members);
+                    phantom.run();
+
+                    /*
+                     * Generate the classes and export them to our phantom content jar
+                     * class cache. This will be used as a library during obfuscation.
+                     */
+
+                    phantom.getGenerated().forEach((k, v) -> {
+                        final byte[] bytes = JPhantomUtils.decorate(v);
+                        final ClassReader reader = new ClassReader(bytes);
+                        final ClassNode node = new ClassNode();
+                        reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
+                        if (classpath.containsKey(node.name)) {
+                            // TODO: here will implement a member check after a rewrite renamer hierarchy find
+                        } else {
+                            classpath.put(node.name, new ClassWrapper(this, node, true));
+                        }
+
+                    });
+
+                    INFO(TRANSLATION("phantom-shield-x.jphantom.info2"), System.currentTimeMillis() - start);
+
+                    // Cleanup
+                    typeMap.clear();
+                    Phantoms.refresh();
+                    ClassAccessStateMachine.refresh();
+                    FieldAccessStateMachine.refresh();
+                    MethodAccessStateMachine.refresh();
+//                    Files.deleteIfExists(input.toPath());
+
                 }
             } catch (ZipException e) {
                 ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-2"), input.getAbsolutePath());

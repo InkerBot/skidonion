@@ -26,7 +26,7 @@ public class VerifyUtils {
     private final static Map<Integer, byte[]> CLOUD_CONSTANT_MAP = new HashMap<>();
     private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static int login(String username, String password) {
         int r = RANDOM.nextInt();
         byte result = -1;

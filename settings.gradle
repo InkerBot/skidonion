@@ -6,4 +6,5 @@ include 'phantomshield-verification'
 include 'phantomshield-inline'
 include 'phantomshield-internals'
 include 'phantomshield-bench'
+include 'phantomshield-jphantom'
 
