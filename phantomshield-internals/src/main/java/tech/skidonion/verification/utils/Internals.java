@@ -2,6 +2,7 @@ package tech.skidonion.verification.utils;
 
 import tech.skidonion.verification.crypto.ChaCha20;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,12 +19,15 @@ public class Internals {
         return "http://localhost:8694/";
     }
 
-    public static String publicKey() {
-        return "MCowBQYDK2VwAyEAfZU0fSt8t0DWwlXSX4hF/TKN7NW+Z9CYy8/m3/Q5AAs=";
+    public static byte[] publicKey() {
+        return Base64.getDecoder().decode("MCowBQYDK2VwAyEAfZU0fSt8t0DWwlXSX4hF/TKN7NW+Z9CYy8/m3/Q5AAs=");
     }
 
     public static long softwareId() {
         return 1L;
+    }
+
+    public static void decrypt(byte[] key) {
     }
 
     public static String version() {

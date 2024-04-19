@@ -779,9 +779,11 @@ public class NativeObfuscation extends Transformer {
                                     iterator.add(new LdcInsnNode(this.verification_server.getValue()));
                                     break;
                                 }
-                                case "tech/skidonion/verification/utils/Internals.publicKey()Ljava/lang/String;": {
+                                case "tech/skidonion/verification/utils/Internals.publicKey()[B": {
                                     iterator.remove();
-                                    iterator.add(new LdcInsnNode(verifyPublicKey));
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(Base64.getDecoder().decode(verifyPublicKey))) {
+                                        iterator.add(abstractInsnNode);
+                                    }
                                     break;
                                 }
                                 case "tech/skidonion/verification/utils/Internals.softwareId()J": {

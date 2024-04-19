@@ -58,7 +58,7 @@ public class VerifyUtils {
                     Internals.setVerifyToken(data.getString("jwt", ""));
 
                     EdDSAEngine verify = new EdDSAEngine();
-                    verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
+                    verify.initVerify(new EdDSAPublicKey(Internals.publicKey()));
                     if (!verify.verify(data.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
                         result = -2;
                         return r & 0xFFFF00FF | (result & 0xFF) << 8;
@@ -162,7 +162,7 @@ public class VerifyUtils {
                     }
 
                     EdDSAEngine verify = new EdDSAEngine();
-                    verify.initVerify(new EdDSAPublicKey(Base64.decode(Internals.publicKey())));
+                    verify.initVerify(new EdDSAPublicKey(Internals.publicKey()));
                     if (!verify.verify(result.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
                         return Optional.of((byte) -3);
                     }

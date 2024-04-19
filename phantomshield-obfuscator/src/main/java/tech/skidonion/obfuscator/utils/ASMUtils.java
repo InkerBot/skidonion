@@ -112,6 +112,7 @@ public class ASMUtils implements Opcodes {
         throw new RuntimeException("Unexpected instruction");
     }
 
+
     public static int getIntegerFromInsn(AbstractInsnNode insn) {
         int opcode = insn.getOpcode();
 
@@ -460,6 +461,20 @@ public class ASMUtils implements Opcodes {
             list.add(new MethodInsnNode(INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;"));
         } else {
             list.add(new LdcInsnNode(string));
+        }
+        return list;
+    }
+
+    public static InsnList getByteArrayInst(byte[] bytes) {
+        InsnList list = new InsnList();
+        list.add(getNumberInsn(bytes.length));
+        list.add(new IntInsnNode(NEWARRAY, T_BYTE));
+
+        for (int i = 0; i < bytes.length; i++) {
+            list.add(new InsnNode(DUP));
+            list.add(getNumberInsn(i));
+            list.add(getNumberInsn(bytes[i]));
+            list.add(new InsnNode(BASTORE));
         }
         return list;
     }
