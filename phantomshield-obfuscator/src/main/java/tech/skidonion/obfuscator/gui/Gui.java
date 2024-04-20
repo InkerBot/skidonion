@@ -1,29 +1,56 @@
 package tech.skidonion.obfuscator.gui;
 
 import org.lwjgl.glfw.GLFWErrorCallback;
-import tech.skidonion.obfuscator.gui.objective2d.implement.Rectangle;
-import tech.skidonion.obfuscator.gui.utility.NvgRenderUtil;
-import tech.skidonion.obfuscator.gui.window.Window;
+import tech.skidonion.obfuscator.gui.glfw.Window;
+import tech.skidonion.obfuscator.gui.rendering.nvg.NvgRenderer;
+import tech.skidonion.obfuscator.gui.rendering.screen.Screen;
+import tech.skidonion.obfuscator.gui.rendering.screen.implement.InitialScreen;
+import tech.skidonion.obfuscator.gui.utils.ResourceUtil;
 
-import java.awt.*;
+import javax.swing.*;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.nanovg.NanoVG.*;
 import static org.lwjgl.opengl.GL11.*;
-import static tech.skidonion.obfuscator.gui.window.Window.*;
 
 public final class Gui {
+
+    public static Gui INSTANCE = new Gui();
+
+    private static final boolean RELEASE = true;
+
+    private Screen screen;
+
+    public Screen getScreen() {
+        return screen;
+    }
+
+    public void setScreen(Screen screenIn) {
+        if (screenIn != screen) {
+
+            if (screen != null) {
+                screen.onClose();
+            }
+
+            screen = screenIn;
+            screen.onInit();
+        }
+    }
 
     private Gui() {
     }
 
-    public static Gui initGui() {
-        return initGLFW() && initWindow() && initNvg() ? new Gui() : null;
+    public boolean init() {
+        if (RELEASE) {
+            JOptionPane.showMessageDialog(null, "GUI currently not available", "PhantomShield-X", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        setScreen(new InitialScreen());
+        return initGlfw() && initWindow() && initNvgRenderer();
     }
 
-    private static boolean initGLFW() {
+    private boolean initGlfw() {
         GLFWErrorCallback.createPrint(System.err);
         if (glfwInit()) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -36,32 +63,41 @@ public final class Gui {
         }
     }
 
-    private static boolean initWindow() {
-        Window.setWindowTitle("PhantomShield-X");
-        return Window.createWindow();
+    private boolean initWindow() {
+        if (Window.INSTANCE.init()) {
+            Window.INSTANCE.setWindowIcon(ResourceUtil.resourceToByteBuffer("/gui/icon/png/0.png", getClass()), ResourceUtil.resourceToByteBuffer("/gui/icon/png/1.png", getClass()));
+            Window.INSTANCE.showWindow();
+            return true;
+        }
+        return false;
     }
 
-    private static boolean initNvg() {
-        return Window.createNvgContext();
+    private boolean initNvgRenderer() {
+        return NvgRenderer.INSTANCE.init();
     }
 
-    public void loop() {
-        while (!glfwWindowShouldClose(getHandle())) {
-            glViewport(0, 0, getWindowWidth(), getWindowHeight());
-            glClearColor(0F, 0F, 0F, 1F);
+    public void runGuiLoop() {
+
+        final Window window = Window.INSTANCE;
+        final long handle = window.getWindow();
+
+        while (!glfwWindowShouldClose(handle)) {
+
+            glViewport(0, 0, window.getWindowWidth(), window.getWindowHeight());
+            glClearColor(0, 0, 0, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            NvgRenderUtil.setup(NvgRenderUtil.Task.GRAPHICS_2D , getNvgContext());
+            NvgRenderer.INSTANCE.setup();
 
-            // THIS IS JUST A RENDERING TEST, I WILL IMPLEMENT MORE FUNCTIONALITY SOON
-            new Rectangle(10, 10, 200, 200, Color.WHITE).draw(getNvgContext());
+            screen.draw(NvgRenderer.INSTANCE.getNvgContext());
 
-            NvgRenderUtil.end(NvgRenderUtil.Task.GRAPHICS_2D , getNvgContext());
+            NvgRenderer.INSTANCE.end();
 
-            glfwSwapBuffers(getHandle());
+            glfwSwapBuffers(handle);
             glfwPollEvents();
         }
-        glfwFreeCallbacks(getHandle());
-        glfwDestroyWindow(getHandle());
+        NvgRenderer.INSTANCE.destroy();
+        glfwFreeCallbacks(handle);
+        glfwDestroyWindow(handle);
     }
 }
