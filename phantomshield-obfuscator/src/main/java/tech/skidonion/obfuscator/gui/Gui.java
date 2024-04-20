@@ -18,7 +18,7 @@ public final class Gui {
 
     public static Gui INSTANCE = new Gui();
 
-    private static final boolean RELEASE = true;
+    private static final boolean RELEASE = false;
 
     private Screen screen;
 
