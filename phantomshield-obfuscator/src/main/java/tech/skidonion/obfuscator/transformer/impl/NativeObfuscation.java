@@ -161,7 +161,7 @@ public class NativeObfuscation extends Transformer {
                 StringBuilder nativeMethods = new StringBuilder();
                 List<HiddenCppMethod> hiddenMethods = new ArrayList<>();
                 String displayName = cw.getOriginalName();
-                boolean isInternal = displayName.startsWith("iterator");
+                boolean isInternal = displayName.startsWith("tech/skidonion/verification/");
                 if (isInternal) {
                     if (!internalTip[0]) {
                         displayName = "[Internal Classes]";
