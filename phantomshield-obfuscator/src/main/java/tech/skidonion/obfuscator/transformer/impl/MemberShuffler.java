@@ -27,8 +27,8 @@ public class MemberShuffler extends Transformer {
                 MethodNode clinit = classWrapper.getOrCreateClinit();
 
                 classWrapper.getFields().stream().filter(fieldWrapper -> Modifier.isStatic(fieldWrapper.getFieldNode().access)
-                        && fieldWrapper.getFieldNode().value != null
-                        && match(fieldWrapper)).forEach(fieldWrapper -> {
+                                                                         && fieldWrapper.getFieldNode().value != null
+                                                                         && match(fieldWrapper)).forEach(fieldWrapper -> {
                     FieldNode fieldNode = fieldWrapper.getFieldNode();
                     Object val = fieldNode.value;
 
@@ -68,9 +68,11 @@ public class MemberShuffler extends Transformer {
 
             getFilteredClasses().forEach(classWrapper -> {
                 Collections.shuffle(classWrapper.getClassNode().methods, new Random(seed));
+                Collections.shuffle(classWrapper.getMethods(), new Random(seed));
                 counter.addAndGet(classWrapper.getClassNode().methods.size());
 
                 Collections.shuffle(classWrapper.getClassNode().fields, new Random(seed));
+                Collections.shuffle(classWrapper.getFields(), new Random(seed));
                 counter.addAndGet(classWrapper.getClassNode().fields.size());
             });
 
