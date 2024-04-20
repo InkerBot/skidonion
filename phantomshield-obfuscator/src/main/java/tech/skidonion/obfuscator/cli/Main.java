@@ -7,6 +7,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.gui.Gui;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ResourceBundle;
@@ -38,14 +39,13 @@ public class Main {
                 new PhantomShield(Config.readConfig(config)).process();
                 return 0;
             }
-            INFO(TRANSLATION("phantom-shield-x.main.gui"));
-            final Gui gui = Gui.initGui();
-            if (gui == null) {
-                ERROR(TRANSLATION("phantom-shield-x.main.gui.unsupported"));
+            if (Gui.INSTANCE.init()) {
+                Gui.INSTANCE.runGuiLoop();
+                return 0;
+            } else {
+                JOptionPane.showMessageDialog(null, TRANSLATION("phantom-shield-x.main.gui.failed"), "PhantomShield-X", JOptionPane.WARNING_MESSAGE);
                 return -1;
             }
-            gui.loop();
-            return 0;
         }
     }
 
