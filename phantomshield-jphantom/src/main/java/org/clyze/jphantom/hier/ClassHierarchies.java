@@ -97,6 +97,8 @@ public class ClassHierarchies implements Opcodes, Types
                     } else {
                         hierarchy.addClass(clazz, superclass, ifaces);
                     }
+                }catch (Exception ignored){
+                    // Ignore exceptions, Low-IQs may have mal-formed class files
                 }
             }
             return hierarchy;

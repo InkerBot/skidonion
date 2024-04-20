@@ -41,8 +41,12 @@ public class PruningSolver extends ForwardingSolver
 
     @Override
     public void visit(IsaClassConstraint constraint) {
-        interesting.add(constraint.type);
-        super.visit(constraint);
+        try {
+            interesting.add(constraint.type);
+            super.visit(constraint);
+        }catch (Exception ignored){
+            // This fails sometimes
+        }
     }
 
     @Override
