@@ -281,7 +281,7 @@ public class CppCompiler {
             return commands.toArray(new String[0]);
         } else {
             ZigBuildFileBuilder zigBuildFileBuilder = new ZigBuildFileBuilder();
-            cppFiles.forEach(path -> zigBuildFileBuilder.addCppFile(path.substring(outputDir.getAbsoluteFile().toString().length())));
+            cppFiles.forEach(path -> zigBuildFileBuilder.addCppFile(path.substring(outputDir.getAbsoluteFile().toString().length() + 1)));
             Path build_zig = outputDir.toPath().resolve("build.zig");
             Files.write(build_zig, zigBuildFileBuilder.build().getBytes(StandardCharsets.UTF_8));
             commands.add("build");
