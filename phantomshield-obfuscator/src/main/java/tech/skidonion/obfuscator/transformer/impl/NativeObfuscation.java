@@ -324,7 +324,7 @@ public class NativeObfuscation extends Transformer {
                     }
                 }
                 Pair<String, MethodWrapper> inlineInfo;
-                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getName() + "." + method.getName() + method.getDescription())) != null ? inlineInfo.getFirst() : null;
+                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getOriginalName() + "." + method.getOriginalName() + method.getOriginalDescription())) != null ? inlineInfo.getFirst() : null;
                 if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                     methodProcessor.processMethod(context);
                 shouldVirtualize |= context.shouldVirtualize;
