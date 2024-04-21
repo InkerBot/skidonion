@@ -21,6 +21,7 @@ gradle.properties text eol=crlf
 *.dll binary
 *.so binary
 *.exe binary
+*.ttf binary
 
 *.gitattributes text eol=crlf
 *.gitignore text eol=crlf
