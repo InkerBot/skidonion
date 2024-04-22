@@ -42,8 +42,13 @@ public @interface NativeObfuscation {
     }
 
     @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.METHOD,ElementType.FIELD})
+    @Target({ElementType.METHOD, ElementType.FIELD})
     public @interface Inline {
     }
 
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.FIELD)
+    @Deprecated
+    public @interface InlineStaticFieldAccess {
+    }
 }
