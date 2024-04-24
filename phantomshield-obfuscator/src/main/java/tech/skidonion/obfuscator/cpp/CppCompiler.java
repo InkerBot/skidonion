@@ -96,7 +96,7 @@ public class CppCompiler {
                         strip = startProcess(new String[]{"bin/llvm-strip.exe", "-s", "\"" + outputDir + "\\build\\" + compileInfo.output + "\""}, logfile_strip.getAbsoluteFile());
                     }
                     if (virtualizeMacroCount.get() > 0 && !isDebug) {
-//                        virtualize = virtualize(timestamp, compileInfo);
+                        virtualize = virtualize(timestamp, compileInfo);
                     }
                     return compileValue | strip | virtualize;
                 }));
