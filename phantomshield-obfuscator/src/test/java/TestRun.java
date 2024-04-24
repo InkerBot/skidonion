@@ -1,11 +1,18 @@
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
+import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.inline.Wrapper;
+import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import java.io.File;
+import java.util.ResourceBundle;
 
 public class TestRun {
     public static void main(String[] args) {
+        if (PhantomShield.BUNDLE == null) {
+            PhantomShield.BUNDLE = ResourceBundle.getBundle("i18n.lang", new UTF8Control());
+        }
+
         Wrapper._debug_addDefaultCloudConstant("授权验证用户组", "1984756007");
         Wrapper._debug_addDefaultCloudConstant("基础用户组", "108325887");
 
@@ -69,7 +76,7 @@ public class TestRun {
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(false)//
+                .setVerificationEnableSetting(true)//
                 .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
                 .setVerificationUserIdSetting("7")//

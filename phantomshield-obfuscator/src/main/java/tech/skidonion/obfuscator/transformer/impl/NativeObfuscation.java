@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -8,11 +9,13 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.CustomClassWriter;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
+import tech.skidonion.obfuscator.crypto.ChaCha20;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
@@ -44,15 +47,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
 
 public class NativeObfuscation extends Transformer {
     public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
+    public static final String OLD_INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.InlineStaticFieldAccess.class);
+    public static final String CLASS_ENCRYPTION_DESC = Type.getDescriptor(LoadAfterLogin.class);
     public final Map<String, MethodWrapper> injectedWrapperMethods = new HashMap<>();
     public final Map<String, Pair<String, FieldWrapper>> inlineFields = new HashMap<>();
     public final Map<String, Pair<String, MethodWrapper>> inlineMethods = new HashMap<>();
@@ -87,6 +92,12 @@ public class NativeObfuscation extends Transformer {
 
     private ClassWrapper dummyInlineClassWrapper;
 
+    private final Map<String, Pair<byte[], List<ClassWrapper>>> encryptedClasses = new HashMap<>();
+
+    private byte[] sessionKey = new byte[16];
+    private byte[] nonce = new byte[12];
+    private final Map<String, byte[]> magicKey = new HashMap<>();
+
     private void init() {
         stringPool = new StringPool();
         snippets = new Snippets(stringPool, null_safety.isEnable());
@@ -97,6 +108,9 @@ public class NativeObfuscation extends Transformer {
         methodProcessor = new MethodProcessor(this);
         nativeDir = loader_package.getValue();
         nativeDir = nativeDir.substring(0, nativeDir.length() - 1);
+
+        ThreadLocalRandom.current().nextBytes(sessionKey);
+        ThreadLocalRandom.current().nextBytes(nonce);
     }
 
 
@@ -339,11 +353,87 @@ public class NativeObfuscation extends Transformer {
 
         }
 
+        // process encrypted classes
+        if (!encryptedClasses.isEmpty()) {
+            INFO(TRANSLATION("phantom-shield-x.native.encrypted-classes"));
+
+
+            for (Pair<byte[], List<ClassWrapper>> pair : encryptedClasses.values()) {
+                byte[] key = pair.getFirst();
+
+                List<ClassWrapper> list = pair.getSecond();
+
+                ChaCha20 crypto = new ChaCha20(key, nonce, 4096);
+                for (ClassWrapper classWrapper : list) {
+
+                    String classFileName = "data_" + StringUtils.escapeCppNameString(classWrapper.getName().replace('/', '_'));
+
+                    headers.add("\"output/" + classFileName + ".hpp\"");
+
+                    CustomClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
+                    classWrapper.getClassNode().accept(classWriter);
+                    byte[] rawData = classWriter.toByteArray();
+                    byte[] dst = new byte[rawData.length];
+                    crypto.encrypt(dst, rawData, rawData.length);
+                    List<Byte> data = new ArrayList<>(dst.length);
+                    for (byte b : dst) {
+                        data.add(b);
+                    }
+
+                    try (BufferedWriter hppWriter = Files.newBufferedWriter(cppOutput.resolve(classFileName + ".hpp"))) {
+                        hppWriter.append("#include \"../native_jvm.hpp\"\n\n");
+                        hppWriter.append("#ifndef ").append(classFileName.toUpperCase()).append("_HPP_GUARD\n\n");
+                        hppWriter.append("#define ").append(classFileName.toUpperCase()).append("_HPP_GUARD\n\n");
+                        hppWriter.append("namespace native_jvm::data::__ngen_").append(classFileName).append(" {\n");
+                        hppWriter.append("    const jbyte* get_class_data();\n");
+                        hppWriter.append("    const jsize get_class_data_length();\n");
+                        hppWriter.append("}\n\n");
+                        hppWriter.append("#endif\n");
+                    }
+
+                    Path cppPath = cppOutput.resolve(classFileName + ".cpp");
+                    try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
+                        compiler.addCppFile(cppPath.toAbsolutePath().toString());
+                        cppWriter.append("#include \"").append(classFileName).append(".hpp\"\n\n");
+                        cppWriter.append("namespace native_jvm::data::__ngen_").append(classFileName).append(" {\n");
+                        cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
+                        cppWriter.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+                        cppWriter.append("};\n");
+                        cppWriter.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
+                        cppWriter.append("    const jbyte* get_class_data() { return class_data; }\n");
+                        cppWriter.append("    const jsize get_class_data_length() { return class_data_length; }\n");
+                        cppWriter.append("}\n");
+                    }
+
+
+                    for (MethodWrapper method : classWrapper.getMethods()) {
+                        MethodNode methodNode = method.getMethodNode();
+                        methodNode.access &= ~(ACC_NATIVE | ACC_ABSTRACT);
+                        InsnList insnList = new InsnList();
+                        insnList.add(new TypeInsnNode(NEW, "java/lang/IllegalStateException"));
+                        insnList.add(new InsnNode(DUP));
+                        insnList.add(new LdcInsnNode("This Exception shouldn't appear! Please contact the software admin."));
+                        insnList.add(new MethodInsnNode(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V"));
+                        insnList.add(new InsnNode(ATHROW));
+                        methodNode.instructions = insnList;
+                        methodNode.tryCatchBlocks = null;
+                        methodNode.localVariables = null;
+                        methodNode.visibleLocalVariableAnnotations = null;
+                        methodNode.invisibleLocalVariableAnnotations = null;
+                        methodNode.invisibleTypeAnnotations = null;
+                        methodNode.visibleTypeAnnotations = null;
+                    }
+                }
+            }
+        }
+
+
         inlineSourceBuilder.buildHeader(headers, shouldVirtualize);
         inlineSourceBuilder.buildInlineFields();
         inlineSourceBuilder.buildInlineMethods(instructions.toString(), declarations.toString(), cachedStrings, cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
         inlineSourceBuilder.buildVerificationField();
         inlineSourceBuilder.buildTail();
+
 
         if (hidden_stack_trace.isEnable()) {
             for (ClassNode hiddenClass : hiddenMethodsPool.getClasses()) {
@@ -440,6 +530,8 @@ public class NativeObfuscation extends Transformer {
         INFO(TRANSLATION("phantom-shield-x.native.preprocess"));
         this.init();
 
+        // inject loader
+
         String loaderClassName = nativeDir + "/___";
 
         ClassNode loaderClass;
@@ -459,11 +551,14 @@ public class NativeObfuscation extends Transformer {
             }
         }));
         injectClassesAsResource(Collections.singletonList(resultLoaderClass));
+
+        // check role
         Optional<String> opt = Wrapper.getCloudConstant(467287013, 0);
 
+        // check if it has permission to access verification
         List<ClassWrapper> injected = new ArrayList<>();
         long verifySoftwareId;
-        String verifyPublicKey;
+        byte[] verifyPublicKey;
         String verifyVersion;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
@@ -474,8 +569,14 @@ public class NativeObfuscation extends Transformer {
             }
             JsonObject entity = softwareInformation.getAsJsonObject("entity");
             verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
-            verifyPublicKey = entity.getAsJsonPrimitive("public_key").getAsString();
+            verifyPublicKey = Base64.getDecoder().decode(entity.getAsJsonPrimitive("public_key").getAsString());
             verifyVersion = entity.getAsJsonPrimitive("version").getAsString();
+            for (JsonElement magic_key : entity.getAsJsonArray("magic_key")) {
+                JsonObject object = magic_key.getAsJsonObject();
+                magicKey.put(object.getAsJsonPrimitive("rank_name").getAsString(), Base64.getDecoder().decode(object.getAsJsonPrimitive("magic_key").getAsString()));
+            }
+
+            // inject verification class
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
             List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
             {
@@ -486,7 +587,7 @@ public class NativeObfuscation extends Transformer {
             }
             {
                 ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(HttpUtils$OnHttpResultDump.dump());
+                ClassReader reader = new ClassReader(MachineIDUtilsDump.dump());
                 reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
                 classes.add(injectClass(node));
             }
@@ -538,11 +639,11 @@ public class NativeObfuscation extends Transformer {
             injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
             verifySoftwareId = -1L;
-            verifyPublicKey = "";
+            verifyPublicKey = new byte[0];
             verifyVersion = "";
         }
 
-
+        // process inlines
         final ClassNode wrapper = new ClassNode();
         wrapper.version = V1_8;
         wrapper.access = ACC_PUBLIC;
@@ -556,6 +657,51 @@ public class NativeObfuscation extends Transformer {
 
 
         getClassWrappers().forEach(classWrapper -> {
+
+            if (isVerificationEnable() && ASMUtils.hasAnnotation(classWrapper, CLASS_ENCRYPTION_DESC)) {
+                Map<String, Object> values = ASMUtils.getAnnotationValues(classWrapper, CLASS_ENCRYPTION_DESC);
+                ASMUtils.removeAnnotation(classWrapper, CLASS_ENCRYPTION_DESC);
+                if (values != null) {
+                    Object value = values.get("value");
+                    if (value instanceof String) {
+                        if (magicKey.containsKey(value)) {
+                            encryptedClasses.compute((String) value, (k, v) -> {
+                                Pair<byte[], List<ClassWrapper>> pair;
+                                if ((pair = v) == null) {
+                                    byte[] des = new byte[32];
+                                    byte[] magic = magicKey.get(value);
+
+                                    for (int i = des.length - 1; i >= 0; i--) {
+                                        int index = i / 2;
+                                        int position = index % 2;
+                                        if (i % 2 == 0) {
+                                            des[i] = magic[index + (position == 1 ? -1 : 1)];
+                                        } else {
+                                            des[i] = sessionKey[index + (position == 1 ? -1 : 1)];
+                                        }
+                                    }
+                                    byte temp = des[0];
+                                    des[0] = des[des.length - 1];
+                                    des[des.length - 1] = temp;
+
+                                    pair = new Pair<>(des, new ArrayList<>());
+                                }
+                                pair.getSecond().add(classWrapper);
+                                return pair;
+                            });
+                        } else {
+                            ERROR(TRANSLATION("phantom-shield-x.native.class-lock.role-not-found"), value);
+                            System.exit(0);
+                            return;
+                        }
+                    }
+                } else {
+                    ERROR(TRANSLATION("phantom-shield-x.native.class-lock.annotation-error"));
+                    System.exit(0);
+                    return;
+                }
+            }
+
             boolean isCloseable;
             if (classWrapper.getInterfaces() != null) {
                 Set<String> interfaces = new HashSet<>(classWrapper.getInterfaces());
@@ -568,10 +714,13 @@ public class NativeObfuscation extends Transformer {
             int i = 0;
             for (Iterator<FieldWrapper> iterator = classWrapper.getFields().iterator(); iterator.hasNext(); i++) {
                 FieldWrapper fieldWrapper = iterator.next();
-                if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_DESC)) {
+                boolean oldAnnotation = ASMUtils.hasAnnotation(fieldWrapper, OLD_INLINE_DESC);
+                if (ASMUtils.hasAnnotation(fieldWrapper, INLINE_DESC) || oldAnnotation) {
                     String key = classWrapper.getName() + "." + fieldWrapper.getName() + "." + fieldWrapper.getDescription();
                     if (!fieldWrapper.getAccess().isStatic()) {
                         inlineVirtualFields.add(key);
+                    } else if (oldAnnotation) {
+                        WARN(TRANSLATION("phantom-shield-x.native.inline-deprecated"));
                     }
                     inlineFields.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));
                     iterator.remove();
@@ -603,13 +752,27 @@ public class NativeObfuscation extends Transformer {
                         return;
                     }
                     String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
-                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
+//                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
+                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + inlineFieldIndex.getAndIncrement(), methodWrapper));
 //                    addInternalInclusion(classWrapper.getOriginalName(), methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription());
                     iterator.remove();
                     classWrapper.getClassNode().methods.remove(i--);
                 }
             }
         });
+
+        for (Pair<byte[], List<ClassWrapper>> pair : encryptedClasses.values()) {
+            List<ClassWrapper> list = pair.getSecond();
+            list.sort((a, b) -> {
+                if (a.equals(b)) {
+                    return 0;
+                } else if (obfuscator.isAssignableFrom(a.getName(), b.getName())) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            });
+        }
 
         ClassNode dummyClass = new ClassNode();
         dummyClass.name = "_PHANTOMSHIELD_X_INLINE_DUMMY";
@@ -625,11 +788,42 @@ public class NativeObfuscation extends Transformer {
 
         addInternalInclusion(dummyClass.name, "*");
 
-        new ArrayList<ClassWrapper>(getClassWrappers()) {
+        ArrayList<ClassWrapper> classWrappers = new ArrayList<ClassWrapper>(getClassWrappers()) {
             {
                 add(dummyInlineClassWrapper);
             }
-        }.forEach(classWrapper -> {
+        };
+
+        classWrappers.forEach(classWrapper -> {
+            classWrapper.getMethods().forEach(methodWrapper -> {
+                for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
+                    AbstractInsnNode instruction = iterator.next();
+                    if (instruction instanceof MethodInsnNode) {
+                        MethodInsnNode methodInsnNode = (MethodInsnNode) instruction;
+                        String reference = methodInsnNode.owner + "." + methodInsnNode.name + methodInsnNode.desc;
+                        switch (reference) {
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
+                                if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                    break;
+                                iterator.remove();
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        classWrappers.forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
@@ -650,7 +844,7 @@ public class NativeObfuscation extends Transformer {
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
                                 if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName())) {
-                                    WARN("phantom-shield-x.native.inline-static-field-warn", reference);
+                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), reference);
                                 }
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
@@ -781,7 +975,22 @@ public class NativeObfuscation extends Transformer {
                                 }
                                 case "tech/skidonion/verification/utils/Internals.publicKey()[B": {
                                     iterator.remove();
-                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(Base64.getDecoder().decode(verifyPublicKey))) {
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(verifyPublicKey)) {
+                                        iterator.add(abstractInsnNode);
+                                    }
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.sessionKey()[B": {
+                                    iterator.remove();
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(sessionKey)) {
+                                        iterator.add(abstractInsnNode);
+                                    }
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.nonce()[B": {
+                                    iterator.remove();
+
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(nonce)) {
                                         iterator.add(abstractInsnNode);
                                     }
                                     break;
@@ -796,29 +1005,74 @@ public class NativeObfuscation extends Transformer {
                                     iterator.add(new LdcInsnNode(verifyVersion));
                                     break;
                                 }
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
-                                case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()J": {
-                                    if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
-                                        break;
+                                case "tech/skidonion/verification/utils/Internals.decryptClasses(I[B)V": {
                                     iterator.remove();
-                                    iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
+                                    int locals = ASMUtils.computeMaxLocals(methodWrapper.getMethodNode());
+                                    int hashIndex = locals++; // istore 1
+                                    int keyIndex = locals++; // astore 2
+                                    int srcIndex = locals++; // astore 3
+                                    int dstIndex = locals++; // astore 4
+                                    int cryptoIndex = locals; // astore 5
+                                    iterator.add(new VarInsnNode(ASTORE, keyIndex)); // astore 2
+                                    iterator.add(new VarInsnNode(ISTORE, hashIndex)); // istore 1
+                                    iterator.add(new TypeInsnNode(NEW, "tech/skidonion/verification/crypto/ChaCha20"));
+                                    iterator.add(new InsnNode(DUP));
+                                    iterator.add(new VarInsnNode(ALOAD, keyIndex));
+//                                    iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/Internals", "nonce", "()[B", false));
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(nonce)) {
+                                        iterator.add(abstractInsnNode);
+                                    }
+
+                                    iterator.add(new IntInsnNode(SIPUSH, 4096));
+                                    iterator.add(new MethodInsnNode(INVOKESPECIAL, "tech/skidonion/verification/crypto/ChaCha20", "<init>", "([B[BI)V", false));
+                                    iterator.add(new VarInsnNode(ASTORE, cryptoIndex));
+                                    iterator.add(new VarInsnNode(ILOAD, hashIndex));
+                                    LabelNode defaultLabel = new LabelNode();
+                                    Map<Integer, LabelNode> labelPool = new HashMap<>();
+                                    Set<String> roles = encryptedClasses.keySet();
+                                    int[] hashes = new int[roles.size()];
+                                    LabelNode[] labels = new LabelNode[roles.size()];
+                                    int i;
+                                    i = 0;
+                                    for (String s : roles) {
+                                        labelPool.put(hashes[i] = s.hashCode(), labels[i++] = new LabelNode());
+                                    }
+                                    iterator.add(new LookupSwitchInsnNode(defaultLabel, hashes, labels));
+
+                                    i = 0;
+                                    for (String roleName : roles) {
+                                        iterator.add(labels[i]);
+                                        for (ClassWrapper cw : encryptedClasses.get(roleName).getSecond()) {
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_encrypt_" + cw.getName(), "()[B", false));
+                                            iterator.add(new VarInsnNode(ASTORE, srcIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, srcIndex));
+                                            iterator.add(new InsnNode(ARRAYLENGTH));
+                                            iterator.add(new IntInsnNode(NEWARRAY, T_BYTE));
+                                            iterator.add(new VarInsnNode(ASTORE, dstIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, cryptoIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, dstIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, srcIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, srcIndex));
+                                            iterator.add(new InsnNode(ARRAYLENGTH));
+                                            iterator.add(new MethodInsnNode(INVOKEVIRTUAL, "tech/skidonion/verification/crypto/ChaCha20", "decrypt", "([B[BI)V", false));
+                                            iterator.add(new VarInsnNode(ALOAD, dstIndex));
+                                            iterator.add(new VarInsnNode(ALOAD, dstIndex));
+                                            iterator.add(new InsnNode(ARRAYLENGTH));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_defineClass_" + cw.getName(), "([BI)V"));
+                                        }
+                                        iterator.add(new JumpInsnNode(GOTO, defaultLabel));
+                                        i++;
+                                    }
+                                    iterator.add(defaultLabel);
                                     break;
                                 }
-                                case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant(Ljava/lang/String;Ljava/lang/String;)V":
+                                case "tech/skidonion/obfuscator/inline/Wrapper._debug_addDefaultCloudConstant(Ljava/lang/String;Ljava/lang/String;)V": {
                                     ERROR(TRANSLATION("phantom-shield-x.native.you"));
                                     System.exit(0);
                                     break;
+                                }
                             }
                         }
-
-
                     }
                 }
             });
@@ -838,7 +1092,6 @@ public class NativeObfuscation extends Transformer {
             mapper.setRepakageName(renamer.repackage_name.getValue());
             mapper.generateMappings();
             mapper.apply();
-            // dummyInlineClassWrapper
         }
         INFO(TRANSLATION("phantom-shield-x.native.preprocess2"), System.currentTimeMillis() - last);
     }
@@ -892,4 +1145,7 @@ public class NativeObfuscation extends Transformer {
         return use_internal_user_interface.isEnable();
     }
 
+    public Map<String, Pair<byte[], List<ClassWrapper>>> getEncryptedClasses() {
+        return encryptedClasses;
+    }
 }

@@ -4,6 +4,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
@@ -241,6 +242,39 @@ public class InlineHandler {
                     }
                     break;
             }
+        } else if (node.name.startsWith("_encrypt_")) {
+            String key = node.name.substring(9);
+            ClassWrapper cw = context.obfuscator.obfuscator.getClassWrapper(key);
+            String classFileName = "data_" + StringUtils.escapeCppNameString(cw.getName().replace('/', '_'));
+            context.output.append("{ jbyteArray src = env->NewByteArray(native_jvm::data::__ngen_")
+                    .append(classFileName).append("::get_class_data_length()); ")
+                    .append("env->SetByteArrayRegion(src, 0, native_jvm::data::__ngen_").append(classFileName)
+                    .append("::get_class_data_length(), native_jvm::data::__ngen_").append(classFileName)
+                    .append("::get_class_data()); cstack")
+                    .append(context.stackPointer)
+                    .append(".l = (jobject) src; refs.insert(cstack").append(context.stackPointer)
+                    .append(".l); }\n");
+//            {
+//                jbyteArray src = env->NewByteArray(native_jvm::data::__ngen_%s::get_class_data_length());
+//                env->SetByteArrayRegion(src, 0, native_jvm::data::__ngen_%s::get_class_data_length(), native_jvm::data::__ngen_%s::get_class_data());
+//            }
+//            sb.append("ALOAD=cstack$stackindex0.l = clocal$var.l; refs.insert(cstack$stackindex0.l);\n");
+        } else if (node.name.startsWith("_defineClass_")) {
+            String key = node.name.substring(13);
+            ClassWrapper cw = context.obfuscator.obfuscator.getClassWrapper(key);
+            context.output.append("{ ")
+                    .append("jbyte* src = new jbyte[").append("cstack").append(context.stackPointer - 1).append(".i]; ")
+                    .append("env->GetByteArrayRegion((jbyteArray) ").append("cstack").append(context.stackPointer - 2).append(".l, 0, cstack")
+                    .append(context.stackPointer - 1).append(".i, src); ")
+                    .append("env->DeleteLocalRef(env->DefineClass(")
+                    .append(context.getStringPool().get(cw.getName()))
+                    .append(", classloader, src, cstack").append(context.stackPointer - 1).append(".i)); delete src; }\n");
+
+//            jbyte* src = new jbyte[length];
+//            env->GetByteArrayRegion((jbyteArray) dst, 0, length, src);
+//
+//            env->DeleteLocalRef(env->DefineClass(((char *)(string_pool + 67LL)), nullptr, src, length));
+//            delete src;
         } else if (Objects.equals("trycatch", node.name)) {
             context.output.append(trimmedTryCatchBlock).append("\n");
         }

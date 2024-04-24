@@ -1,5 +1,7 @@
 package tech.skidonion.verification.utils;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -15,6 +17,7 @@ public class HttpUtils {
      * @param params 请求参数
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String get(String url, Map<String, String> params) {
         return get(url, params, null);
     }
@@ -27,33 +30,9 @@ public class HttpUtils {
      * @param headers 请求头
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String get(String url, Map<String, String> params, Map<String, String> headers) {
         return request(mapToString(url, params, "?"), null, headers, "GET");
-    }
-
-    /**
-     * 异步get请求
-     *
-     * @param url          请求目标
-     * @param params       请求参数
-     * @param onHttpResult 请求回调
-     * @return 返回数据
-     */
-    public static void getAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
-        getAsyn(url, params, null, onHttpResult);
-    }
-
-    /**
-     * 异步get请求
-     *
-     * @param url          请求目标
-     * @param params       请求参数
-     * @param headers      请求头
-     * @param onHttpResult 请求回调
-     * @return 返回数据
-     */
-    public static void getAsyn(String url, Map<String, String> params, Map<String, String> headers, OnHttpResult onHttpResult) {
-        requestAsyn(mapToString(url, params, "?"), null, headers, "GET", onHttpResult);
     }
 
     /**
@@ -63,6 +42,7 @@ public class HttpUtils {
      * @param params 请求参数
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String post(String url, Map<String, String> params) {
         return post(url, params, null);
     }
@@ -75,30 +55,9 @@ public class HttpUtils {
      * @param headers 请求头
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String post(String url, Map<String, String> params, Map<String, String> headers) {
         return request(url, mapToString(null, params, null), headers, "POST");
-    }
-
-    /**
-     * 异步post请求
-     *
-     * @param url    请求目标
-     * @param params 请求参数
-     * @return 返回数据
-     */
-    public static void postAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
-        postAsyn(url, params, null, onHttpResult);
-    }
-
-    /**
-     * 异步post请求
-     *
-     * @param url     请求目标
-     * @param params  请求参数
-     * @param headers 请求头
-     */
-    public static void postAsyn(String url, Map<String, String> params, Map<String, String> headers, OnHttpResult onHttpResult) {
-        requestAsyn(url, mapToString(null, params, null), headers, "POST", onHttpResult);
     }
 
     /**
@@ -108,6 +67,7 @@ public class HttpUtils {
      * @param params 请求参数
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String put(String url, Map<String, String> params) {
         return put(url, params, null);
     }
@@ -120,31 +80,10 @@ public class HttpUtils {
      * @param headers 请求头
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String put(String url, Map<String, String> params, Map<String, String> headers) {
         return request(url, mapToString(null, params, null), headers, "PUT");
     }
-
-    /**
-     * 异步put请求
-     *
-     * @param url    请求目标
-     * @param params 请求参数
-     */
-    public static void putAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
-        putAsyn(url, params, null, onHttpResult);
-    }
-
-    /**
-     * 异步put请求
-     *
-     * @param url     请求目标
-     * @param params  请求参数
-     * @param headers 请求头
-     */
-    public static void putAsyn(String url, Map<String, String> params, Map<String, String> headers, OnHttpResult onHttpResult) {
-        requestAsyn(url, mapToString(null, params, null), headers, "PUT", onHttpResult);
-    }
-
     /**
      * delete请求
      *
@@ -152,6 +91,7 @@ public class HttpUtils {
      * @param params 请求参数
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String delete(String url, Map<String, String> params) {
         return delete(url, params, null);
     }
@@ -164,30 +104,11 @@ public class HttpUtils {
      * @param headers 请求头
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String delete(String url, Map<String, String> params, Map<String, String> headers) {
         return request(mapToString(url, params, "?"), null, headers, "DELETE");
     }
 
-    /**
-     * 异步delete请求
-     *
-     * @param url    请求目标
-     * @param params 请求参数
-     */
-    public static void deleteAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
-        deleteAsyn(url, params, null, onHttpResult);
-    }
-
-    /**
-     * 异步delete请求
-     *
-     * @param url     请求目标
-     * @param params  请求参数
-     * @param headers 请求头
-     */
-    public static void deleteAsyn(String url, Map<String, String> params, Map<String, String> headers, OnHttpResult onHttpResult) {
-        requestAsyn(mapToString(url, params, "?"), null, headers, "DELETE", onHttpResult);
-    }
 
     /**
      * 表单请求
@@ -198,6 +119,7 @@ public class HttpUtils {
      * @param method  请求方式
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String request(String url, String params, Map<String, String> headers, String method) {
         return request(url, params, headers, method, "application/x-www-form-urlencoded");
     }
@@ -212,6 +134,7 @@ public class HttpUtils {
      * @param mediaType 参数类型,application/json,application/x-www-form-urlencoded
      * @return 返回数据
      */
+    @NativeObfuscation.Inline
     public static String request(String url, String params, Map<String, String> headers, String method, String mediaType) {
         String result = null;
         if (url == null || url.trim().isEmpty()) {
@@ -284,43 +207,11 @@ public class HttpUtils {
         return result;
     }
 
-    /**
-     * 异步表单请求
-     *
-     * @param url          请求目标
-     * @param params       请求参数
-     * @param headers      请求头
-     * @param method       请求方式
-     * @param onHttpResult 请求回调
-     */
-    public static void requestAsyn(String url, String params, Map<String, String> headers, String method, OnHttpResult onHttpResult) {
-        requestAsyn(url, params, headers, method, "application/x-www-form-urlencoded", onHttpResult);
-    }
-
-    /**
-     * 异步http请求
-     *
-     * @param url          请求目标
-     * @param params       请求参数
-     * @param headers      请求头
-     * @param method       请求方式
-     * @param mediaType    参数类型,application/json,application/x-www-form-urlencoded
-     * @param onHttpResult 请求回调
-     */
-    public static void requestAsyn(String url, String params, Map<String, String> headers, String method, String mediaType, OnHttpResult onHttpResult) {
-        new Thread(() -> {
-            try {
-                String result = request(url, params, headers, method, mediaType);
-                onHttpResult.onSuccess(result);
-            } catch (Exception e) {
-                onHttpResult.onError(e.getMessage());
-            }
-        }).start();
-    }
 
     /**
      * map转成string
      */
+    @NativeObfuscation.Inline
     private static String mapToString(String url, Map<String, String> params, String first) {
         StringBuilder sb;
         if (url != null) {
@@ -347,12 +238,4 @@ public class HttpUtils {
         return sb.toString();
     }
 
-    /**
-     * 异步请求回调
-     */
-    public interface OnHttpResult {
-        void onSuccess(String result);
-
-        void onError(String message);
-    }
 }

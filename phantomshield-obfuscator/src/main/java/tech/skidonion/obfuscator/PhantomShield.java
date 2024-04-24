@@ -551,7 +551,14 @@ public class PhantomShield {
     }
 
     public void buildInheritance() {
-        classes.values().forEach(classWrapper -> buildHierarchy(classWrapper, null));
+        classes.values().forEach(classWrapper -> {
+            try {
+                buildHierarchy(classWrapper, null);
+            } catch (Exception e) {
+                ERROR(classWrapper.getName());
+                throw e;
+            }
+        });
     }
 
     public Dictionary getDictionary() {

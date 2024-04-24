@@ -3,6 +3,7 @@ package tech.skidonion.verification.utils;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.verification.crypto.*;
+import tech.skidonion.verification.crypto.Base64;
 import tech.skidonion.verification.json.Json;
 import tech.skidonion.verification.json.JsonArray;
 import tech.skidonion.verification.json.JsonObject;
@@ -12,22 +13,29 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 
 public class VerifyUtils {
-    private static final Random RANDOM = new SecureRandom();
-    private final static Map<Integer, byte[]> CLOUD_CONSTANT_MAP = new HashMap<>();
-    private final static Map<String, LocalDateTime> EXPIRED_DATE = new HashMap<>();
+    @NativeObfuscation.Inline
+    private static Random RANDOM;
+    @NativeObfuscation.Inline
+    private static Map<Integer, byte[]> CLOUD_CONSTANT_MAP;
+    @NativeObfuscation.Inline
+    private static Map<String, LocalDateTime> EXPIRED_DATE;
 
+    @NativeObfuscation.Inline
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static int login(String username, String password) {
+        if (RANDOM == null) {
+            RANDOM = new SecureRandom();
+            CLOUD_CONSTANT_MAP = new HashMap<>();
+            EXPIRED_DATE = new HashMap<>();
+        }
         int r = RANDOM.nextInt();
         byte result = -1;
         Map<String, String> headers = new HashMap<>();
@@ -46,6 +54,7 @@ public class VerifyUtils {
             params.put("q", URLEncoder.encode(Base64.encode(q.toByteArray())));
             params.put("m", URLEncoder.encode(Base64.encode(m.toByteArray())));
             String res = HttpUtils.post(Internals.verificationServer() + "api/verify/login", params, headers);
+            Inline.trycatch();
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();
                 result = (byte) json.getInt("code", -1);
@@ -104,9 +113,9 @@ public class VerifyUtils {
     }
 
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
+    @NativeObfuscation.Inline
     private static Optional<Byte> requestInformation() {
-        long delay = 0;
         Map<String, String> headers = new HashMap<>();
         if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
         Map<String, String> params = new HashMap<>();
@@ -127,6 +136,7 @@ public class VerifyUtils {
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
             String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            Inline.trycatch();
             long lastTimestamp = System.currentTimeMillis();
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();
@@ -141,6 +151,7 @@ public class VerifyUtils {
                     ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
+                    long delay = System.currentTimeMillis() - lastTimestamp;
                     long now = System.currentTimeMillis();
                     long timestamp = result.getLong("t", -1);
                     long diff = now - timestamp - delay;
@@ -171,6 +182,42 @@ public class VerifyUtils {
                         JsonObject mem = (JsonObject) c;
                         CLOUD_CONSTANT_MAP.put(Integer.parseInt(mem.getString("h", "-1")), Base64.decode(mem.getString("e", "==")));
                     }
+                    for (JsonValue k : result.get("k").asArray()) {
+                        JsonObject mem = (JsonObject) k;
+                        byte[] des = new byte[32];
+                        int magicKey = 0x0;
+                        byte[] magic = Internals.getMagicKey();
+                        int base = 0x0;
+                        for (int i = 0; i < 16; i++) {
+                            base = base | magic[i] & 0xFF;
+                            if (i % 4 == 3) {
+                                magicKey ^= base;
+                                base = 0x0;
+                            } else {
+                                base <<= 8;
+                            }
+                        }
+                        ChaCha20 crypto = new ChaCha20(Internals.getKey(), Internals.getNonce(), magicKey);
+                        byte[] src_key = Base64.decode(mem.getString("e", "=="));
+                        byte[] magic2 = new byte[src_key.length];
+                        crypto.decrypt(magic2, src_key, src_key.length);
+                        byte[] session = Internals.sessionKey();
+
+                        for (int i = des.length - 1; i >= 0; i--) {
+                            int index = i / 2;
+                            int position = index % 2;
+                            if (i % 2 == 0) {
+                                des[i] = magic2[index + (position == 1 ? -1 : 1)];
+                            } else {
+                                des[i] = session[index + (position == 1 ? -1 : 1)];
+                            }
+                        }
+                        byte temp = des[0];
+                        des[0] = des[des.length - 1];
+                        des[des.length - 1] = temp;
+
+                        Internals.decryptClasses(Integer.parseInt(mem.getString("h", "-1")), des);
+                    }
                 }
                 return Optional.of(code);
             }
@@ -179,7 +226,7 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     private static void heartbeat() {
         try {
             Map<String, String> headers = new HashMap<>();
@@ -196,6 +243,7 @@ public class VerifyUtils {
             params.put("data", URLEncoder.encode(Base64.encode(dst)));
 
             String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            Inline.trycatch();
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();
                 byte code = (byte) json.getInt("code", -1);
@@ -218,7 +266,8 @@ public class VerifyUtils {
         }
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
+    @NativeObfuscation.Inline
     public static void setAsSuspected(String reason) {
         Map<String, String> headers = new HashMap<>();
         if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
@@ -236,6 +285,7 @@ public class VerifyUtils {
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
             HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            Inline.trycatch();
         } catch (Exception ignore) {
         }
         System.exit(0);
@@ -244,7 +294,8 @@ public class VerifyUtils {
     /**
      * "xxxx用户组".hashcode();
      */
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
+    @NativeObfuscation.Inline
     public static Optional<String> getCloudConstant(int hash, int index) {
         byte[] encoded = CLOUD_CONSTANT_MAP.get(hash);
         if (encoded == null) {
@@ -277,22 +328,27 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
+    @NativeObfuscation.Inline
     public static String getVerifyToken() {
         return Internals.getVerifyToken();
     }
 
+    @NativeObfuscation.Inline
     public static Optional<LocalDateTime> getExpiredDate(String role) {
         return Optional.ofNullable(EXPIRED_DATE.get(role));
     }
 
+    @NativeObfuscation.Inline
     public static Map<String, LocalDateTime> getExpiredDates() {
         return EXPIRED_DATE;
     }
 
+    @NativeObfuscation.Inline
     public static boolean hasRole(String role) {
         return EXPIRED_DATE.get(role) != null;
     }
 
+    @NativeObfuscation.Inline
     public static Optional<Long> getUserId() {
         if (Internals.getUserId() > 0) {
             return Optional.of(Internals.getUserId());
@@ -300,6 +356,7 @@ public class VerifyUtils {
         return Optional.empty();
     }
 
+    @NativeObfuscation.Inline
     public static Optional<String> getUsername() {
         if (Internals.getUsername() != null) {
             return Optional.of(Internals.getUsername());

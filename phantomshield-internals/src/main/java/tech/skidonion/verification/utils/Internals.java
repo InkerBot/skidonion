@@ -1,10 +1,6 @@
 package tech.skidonion.verification.utils;
 
-import tech.skidonion.verification.crypto.ChaCha20;
-
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Internals {
     private static byte[] NONCE;
@@ -27,7 +23,15 @@ public class Internals {
         return 1L;
     }
 
-    public static void decrypt(byte[] key) {
+    public static void decryptClasses(int hash, byte[] key) {
+    }
+
+    public static byte[] sessionKey() {
+        return new byte[16];
+    }
+
+    public static byte[] nonce() {
+        return new byte[12];
     }
 
     public static String version() {

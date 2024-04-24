@@ -1,5 +1,8 @@
 package tech.skidonion.verification.utils;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+import tech.skidonion.obfuscator.inline.Inline;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -12,6 +15,8 @@ public class MachineIDUtils {
     /**
      * @param array 数组最后一个参数为返回值
      */
+    @NativeObfuscation.Inline
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static void generate(Object[] array) {
         Objects.requireNonNull(array);
         byte[] UNIQUE = new byte[]{82, (byte) 249, (byte) 163, (byte) 203, (byte) 143, 107, (byte) 129, 8};
@@ -27,42 +32,45 @@ public class MachineIDUtils {
             data.writeByte(0x01);
             for (int i = 0; i < length; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
             data.write(0x00);
-            try {
+            host:
+            {
                 String host = InetAddress.getLocalHost().getHostName();
+                Inline.trycatch();
                 byte[] n = host.getBytes(StandardCharsets.UTF_8);
                 current += 3 + n.length;
-                if (current > max) throw new RuntimeException();
+                if (current > max) break host;
                 data.writeByte(0x01);
                 data.writeShort(n.length & 0xFFFF);
                 data.write(n, 0, n.length);
-            } catch (Exception ignore) {
             }
-            try {
+            os:
+            {
                 String os = String.join("-", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), System.getProperty("user.name"));
                 byte[] n = os.getBytes(StandardCharsets.UTF_8);
                 current += 3 + n.length;
-                if (current > max) throw new RuntimeException();
+                if (current > max) break os;
                 data.writeByte(0x02);
                 data.writeShort(n.length & 0xFFFF);
                 data.write(n, 0, n.length);
-            } catch (Exception ignore) {
             }
 
-            try {
+            mac:
+            {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                Inline.trycatch();
                 current++;
                 data.writeByte(0x03);
                 while (interfaces.hasMoreElements()) {
                     NetworkInterface networkInterface = interfaces.nextElement();
                     byte[] mac = networkInterface.getHardwareAddress();
+                    Inline.trycatch();
                     if (mac != null) {
                         current += 1 + mac.length;
-                        if (current > max) throw new RuntimeException();
+                        if (current > max) break mac;
                         data.write(mac.length & 0xFF);
                         data.write(mac, 0, mac.length);
                     }
                 }
-            } catch (Exception ignore) {
             }
             data.writeByte(0x00);
             int rest = max - current;
@@ -87,6 +95,8 @@ public class MachineIDUtils {
      *
      * @param array 数组大小至少为3，index = 0时，为返回值，index = size - 1时为要判断的hwid index = size - 2时为输入的随机数字
      */
+    @NativeObfuscation.Inline
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static void check(Object[] array) {
         Objects.requireNonNull(array);
         byte[] UNIQUE = new byte[]{82, (byte) 249, (byte) 163, (byte) 203, (byte) 143, 107, (byte) 129, 8};
@@ -96,7 +106,7 @@ public class MachineIDUtils {
         byte[] encoded = new byte[l / 2];
         for (int i = 0; i < l; i += 2) {
             encoded[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
-                    + Character.digit(hexString.charAt(i + 1), 16));
+                                     + Character.digit(hexString.charAt(i + 1), 16));
         }
 
         byte[] decoded = new byte[encoded.length];
@@ -128,8 +138,11 @@ public class MachineIDUtils {
                         byte[] bytes = new byte[length];
                         data.read(bytes, 0, bytes.length);
                         String src = new String(bytes, StandardCharsets.UTF_8);
-                        if (Objects.equals(InetAddress.getLocalHost().getHostName(), src))
+                        String host = InetAddress.getLocalHost().getHostName();
+                        Inline.trycatch();
+                        if (Objects.equals(host, src)) {
                             valid++;
+                        }
                         break;
                     }
                     case 0x2: {
@@ -150,10 +163,14 @@ public class MachineIDUtils {
                             set.add(Arrays.hashCode(bytes));
                         } while (n != 0x00);
                         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                        Inline.trycatch();
                         while (interfaces.hasMoreElements()) {
                             NetworkInterface networkInterface = interfaces.nextElement();
-                            if (set.contains(Arrays.hashCode(networkInterface.getHardwareAddress())))
+                            byte[] hardwareAddress = networkInterface.getHardwareAddress();
+                            Inline.trycatch();
+                            if (set.contains(Arrays.hashCode(hardwareAddress))) {
                                 valid++;
+                            }
                         }
                         break block;
                     }

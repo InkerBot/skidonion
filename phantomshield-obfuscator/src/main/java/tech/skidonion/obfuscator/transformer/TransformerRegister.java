@@ -82,6 +82,7 @@ public class TransformerRegister {
                 instance.preprocess();
             } catch (Exception e) {
                 ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred"), e);
+                System.exit(0);
             }
         });
 

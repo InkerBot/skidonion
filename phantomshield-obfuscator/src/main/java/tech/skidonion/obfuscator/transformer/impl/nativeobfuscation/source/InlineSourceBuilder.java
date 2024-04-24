@@ -48,9 +48,9 @@ public class InlineSourceBuilder {
 
         if (virtualize) {
             if (compiler.isAdvancedModuleEnable()) {
-                cpp.append("#include \"../ThemidaSDK.h\"\n");
+                cpp.append("#include \"ThemidaSDK.h\"\n");
             } else {
-                cpp.append("#include \"../VirtualizerSDK.h\"\n");
+                cpp.append("#include \"VirtualizerSDK.h\"\n");
             }
         }
         cpp.append("namespace native_jvm::inlines {\n");

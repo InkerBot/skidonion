@@ -13,7 +13,6 @@ package tech.skidonion.verification.crypto;
 import tech.skidonion.verification.crypto.math.Curve;
 import tech.skidonion.verification.crypto.math.GroupElement;
 
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -63,7 +62,7 @@ public final class EdDSAEngine {
             digest.reset();
     }
 
-    public void initVerify(EdDSAPublicKey publicKey) throws InvalidKeyException {
+    public void initVerify(EdDSAPublicKey publicKey) {
         reset();
         key = publicKey;
 
@@ -77,7 +76,7 @@ public final class EdDSAEngine {
     }
 
 
-    private boolean x_engineVerify(byte[] data, int off, int len, byte[] sigBytes) throws SignatureException {
+    private boolean x_engineVerify(byte[] data, int off, int len, byte[] sigBytes) {
         Curve curve = key.getParams().getCurve();
         int b = curve.getField().getb();
         // R is first b/8 bytes of sigBytes, S is second b/8 bytes
@@ -105,17 +104,15 @@ public final class EdDSAEngine {
         return true;
     }
 
-    public boolean verify(byte[] data, byte[] signature) throws SignatureException {
+    public boolean verify(byte[] data, byte[] signature) {
         return verify(data, 0, data.length, signature, 0, signature.length);
     }
 
-    public boolean verify(byte[] data, int off, int len, byte[] signature, int offset, int length)
-            throws SignatureException {
+    public boolean verify(byte[] data, int off, int len, byte[] signature, int offset, int length) {
         return engineVerify(data, off, len, signature, offset, length);
     }
 
-    private boolean engineVerify(byte[] data, int off, int len, byte[] sigBytes, int offset, int length)
-            throws SignatureException {
+    private boolean engineVerify(byte[] data, int off, int len, byte[] sigBytes, int offset, int length) {
         byte[] sigBytesCopy = new byte[length];
         System.arraycopy(sigBytes, offset, sigBytesCopy, 0, length);
         try {

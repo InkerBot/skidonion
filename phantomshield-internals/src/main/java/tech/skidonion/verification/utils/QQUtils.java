@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class QQUtils {
+    @NativeObfuscation.Inline
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     public static Set<String> getAllQQ() {
         Set<String> qqs = new HashSet<>();
