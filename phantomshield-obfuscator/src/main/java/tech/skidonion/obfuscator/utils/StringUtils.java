@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.utils;
 
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

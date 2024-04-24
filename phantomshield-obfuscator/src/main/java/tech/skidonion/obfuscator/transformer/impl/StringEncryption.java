@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
+@LoadAfterLogin("基础用户组")
 public class StringEncryption extends Transformer {
     private final AtomicInteger count = new AtomicInteger(0);
 

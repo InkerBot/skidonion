@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
+@LoadAfterLogin("基础用户组")
 public class NativeObfuscation extends Transformer {
     public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public static final String OLD_INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.InlineStaticFieldAccess.class);

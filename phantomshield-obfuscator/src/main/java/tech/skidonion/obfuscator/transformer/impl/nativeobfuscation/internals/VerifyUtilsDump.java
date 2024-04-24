@@ -12,6 +12,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
+
+@LoadAfterLogin("授权验证用户组")
 public class VerifyUtilsDump implements Opcodes {
 
 public static byte[] dump () throws Exception {

@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
 import org.objectweb.asm.Type;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
+@LoadAfterLogin("基础用户组")
 public class Renamer extends Transformer {
 
     private final BooleanValue print_mappings = new BooleanValue("print_mappings", false);

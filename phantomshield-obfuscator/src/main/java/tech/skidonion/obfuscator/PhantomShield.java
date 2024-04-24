@@ -17,6 +17,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.asm.ClassTree;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.config.Config;
@@ -54,6 +55,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 @NativeObfuscation
+@LoadAfterLogin("基础用户组")
 public class PhantomShield {
     @NativeObfuscation.Inline
     public static ResourceBundle BUNDLE;
