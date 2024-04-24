@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.cli;
 
 import picocli.CommandLine;
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
@@ -13,7 +14,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
-
+@NativeObfuscation
 public class Main {
     @CommandLine.Command(name = "Phantom-Shield-X", mixinStandardHelpOptions = true, version = PhantomShield.VERSION, description = "Heavy Duty to Protect Your Jar")
     public static class CommandParser implements Callable<Integer> {

@@ -22,7 +22,6 @@ import java.util.zip.ZipInputStream;
 /**
  * Bytecode utilities for bytecode instructions.
  */
-@LoadAfterLogin("基础用户组")
 public class ASMUtils implements Opcodes {
     public static boolean isInstruction(AbstractInsnNode insn) {
         return !(insn instanceof FrameNode) && !(insn instanceof LineNumberNode) && !(insn instanceof LabelNode);

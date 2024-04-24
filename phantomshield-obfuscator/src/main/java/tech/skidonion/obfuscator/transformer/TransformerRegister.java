@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer;
 
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.filter.Filter;
 import tech.skidonion.obfuscator.transformer.impl.*;
@@ -14,7 +15,7 @@ import java.util.Objects;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
-
+@LoadAfterLogin("基础用户组")
 public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 

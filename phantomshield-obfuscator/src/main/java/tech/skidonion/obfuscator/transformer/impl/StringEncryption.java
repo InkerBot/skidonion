@@ -80,7 +80,7 @@ public class StringEncryption extends Transformer {
                     }
                 } else {
                     if (isNativeObfuscationEnable) {
-                        realStringField.visitAnnotation(NativeObfuscation.INLINE_DESC, false);
+//                        realStringField.visitAnnotation(NativeObfuscation.INLINE_DESC, false);
                     }
                     cw.addField(realStringField);
                 }

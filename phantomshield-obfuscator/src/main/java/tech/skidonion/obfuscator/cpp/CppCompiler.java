@@ -126,11 +126,23 @@ public class CppCompiler {
             }
         }
 
-        for (File file : Objects.requireNonNull(buildDir.listFiles())) {
-            try (FileInputStream fis = new FileInputStream(file)) {
-                obfuscator.resources.put(properties.get("loader_path") + "/" + file.getName(), IOUtils.toByteArray(fis));
-            } catch (IOException e) {
-                ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.inject"), e);
+        injectLibrary(buildDir, properties);
+
+    }
+
+    private void injectLibrary(File dir, Map<String, String> properties) {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    this.injectLibrary(file, properties);
+                } else {
+                    try (FileInputStream fis = new FileInputStream(file)) {
+                        obfuscator.resources.put(properties.get("loader_path") + "/" + file.getName(), IOUtils.toByteArray(fis));
+                    } catch (IOException e) {
+                        ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.inject"), e);
+                    }
+                }
             }
         }
     }

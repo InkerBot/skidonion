@@ -4,6 +4,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
@@ -14,7 +15,7 @@ import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
 import java.util.stream.Stream;
-
+@LoadAfterLogin("基础用户组")
 public abstract class Transformer implements Opcodes {
     public PhantomShield obfuscator;
     private final boolean forceEnabled;
