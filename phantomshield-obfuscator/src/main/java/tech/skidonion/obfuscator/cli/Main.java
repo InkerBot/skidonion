@@ -4,7 +4,6 @@ import picocli.CommandLine;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.cpp.CompilerUpdater;
-import tech.skidonion.obfuscator.gui.Gui;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import javax.swing.*;
@@ -39,13 +38,9 @@ public class Main {
                 new PhantomShield(Config.readConfig(config)).process();
                 return 0;
             }
-            if (Gui.INSTANCE.init()) {
-                Gui.INSTANCE.runGuiLoop();
-                return 0;
-            } else {
-                JOptionPane.showMessageDialog(null, TRANSLATION("phantom-shield-x.main.gui.failed"), "PhantomShield-X", JOptionPane.WARNING_MESSAGE);
-                return -1;
-            }
+            ERROR(TRANSLATION("phantom-shield-x.main.invalid"));
+            ERROR(TRANSLATION("phantom-shield-x.main.try"));
+            return -1;
         }
     }
 
