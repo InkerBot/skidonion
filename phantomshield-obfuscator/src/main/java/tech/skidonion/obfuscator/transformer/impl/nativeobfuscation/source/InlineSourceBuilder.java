@@ -143,7 +143,7 @@ public class InlineSourceBuilder {
     public void buildVerificationField() {
         if (obfuscation.isVerificationEnable()) {
             if (obfuscation.isUseInternalVerificationInterface()) {
-                cpp.append("bool* licenced = new bool;\n");
+                cpp.append("bool* licenced = new bool(false);\n");
                 hpp.append("extern bool* licenced;\n");
             }
             cpp.append("jbyteArray nonce;\n");
