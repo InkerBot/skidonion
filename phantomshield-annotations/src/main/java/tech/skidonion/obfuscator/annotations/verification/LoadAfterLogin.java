@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface LoadAfterLogin {
     String value();
+    int priority() default 0;
 }

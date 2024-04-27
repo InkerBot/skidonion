@@ -35,6 +35,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.Strin
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.utils.*;
 import tech.skidonion.obfuscator.utils.commons.Pair;
+import tech.skidonion.obfuscator.utils.commons.PriorityObject;
 import tech.skidonion.obfuscator.value.impls.BooleanValue;
 import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringValue;
@@ -93,7 +94,7 @@ public class NativeObfuscation extends Transformer {
 
     private ClassWrapper dummyInlineClassWrapper;
 
-    private final Map<String, Pair<byte[], List<ClassWrapper>>> encryptedClasses = new HashMap<>();
+    private final Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> encryptedClasses = new HashMap<>();
 
     private byte[] sessionKey = new byte[16];
     private byte[] nonce = new byte[12];
@@ -359,13 +360,14 @@ public class NativeObfuscation extends Transformer {
             INFO(TRANSLATION("phantom-shield-x.native.encrypted-classes"));
 
 
-            for (Pair<byte[], List<ClassWrapper>> pair : encryptedClasses.values()) {
+            for (Pair<byte[], List<PriorityObject<ClassWrapper>>> pair : encryptedClasses.values()) {
                 byte[] key = pair.getFirst();
 
-                List<ClassWrapper> list = pair.getSecond();
+                List<PriorityObject<ClassWrapper>> list = pair.getSecond();
 
                 ChaCha20 crypto = new ChaCha20(key, nonce, 4096);
-                for (ClassWrapper classWrapper : list) {
+                for (PriorityObject<ClassWrapper> priorityObject : list) {
+                    ClassWrapper classWrapper = priorityObject.getObject();
 
                     String classFileName = "data_" + StringUtils.escapeCppNameString(classWrapper.getName().replace('/', '_'));
 
@@ -664,10 +666,11 @@ public class NativeObfuscation extends Transformer {
                 ASMUtils.removeAnnotation(classWrapper, CLASS_ENCRYPTION_DESC);
                 if (values != null) {
                     Object value = values.get("value");
-                    if (value instanceof String) {
+                    Object priority = values.getOrDefault("priority", 0);
+                    if (value instanceof String && priority instanceof Integer) {
                         if (magicKey.containsKey(value)) {
                             encryptedClasses.compute((String) value, (k, v) -> {
-                                Pair<byte[], List<ClassWrapper>> pair;
+                                Pair<byte[], List<PriorityObject<ClassWrapper>>> pair;
                                 if ((pair = v) == null) {
                                     byte[] des = new byte[32];
                                     byte[] magic = magicKey.get(value);
@@ -687,7 +690,7 @@ public class NativeObfuscation extends Transformer {
 
                                     pair = new Pair<>(des, new ArrayList<>());
                                 }
-                                pair.getSecond().add(classWrapper);
+                                pair.getSecond().add(new PriorityObject<>(classWrapper, (int) priority));
                                 return pair;
                             });
                         } else {
@@ -762,17 +765,9 @@ public class NativeObfuscation extends Transformer {
             }
         });
 
-        for (Pair<byte[], List<ClassWrapper>> pair : encryptedClasses.values()) {
-            List<ClassWrapper> list = pair.getSecond();
-            list.sort((a, b) -> {
-                if (a.equals(b)) {
-                    return 0;
-                } else if (obfuscator.isAssignableFrom(a.getName(), b.getName())) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            });
+        for (Pair<byte[], List<PriorityObject<ClassWrapper>>> pair : encryptedClasses.values()) {
+            List<PriorityObject<ClassWrapper>> list = pair.getSecond();
+            Collections.sort(list);
         }
 
         ClassNode dummyClass = new ClassNode();
@@ -1040,22 +1035,22 @@ public class NativeObfuscation extends Transformer {
                                     iterator.add(new VarInsnNode(ASTORE, cryptoIndex));
                                     iterator.add(new VarInsnNode(ILOAD, hashIndex));
                                     LabelNode defaultLabel = new LabelNode();
-                                    Map<Integer, LabelNode> labelPool = new HashMap<>();
                                     Set<String> roles = encryptedClasses.keySet();
                                     int[] hashes = new int[roles.size()];
                                     LabelNode[] labels = new LabelNode[roles.size()];
                                     int i;
                                     i = 0;
                                     for (String s : roles) {
-                                        labelPool.put(hashes[i] = s.hashCode(), labels[i++] = new LabelNode());
+                                        hashes[i] = s.hashCode();
+                                        labels[i++] = new LabelNode();
                                     }
                                     iterator.add(new LookupSwitchInsnNode(defaultLabel, hashes, labels));
 
                                     i = 0;
                                     for (String roleName : roles) {
                                         iterator.add(labels[i]);
-                                        for (ClassWrapper cw : encryptedClasses.get(roleName).getSecond()) {
-                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_encrypt_" + cw.getName(), "()[B", false));
+                                        for (PriorityObject<ClassWrapper> cw : encryptedClasses.get(roleName).getSecond()) {
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_encrypt_" + cw.getObject().getName(), "()[B", false));
                                             iterator.add(new VarInsnNode(ASTORE, srcIndex));
                                             iterator.add(new VarInsnNode(ALOAD, srcIndex));
                                             iterator.add(new InsnNode(ARRAYLENGTH));
@@ -1070,7 +1065,7 @@ public class NativeObfuscation extends Transformer {
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new InsnNode(ARRAYLENGTH));
-                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_defineClass_" + cw.getName(), "([BI)V"));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_defineClass_" + cw.getObject().getName(), "([BI)V"));
                                         }
                                         iterator.add(new JumpInsnNode(GOTO, defaultLabel));
                                         i++;
@@ -1155,9 +1150,5 @@ public class NativeObfuscation extends Transformer {
 
     public boolean isUseInternalVerificationInterface() {
         return use_internal_user_interface.isEnable();
-    }
-
-    public Map<String, Pair<byte[], List<ClassWrapper>>> getEncryptedClasses() {
-        return encryptedClasses;
     }
 }
