@@ -27,7 +27,7 @@ public class Main {
             if (username != null && password != null) {
                 ResourceBundle bundle = ResourceBundle.getBundle("tech.skidonion.verification.lang");
                 System.out.println(bundle.getString("VerificationPanel.login.autologin"));
-                byte result = (byte) (Wrapper.login(username, password) >> 8 & 0xFF);
+                int result = Wrapper.login(username, password);
                 if (result == 0) {
                     return 1;
                 } else {

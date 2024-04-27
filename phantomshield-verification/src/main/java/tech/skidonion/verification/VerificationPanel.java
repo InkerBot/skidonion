@@ -77,7 +77,7 @@ public class VerificationPanel extends JPanel {
 
     private void loginThread() {
         try {
-            byte result = (byte) (Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword())) >> 8 & 0xFF);
+            int result = (byte) Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword()));
             if (result == 0) {
                 try {
                     Path dataPath = Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode());

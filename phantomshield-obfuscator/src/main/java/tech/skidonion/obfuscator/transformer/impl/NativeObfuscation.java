@@ -804,7 +804,6 @@ public class NativeObfuscation extends Transformer {
                         String reference = methodInsnNode.owner + "." + methodInsnNode.name + methodInsnNode.desc;
                         switch (reference) {
                             case "tech/skidonion/obfuscator/inline/Wrapper.getVerifyToken()Ljava/lang/String;":
-                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I":
                             case "tech/skidonion/obfuscator/inline/Wrapper.setAsSuspected(Ljava/lang/String;)V":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getCloudConstant(II)Ljava/util/Optional;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDate(Ljava/lang/String;)Ljava/util/Optional;":
@@ -816,6 +815,18 @@ public class NativeObfuscation extends Transformer {
                                     break;
                                 iterator.remove();
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
+                                break;
+                            }
+                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I": {
+                                if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
+                                    break;
+                                iterator.remove();
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
+                                iterator.add(new IntInsnNode(BIPUSH, 8));
+                                iterator.add(new InsnNode(ISHR));
+                                iterator.add(new IntInsnNode(SIPUSH, 255));
+                                iterator.add(new InsnNode(IAND));
+                                iterator.add(new InsnNode(I2B));
                                 break;
                             }
                         }
