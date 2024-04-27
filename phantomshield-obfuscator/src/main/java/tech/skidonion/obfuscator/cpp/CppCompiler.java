@@ -185,6 +185,9 @@ public class CppCompiler {
         File logfile_virtualize = new File("logs/virtualize/" + output + "/" + timestamp + ".log");
         if (!logfile_virtualize.getParentFile().exists()) logfile_virtualize.getParentFile().mkdirs();
         File origin = new File(outputDir + "\\build\\" + output);
+        if (!origin.exists()) {
+            origin = new File(outputDir + "\\build\\bin\\" + output);
+        }
         File newer = new File(outputDir + "\\build\\_" + output);
         INFO(TRANSLATION("phantom-shield-x.cpp-compiler.virtualize"), output, logfile_virtualize);
         String arch;
