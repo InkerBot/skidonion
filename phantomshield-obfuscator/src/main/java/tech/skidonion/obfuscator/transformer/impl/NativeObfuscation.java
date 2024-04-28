@@ -789,7 +789,7 @@ public class NativeObfuscation extends Transformer {
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
                                 if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName())) {
-                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), reference);
+                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
                                 }
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
