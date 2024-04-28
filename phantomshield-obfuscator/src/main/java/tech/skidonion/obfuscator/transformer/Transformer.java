@@ -15,7 +15,8 @@ import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
 import java.util.stream.Stream;
-@LoadAfterLogin(value = "基础用户组",priority = 0)
+
+@LoadAfterLogin(value = "基础用户组", priority = 0)
 public abstract class Transformer implements Opcodes {
     public PhantomShield obfuscator;
     private final boolean forceEnabled;
@@ -23,7 +24,7 @@ public abstract class Transformer implements Opcodes {
     private boolean enabled;
     private Filter filter;
     private final List<Value<?>> settings = new ArrayList<>();
-    private final Map<String, Set<String>> internal = new HashMap<>();
+    protected final Map<String, Set<String>> internal = new HashMap<>();
 
     public Transformer(String name) {
         this(name, false);
@@ -38,6 +39,7 @@ public abstract class Transformer implements Opcodes {
     public final void init(PhantomShield obfuscator) {
         this.obfuscator = obfuscator;
     }
+
     public abstract void preprocess() throws Exception;
 
     public abstract void transform() throws Exception;
@@ -122,8 +124,7 @@ public abstract class Transformer implements Opcodes {
 
 
     public boolean match(MethodWrapper method) {
-        Set<String> internals = this.internal.get(method.getOwner().getOriginalName());
-        if (internals != null && (internals.contains("*") || internals.contains(method.getOriginalName() + method.getOriginalDescription())))
+        if (internalMatch(method))
             return true;
         if (hasAnnotation(method)) return matchAnnotation(method);
         if (filter == null) return true;
@@ -131,8 +132,7 @@ public abstract class Transformer implements Opcodes {
     }
 
     public boolean match(FieldWrapper field) {
-        Set<String> internals = this.internal.get(field.getOwner().getOriginalName());
-        if (internals != null && (internals.contains("*") || internals.contains(field.getOriginalName() + "." + field.getOriginalDescription())))
+        if (internalMatch(field))
             return true;
         if (hasAnnotation(field)) return matchAnnotation(field);
         if (filter == null) return true;
@@ -140,10 +140,24 @@ public abstract class Transformer implements Opcodes {
     }
 
     public boolean match(ClassWrapper clazz) {
-        if (this.internal.containsKey(clazz.getOriginalName())) return true;
+        if (internalMatch(clazz)) return true;
         if (hasAnnotation(clazz)) return matchAnnotation(clazz);
         if (filter == null) return true;
         return filter.match(clazz);
+    }
+
+    public boolean internalMatch(MethodWrapper method) {
+        Set<String> internals;
+        return (internals = this.internal.get(method.getOwner().getOriginalName())) != null && (internals.contains("*") || internals.contains(method.getOriginalName() + method.getOriginalDescription()));
+    }
+
+    public boolean internalMatch(FieldWrapper field) {
+        Set<String> internals = this.internal.get(field.getOwner().getOriginalName());
+        return internals != null && (internals.contains("*") || internals.contains(field.getOriginalName() + "." + field.getOriginalDescription()));
+    }
+
+    public boolean internalMatch(ClassWrapper clazz) {
+        return this.internal.containsKey(clazz.getOriginalName());
     }
 
     public void addInternalInclusion(String owner, String descriptor) {
