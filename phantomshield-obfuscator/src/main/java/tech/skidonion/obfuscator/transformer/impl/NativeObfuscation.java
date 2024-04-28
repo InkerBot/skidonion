@@ -337,7 +337,7 @@ public class NativeObfuscation extends Transformer {
                     }
                 }
                 Pair<String, MethodWrapper> inlineInfo;
-                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getOriginalName() + "." + method.getOriginalName() + method.getOriginalDescription())) != null ? inlineInfo.getFirst() : null;
+                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getName() + "." + method.getName() + method.getDescription())) != null ? inlineInfo.getFirst() : null;
                 if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                     methodProcessor.processMethod(context);
                 shouldVirtualize |= context.shouldVirtualize;
@@ -788,7 +788,7 @@ public class NativeObfuscation extends Transformer {
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
-                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName())) {
+                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName()) && !internalMatch(inlinedField)) {
                                     WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
                                 }
                                 iterator.remove();

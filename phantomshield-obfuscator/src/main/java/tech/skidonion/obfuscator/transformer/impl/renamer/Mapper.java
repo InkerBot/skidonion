@@ -62,8 +62,6 @@ public class Mapper {
         classes.forEach(classWrapper -> {
             final Set<String> generated = new HashSet<>();
             classWrapper.getMethods().stream().filter(Mapper::methodCanBeRenamed).forEach(methodWrapper -> {
-                if (renamer != null) renamer.removeAnnotation(methodWrapper);
-
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
@@ -72,10 +70,10 @@ public class Mapper {
                     result.setObfuscatedName(prefix_name + classWrapper.getMethodDictionary().nextUniqueString());
                     processRenamerResult(result);
                 }
+                if (renamer != null) renamer.removeAnnotation(methodWrapper);
             });
 
             classWrapper.getFields().forEach(fieldWrapper -> {
-                if (renamer != null) renamer.removeAnnotation(fieldWrapper);
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
@@ -84,6 +82,7 @@ public class Mapper {
                     result.setObfuscatedName(prefix_name + classWrapper.getFieldDictionary().nextUniqueString());
                     processRenamerResult(result);
                 }
+                if (renamer != null) renamer.removeAnnotation(fieldWrapper);
             });
 
 

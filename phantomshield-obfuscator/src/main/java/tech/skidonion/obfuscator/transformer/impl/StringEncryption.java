@@ -81,6 +81,7 @@ public class StringEncryption extends Transformer {
                 } else {
                     if (isNativeObfuscationEnable) {
                         realStringField.visitAnnotation(NativeObfuscation.INLINE_DESC, false);
+                        Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptedStringsFieldName + ".Ljava/lang/Object;");
                     }
                     cw.addField(realStringField);
                 }

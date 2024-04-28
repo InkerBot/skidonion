@@ -44,10 +44,7 @@ public class InlineHandler {
             int sort = Type.getType(desc).getSort();
             String cname = pair.getFirst();
             if (Objects.equals("(Ljava/lang/Object;)V", node.desc)) {
-                if (isStatic) {
-                    ERROR(TRANSLATION("phantom-shield-x.native.inline-static-error"));
-                    System.exit(0);
-                } else {
+                if (!isStatic) {
                     if (sort == Type.ARRAY || sort == Type.OBJECT || sort == Type.METHOD) {
                         context.output.append("env->DeleteGlobalRef((jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l]);\n");
                         context.output.append("inlines::").append(cname).append(".erase((uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l);\n");
