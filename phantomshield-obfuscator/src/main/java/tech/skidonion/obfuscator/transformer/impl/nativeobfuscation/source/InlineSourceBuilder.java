@@ -146,21 +146,29 @@ public class InlineSourceBuilder {
                 cpp.append("bool* licenced = new bool(false);\n");
                 hpp.append("extern bool* licenced;\n");
             }
-            cpp.append("jbyteArray nonce;\n");
-            cpp.append("jobject crypto;\n");
-            cpp.append("jobject verify_token;\n");
-            cpp.append("jbyteArray key;\n");
-            cpp.append("jobject username;\n");
-            cpp.append("jlong user_id;\n");
-            cpp.append("jbyteArray magic_key;\n");
+            cpp.append("jbyteArray __psx_a;\n");
+            cpp.append("jobject __psx_b;\n");
+            cpp.append("jobject __psx_c;\n");
+            cpp.append("jbyteArray __psx_d;\n");
+            cpp.append("jobject __psx_e;\n");
+            cpp.append("jlong __psx_f;\n");
+            cpp.append("jbyteArray __psx_g;\n");
 
-            hpp.append("extern jbyteArray nonce;\n");
-            hpp.append("extern jobject crypto;\n");
-            hpp.append("extern jobject verify_token;\n");
-            hpp.append("extern jbyteArray key;\n");
-            hpp.append("extern jobject username;\n");
-            hpp.append("extern jlong user_id;\n");
-            hpp.append("extern jbyteArray magic_key;\n");
+//            hpp.append("extern jbyteArray nonce;\n");
+            hpp.append("extern jbyteArray __psx_a;\n");
+//            hpp.append("extern jobject crypto;\n");
+            hpp.append("extern jobject __psx_b;\n");
+//            hpp.append("extern jobject verify_token;\n");
+            hpp.append("extern jobject __psx_c;\n");
+//            hpp.append("extern jbyteArray key;\n");
+            hpp.append("extern jbyteArray __psx_d;\n");
+//            hpp.append("extern jobject username;\n");
+            hpp.append("extern jobject __psx_e;\n");
+//            hpp.append("extern jlong user_id;\n");
+            hpp.append("extern jlong __psx_f;\n");
+//            hpp.append("extern jbyteArray magic_key;\n");
+            hpp.append("extern jbyteArray __psx_g;\n");
+
         }
 
     }
