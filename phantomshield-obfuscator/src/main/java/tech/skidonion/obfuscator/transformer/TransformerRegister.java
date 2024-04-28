@@ -84,21 +84,23 @@ public class TransformerRegister {
                 instance.preprocess();
             } catch (Exception e) {
                 ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred"), e);
-                System.exit(0);
             }
         });
 
         instances.values().stream().filter(instance -> Objects.nonNull(instance) && instance.isEnabled()).forEach(instance -> {
-            PhantomShield.INFO("-----------------------");
-            PhantomShield.INFO(TRANSLATION("phantom-shield-x.transformer-register.transformer"), instance.getName());
-            long current = System.currentTimeMillis();
             try {
                 instance.transform();
             } catch (Exception e) {
                 ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred2"), e);
             }
-            PhantomShield.INFO(TRANSLATION("phantom-shield-x.transformer-register.finish"), instance.getName(), (System.currentTimeMillis() - current));
-            PhantomShield.INFO("-----------------------");
+        });
+
+        instances.values().stream().filter(instance -> Objects.nonNull(instance) && instance.isEnabled()).forEach(instance -> {
+            try {
+                instance.postprocess();
+            } catch (Exception e) {
+                ERROR(TRANSLATION("phantom-shield-x.transformer-register.occurred2"), e);
+            }
         });
     }
 }

@@ -109,6 +109,11 @@ public class Renamer extends Transformer {
     }
 
     @Override
+    public void postprocess() throws Exception {
+
+    }
+
+    @Override
     public void preprocess() throws Exception {
         mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
         mapper.setPrefixName(prefix_name.getValue());

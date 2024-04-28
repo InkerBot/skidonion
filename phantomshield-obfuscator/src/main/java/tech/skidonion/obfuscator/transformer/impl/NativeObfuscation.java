@@ -528,6 +528,11 @@ public class NativeObfuscation extends Transformer {
     }
 
     @Override
+    public void postprocess() throws Exception {
+
+    }
+
+    @Override
     public void preprocess() throws Exception {
         long last = System.currentTimeMillis();
         INFO(TRANSLATION("phantom-shield-x.native.preprocess"));

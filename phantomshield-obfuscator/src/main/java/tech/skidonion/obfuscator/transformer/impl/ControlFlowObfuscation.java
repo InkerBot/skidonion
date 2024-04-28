@@ -98,6 +98,11 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     }
 
     @Override
+    public void postprocess() throws Exception {
+
+    }
+
+    @Override
     public void preprocess() throws Exception {
     }
 

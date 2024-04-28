@@ -38,10 +38,11 @@ public abstract class Transformer implements Opcodes {
     public final void init(PhantomShield obfuscator) {
         this.obfuscator = obfuscator;
     }
+    public abstract void preprocess() throws Exception;
 
     public abstract void transform() throws Exception;
 
-    public abstract void preprocess() throws Exception;
+    public abstract void postprocess() throws Exception;
 
     /*
      * nullable

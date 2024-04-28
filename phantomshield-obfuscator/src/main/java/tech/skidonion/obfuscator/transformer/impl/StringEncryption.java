@@ -100,6 +100,11 @@ public class StringEncryption extends Transformer {
         INFO(TRANSLATION("phantom-shield-x.string.encrypted"), count.get(), System.currentTimeMillis() - current);
     }
 
+    @Override
+    public void postprocess() throws Exception {
+
+    }
+
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName) {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
         Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");

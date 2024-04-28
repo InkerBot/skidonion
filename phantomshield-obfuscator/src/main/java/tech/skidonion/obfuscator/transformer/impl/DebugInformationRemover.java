@@ -187,6 +187,11 @@ public class DebugInformationRemover extends Transformer {
     }
 
     @Override
+    public void postprocess() throws Exception {
+
+    }
+
+    @Override
     public void preprocess() throws Exception {
 
     }
