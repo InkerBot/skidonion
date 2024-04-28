@@ -15,7 +15,8 @@ import java.util.Objects;
 
 import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
-@LoadAfterLogin("基础用户组")
+
+@LoadAfterLogin(value = "基础用户组", priority = 0)
 public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 

@@ -1,7 +1,8 @@
 package pack.tests.basics.cross;
 
 import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
-@LoadAfterLogin("基础用户组")
+
+@LoadAfterLogin(value = "基础用户组", priority = 2)
 public class Top extends Abst1 implements Inte {
 
     public void run() {

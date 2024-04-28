@@ -15,7 +15,7 @@ import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
 import java.util.stream.Stream;
-@LoadAfterLogin("基础用户组")
+@LoadAfterLogin(value = "基础用户组",priority = 0)
 public abstract class Transformer implements Opcodes {
     public PhantomShield obfuscator;
     private final boolean forceEnabled;

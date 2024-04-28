@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
-@LoadAfterLogin("基础用户组")
+@LoadAfterLogin(value = "基础用户组", priority = 1)
 public class StringEncryption extends Transformer {
     private final AtomicInteger count = new AtomicInteger(0);
 

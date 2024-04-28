@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
-@LoadAfterLogin("基础用户组")
+@LoadAfterLogin(value = "基础用户组", priority = 1)
 public class Renamer extends Transformer {
 
     private final BooleanValue print_mappings = new BooleanValue("print_mappings", false);

@@ -2,7 +2,6 @@ package tech.skidonion.obfuscator;
 
 import org.clyze.jphantom.ClassMembers;
 import org.clyze.jphantom.JPhantom;
-import org.clyze.jphantom.Options;
 import org.clyze.jphantom.Phantoms;
 import org.clyze.jphantom.access.ClassAccessStateMachine;
 import org.clyze.jphantom.access.FieldAccessStateMachine;
@@ -12,8 +11,6 @@ import org.clyze.jphantom.hier.ClassHierarchy;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
@@ -37,7 +34,6 @@ import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -55,7 +51,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 @NativeObfuscation
-@LoadAfterLogin("基础用户组")
+@LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
     @NativeObfuscation.Inline
     public static ResourceBundle BUNDLE;

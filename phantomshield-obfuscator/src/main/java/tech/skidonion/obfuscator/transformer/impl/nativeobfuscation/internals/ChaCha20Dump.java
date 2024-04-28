@@ -13,8 +13,7 @@ import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
-
-@LoadAfterLogin("授权验证用户组")
+@LoadAfterLogin(value = "授权验证用户组",priority = 0)
 public class ChaCha20Dump implements Opcodes {
 
 public static byte[] dump () throws Exception {
