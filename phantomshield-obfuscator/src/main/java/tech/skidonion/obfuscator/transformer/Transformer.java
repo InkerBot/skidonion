@@ -24,7 +24,7 @@ public abstract class Transformer implements Opcodes {
     private boolean enabled;
     private Filter filter;
     private final List<Value<?>> settings = new ArrayList<>();
-    protected final Map<String, Set<String>> internal = new HashMap<>();
+    private final Map<String, Set<String>> internal = new HashMap<>();
 
     public Transformer(String name) {
         this(name, false);
