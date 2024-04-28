@@ -42,6 +42,19 @@ public class Renamer extends Transformer {
 
     @Override
     public void transform() throws InterruptedException {
+    }
+
+    @Override
+    public void postprocess() throws Exception {
+    }
+
+    @Override
+    public void preprocess() throws Exception {
+        mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
+        mapper.setPrefixName(prefix_name.getValue());
+        mapper.setRepackage(repackage.isEnable());
+        mapper.setRepakageName(repackage_name.getValue());
+
         if (obfuscator.getConfig().has("input_mappings_file")) {
             INFO(TRANSLATION("phantom-shield-x.renamer.input"));
             long current = System.currentTimeMillis();
@@ -106,19 +119,6 @@ public class Renamer extends Transformer {
             mapper.printMappings(file);
             INFO(TRANSLATION("phantom-shield-x.renamer.finished2"), file.getAbsolutePath(), System.currentTimeMillis() - current);
         }
-    }
-
-    @Override
-    public void postprocess() throws Exception {
-
-    }
-
-    @Override
-    public void preprocess() throws Exception {
-        mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
-        mapper.setPrefixName(prefix_name.getValue());
-        mapper.setRepackage(repackage.isEnable());
-        mapper.setRepakageName(repackage_name.getValue());
     }
 
     @Override

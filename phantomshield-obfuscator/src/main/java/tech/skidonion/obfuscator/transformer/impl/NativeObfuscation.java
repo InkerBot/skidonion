@@ -18,10 +18,7 @@ import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.crypto.ChaCha20;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenCppMethod;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.*;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorRunner;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
@@ -117,7 +114,7 @@ public class NativeObfuscation extends Transformer {
 
 
     @Override
-    public void transform() throws Exception {
+    public void postprocess() throws Exception {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
         Path cppOutput = cppDir.resolve("output");
         Files.createDirectories(cppOutput);
@@ -528,42 +525,13 @@ public class NativeObfuscation extends Transformer {
     }
 
     @Override
-    public void postprocess() throws Exception {
-
-    }
-
-    @Override
-    public void preprocess() throws Exception {
-        long last = System.currentTimeMillis();
-        INFO(TRANSLATION("phantom-shield-x.native.preprocess"));
-        this.init();
-
-        // inject loader
-
-        String loaderClassName = nativeDir + "/___";
-
-        ClassNode loaderClass;
-
-        List<ClassNode> classNodes = ASMUtils.readClassesWithInputStream("/binaries/phantomshield-loader.bin", 0);
-        if (classNodes.size() != 1) throw new RuntimeException("impossible loader class member size");
-
-        loaderClass = classNodes.get(0);
-        loaderClass.sourceFile = "synthetic";
-
-        ClassNode resultLoaderClass = new ClassNode();
-        String originalLoaderClassName = loaderClass.name;
-        loaderClass.accept(new ClassRemapper(resultLoaderClass, new Remapper() {
-            @Override
-            public String map(String internalName) {
-                return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
-            }
-        }));
-        injectClassesAsResource(Collections.singletonList(resultLoaderClass));
-
+    public void transform() throws Exception {
         // check role
         Optional<String> opt = Wrapper.getCloudConstant(467287013, 0);
 
+
         // check if it has permission to access verification
+        // request software information
         List<ClassWrapper> injected = new ArrayList<>();
         long verifySoftwareId;
         byte[] verifyPublicKey;
@@ -586,55 +554,11 @@ public class NativeObfuscation extends Transformer {
 
             // inject verification class
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
+
             List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(HttpUtilsDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(MachineIDUtilsDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(QQUtilsDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(VerifyUtilsDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(URLEncoderDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(EdDSAEngineDump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(ChaCha20Dump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
-            {
-                ClassNode node = new ClassNode();
-                ClassReader reader = new ClassReader(Base64Dump.dump());
-                reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                classes.add(injectClass(node));
-            }
+
+            InternalClasses.inject(this, classes);
+
             for (ClassWrapper cw : classes) {
                 obfuscator.buildHierarchy(cw, null);
                 String origin = cw.getOriginalName();
@@ -643,6 +567,7 @@ public class NativeObfuscation extends Transformer {
                     injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
                 }
             }
+
             injected.addAll(classes);
             injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
@@ -651,18 +576,9 @@ public class NativeObfuscation extends Transformer {
             verifyVersion = "";
         }
 
-        // process inlines
-        final ClassNode wrapper = new ClassNode();
-        wrapper.version = V1_8;
-        wrapper.access = ACC_PUBLIC;
-        wrapper.superName = "java/lang/Object";
-        wrapper.name = "tech/skidonion/verification/InlineWrapper";
-//        ClassWrapper inline = injectClass(wrapper);
-        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
-        AtomicInteger inlineIndex = new AtomicInteger();
-        addInternalInclusion(wrapper.name, "*");
-        AtomicInteger inlineFieldIndex = new AtomicInteger();
 
+        // process for annotations
+        AtomicInteger inlineFieldIndex = new AtomicInteger();
 
         getClassWrappers().forEach(classWrapper -> {
 
@@ -770,11 +686,25 @@ public class NativeObfuscation extends Transformer {
             }
         });
 
+        // sort for encryptedClasses
         for (Pair<byte[], List<PriorityObject<ClassWrapper>>> pair : encryptedClasses.values()) {
             List<PriorityObject<ClassWrapper>> list = pair.getSecond();
             Collections.sort(list);
         }
 
+        // make wrapper class for inline where can't force inline to native code
+        final ClassNode wrapper = new ClassNode();
+        wrapper.version = V1_8;
+        wrapper.access = ACC_PUBLIC;
+        wrapper.superName = "java/lang/Object";
+        wrapper.name = "tech/skidonion/verification/InlineWrapper";
+//        ClassWrapper inline = injectClass(wrapper);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
+        AtomicInteger inlineIndex = new AtomicInteger();
+        addInternalInclusion(wrapper.name, "*");
+
+
+        // make inline dummy class
         ClassNode dummyClass = new ClassNode();
         dummyClass.name = "_PHANTOMSHIELD_X_INLINE_DUMMY";
         dummyClass.version = V1_8;
@@ -786,7 +716,6 @@ public class NativeObfuscation extends Transformer {
                 .map(Pair::getSecond)
                 .forEach(dummyInlineClassWrapper::addMethod);
 
-
         addInternalInclusion(dummyClass.name, "*");
 
         ArrayList<ClassWrapper> classWrappers = new ArrayList<ClassWrapper>(getClassWrappers()) {
@@ -794,6 +723,8 @@ public class NativeObfuscation extends Transformer {
                 add(dummyInlineClassWrapper);
             }
         };
+
+        // process wrapper first
 
         classWrappers.forEach(classWrapper -> {
             classWrapper.getMethods().forEach(methodWrapper -> {
@@ -834,6 +765,8 @@ public class NativeObfuscation extends Transformer {
                 }
             });
         });
+
+        // then process for inline
 
         classWrappers.forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
@@ -1089,12 +1022,15 @@ public class NativeObfuscation extends Transformer {
                 }
             });
         });
+
+        // join classpath
         if (!inline.getMethods().isEmpty()) {
             obfuscator.classes.put(inline.getName(), inline);
             obfuscator.classpath.put(inline.getName(), inline);
             injected.add(inline);
         }
 
+        // remap for injected classes
         if (!injected.isEmpty()) {
             Collections.shuffle(injected);
             Renamer renamer = (Renamer) obfuscator.getRegister().get("renamer");
@@ -1105,7 +1041,33 @@ public class NativeObfuscation extends Transformer {
             mapper.generateMappings();
             mapper.apply();
         }
-        INFO(TRANSLATION("phantom-shield-x.native.preprocess2"), System.currentTimeMillis() - last);
+    }
+
+    @Override
+    public void preprocess() throws Exception {
+        this.init();
+
+        // inject loader
+
+        String loaderClassName = nativeDir + "/___";
+
+        ClassNode loaderClass;
+
+        List<ClassNode> classNodes = ASMUtils.readClassesWithInputStream("/binaries/phantomshield-loader.bin", 0);
+        if (classNodes.size() != 1) throw new RuntimeException("impossible loader class member size");
+
+        loaderClass = classNodes.get(0);
+        loaderClass.sourceFile = "synthetic";
+
+        ClassNode resultLoaderClass = new ClassNode();
+        String originalLoaderClassName = loaderClass.name;
+        loaderClass.accept(new ClassRemapper(resultLoaderClass, new Remapper() {
+            @Override
+            public String map(String internalName) {
+                return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
+            }
+        }));
+        injectClassesAsResource(Collections.singletonList(resultLoaderClass));
     }
 
     @Override
