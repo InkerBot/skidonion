@@ -68,16 +68,15 @@ public class StringEncryption extends Transformer {
                     throw new RuntimeException("String Constant Pool is bigger than maximum pool size??");
                 this.count.addAndGet(strings.size());
 
-                FieldNode realStringField = new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null);
+                FieldNode realStringField = new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", null, null);
 
-                if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     int amount = Math.min(7, strings.size() - 1);
                     int theReal = RandomUtils.getRandomInt(amount);
                     for (int i = 0; i < amount; i++) { // 均分 最大7个dummy field
                         if (i == theReal) {
                             cw.addField(realStringField);
                         }
-                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomStaticFieldName(), "Ljava/lang/Object;", "", null);
+                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomStaticFieldName(), "Ljava/lang/Object;", null, null);
                         cw.addField(fieldNode);
                         dummys.add(fieldNode);
                     }
@@ -282,6 +281,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(new VarInsnNode(ASTORE, startIndex + 1));
         if (dummys.isEmpty())
             decryptInsts.add(new FieldInsnNode(PUTSTATIC, ownerName, decryptedStringsFieldName, "Ljava/lang/Object;"));
+
         decryptInsts.add(new VarInsnNode(ILOAD, startIndex + 2));
         decryptInsts.add(new VarInsnNode(ISTORE, startIndex + 3));
         decryptInsts.add(new InsnNode(ICONST_0));
