@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
@@ -18,6 +20,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static tech.skidonion.obfuscator.PhantomShield.INFO;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
@@ -67,7 +70,7 @@ public class StringEncryption extends Transformer {
 
                 FieldNode realStringField = new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", "", null);
 
-                if (!isNativeObfuscationEnable && strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
+                if (strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     int amount = Math.min(7, strings.size() - 1);
                     int theReal = RandomUtils.getRandomInt(amount);
                     for (int i = 0; i < amount; i++) { // 均分 最大7个dummy field
@@ -121,9 +124,9 @@ public class StringEncryption extends Transformer {
     }
 
     private static void generateDecryptor(MethodNode method, String ownerName, String decryptedStringsFieldName, Map<String, Integer> strings, List<FieldNode> dummys) {
-        final int startIndex = method.maxLocals + 1;
+        final int startIndex = ASMUtils.computeMaxLocals(method);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final List<String> shuffled = shuffleString(strings.keySet());
+        final Collection<String> shuffled = dummys.isEmpty() ? strings.keySet() : shuffleString(strings.keySet());
         for (String string : shuffled) {
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             int length = b.length;
@@ -333,7 +336,7 @@ public class StringEncryption extends Transformer {
         decryptInsts.add(generateDummy(dummys, shuffled, strings, ownerName, decryptedStringsFieldName, startIndex));
 
         decryptInsts.add(realMethodStart);
-        method.instructions.insertBefore(method.instructions.getFirst(), decryptInsts);
+        method.instructions.insert(decryptInsts);
     }
 
     private static InsnList generateSwitchCase(byte[] swp, Random rand) {
@@ -355,7 +358,7 @@ public class StringEncryption extends Transformer {
         return insts;
     }
 
-    private static InsnList generateDummy(List<FieldNode> dummys, List<String> shuffle, Map<String, Integer> origin, String owner, String fieldName, int startIndex) {
+    private static InsnList generateDummy(List<FieldNode> dummys, Collection<String> shuffle, Map<String, Integer> origin, String owner, String fieldName, int startIndex) {
         final InsnList insnList = new InsnList();
         if (dummys.isEmpty()) return insnList;
 

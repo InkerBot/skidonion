@@ -317,6 +317,8 @@ public class NativeObfuscation extends Transformer {
             if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537) {
                 IntStream.range(0, computedClassNode.methods.size())
                         .forEach(i -> dummyInlineClassWrapper.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
+                IntStream.range(0, computedClassNode.fields.size())
+                        .forEach(i -> dummyInlineClassWrapper.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
             }
 
             for (int i = 0; i < dummyInlineClassWrapper.getMethods().size(); i++) {
