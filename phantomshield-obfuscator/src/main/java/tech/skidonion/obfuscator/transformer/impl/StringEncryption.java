@@ -70,6 +70,7 @@ public class StringEncryption extends Transformer {
 
                 FieldNode realStringField = new FieldNode(ACC_STATIC, decryptedStringsFieldName, "Ljava/lang/Object;", null, null);
 
+                if (!isNativeObfuscationEnable && strings.size() > 1) { // 只有一个字符串的再多dummy field也没用
                     int amount = Math.min(7, strings.size() - 1);
                     int theReal = RandomUtils.getRandomInt(amount);
                     for (int i = 0; i < amount; i++) { // 均分 最大7个dummy field
