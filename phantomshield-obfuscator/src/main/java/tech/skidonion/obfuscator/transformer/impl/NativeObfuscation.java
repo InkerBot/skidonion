@@ -23,7 +23,6 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.Pre
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
-import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.internals.*;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.ClassSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
@@ -669,7 +668,7 @@ public class NativeObfuscation extends Transformer {
                     for (String inlineVirtualField : inlineVirtualFields) {
                         InsnList insnList = new InsnList();
                         insnList.add(new VarInsnNode(ALOAD, 0));
-                        insnList.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
+                        insnList.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_-" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
                         instructions.insert(insnList);
                     }
                 } else if (ASMUtils.hasAnnotation(methodWrapper, INLINE_DESC)) {

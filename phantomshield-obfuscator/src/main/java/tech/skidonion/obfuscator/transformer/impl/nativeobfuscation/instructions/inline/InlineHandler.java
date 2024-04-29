@@ -34,16 +34,23 @@ public class InlineHandler {
                 WARN(TRANSLATION("phantom-shield-x.native.inline1"));
             }
         } else if (node.name.startsWith("_field_")) {
+            boolean isGarbageCollector;
             String key = node.name.substring(7);
+            if (key.startsWith("-")) {
+                key = key.substring(1);
+                isGarbageCollector = true;
+            } else {
+                isGarbageCollector = false;
+            }
+
             Pair<String, FieldWrapper> pair = context.obfuscator.inlineFields.get(key);
-            Type returnType = Type.getReturnType(node.desc);
-            boolean isSet = returnType.getSort() == Type.VOID;
             FieldWrapper fw = pair.getSecond();
-            String desc = fw.getDescription();
-            boolean isStatic = fw.getAccess().isStatic();
-            int sort = Type.getType(desc).getSort();
             String cname = pair.getFirst();
-            if (Objects.equals("(Ljava/lang/Object;)V", node.desc)) {
+
+            boolean isSet = Type.getReturnType(node.desc).getSort() == Type.VOID;
+            boolean isStatic = fw.getAccess().isStatic();
+            int sort = Type.getType(fw.getDescription()).getSort();
+            if (isGarbageCollector && Objects.equals("(Ljava/lang/Object;)V", node.desc)) {
                 if (!isStatic) {
                     if (sort == Type.ARRAY || sort == Type.OBJECT || sort == Type.METHOD) {
                         context.output.append("env->DeleteGlobalRef((jobject) inlines::").append(cname).append("[(uintptr_t)*(void**)cstack").append(context.stackPointer - 1).append(".l]);\n");
