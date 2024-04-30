@@ -270,7 +270,7 @@ public class NativeObfuscation extends Transformer {
 
                     cppBuilder.addHeader(headers, cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
                     cppBuilder.addInstructions(instructions.toString());
-                    cppBuilder.registerMethods(cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
+                    cppBuilder.registerMethods(cw, cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
 
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getHppFilename());
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getCppFilename());

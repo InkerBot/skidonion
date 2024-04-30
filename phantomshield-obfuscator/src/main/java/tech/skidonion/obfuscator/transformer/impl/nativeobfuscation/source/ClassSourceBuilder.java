@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source;
 
 import org.objectweb.asm.tree.ClassNode;
+import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
@@ -110,7 +111,7 @@ public class ClassSourceBuilder implements AutoCloseable {
         cppWriter.append("\n");
     }
 
-    public void registerMethods(NodeCache<String> strings, NodeCache<String> classes, String
+    public void registerMethods(ClassWrapper cw, NodeCache<String> strings, NodeCache<String> classes, String
             nativeMethods, List<HiddenCppMethod> hiddenMethods, boolean virtualize, boolean internal) throws IOException {
 
         cppWriter.append("    void __ngen_register_methods(JNIEnv *env, jclass clazz) {\n");
@@ -186,6 +187,16 @@ public class ClassSourceBuilder implements AutoCloseable {
                 cppWriter.append("            env->DeleteLocalRef(hidden_class);\n");
                 cppWriter.append("        }\n");
 
+            }
+        }
+        ClassNode node = cw.getClassNode();
+        if (node.superName != null) {
+            cppWriter.append("        env->DeleteLocalRef(env->FindClass(").append(stringPool.get(node.superName)).append("));\n");
+        }
+
+        if (node.interfaces != null) {
+            for (String _interface : node.interfaces) {
+                cppWriter.append("        env->DeleteLocalRef(env->FindClass(").append(stringPool.get(_interface)).append("));\n");
             }
         }
 
