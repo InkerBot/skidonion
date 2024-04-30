@@ -211,11 +211,8 @@ public class Mapper {
             result.add(key, RenamerResult.RenamerType.DUMMY);
         }
 
-
-        if (!methodWrapper.getAccess().isStatic()) { // Static methods can't be overridden
-            tree.getParentClasses().forEach(parentClass -> genMethodMappings(methodWrapper, parentClass, result, visited));
-            tree.getSubClasses().forEach(subClass -> genMethodMappings(methodWrapper, subClass, result, visited));
-        }
+        tree.getParentClasses().forEach(parentClass -> genMethodMappings(methodWrapper, parentClass, result, visited));
+        tree.getSubClasses().forEach(subClass -> genMethodMappings(methodWrapper, subClass, result, visited));
         return result;
     }
 
@@ -235,10 +232,8 @@ public class Mapper {
             result.add(key, RenamerResult.RenamerType.DUMMY);
         }
 
-        if (!fieldWrapper.getAccess().isStatic()) { // Static fields can't be inherited
-            tree.getParentClasses().forEach(parentClass -> genFieldMappings(fieldWrapper, parentClass, result, visited));
-            tree.getSubClasses().forEach(subClass -> genFieldMappings(fieldWrapper, subClass, result, visited));
-        }
+        tree.getParentClasses().forEach(parentClass -> genFieldMappings(fieldWrapper, parentClass, result, visited));
+        tree.getSubClasses().forEach(subClass -> genFieldMappings(fieldWrapper, subClass, result, visited));
         return result;
     }
 
