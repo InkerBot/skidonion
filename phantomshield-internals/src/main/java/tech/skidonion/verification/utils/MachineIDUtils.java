@@ -7,6 +7,9 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,7 +32,7 @@ public class MachineIDUtils {
         current += length;
         try {
             data.writeByte(0xFF);
-            data.writeByte(0x01);
+            data.writeByte(0x02);
             for (int i = 0; i < length; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
             data.write(0x00);
             host:
@@ -54,28 +57,29 @@ public class MachineIDUtils {
                 data.write(n, 0, n.length);
             }
 
-            mac:
+            uuid:
             {
-                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                Inline.trycatch();
                 current++;
                 data.writeByte(0x03);
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface networkInterface = interfaces.nextElement();
-                    byte[] mac = networkInterface.getHardwareAddress();
-                    Inline.trycatch();
-                    if (mac != null) {
-                        current += 1 + mac.length;
-                        if (current > max) break mac;
-                        data.write(mac.length & 0xFF);
-                        data.write(mac, 0, mac.length);
-                    }
+                Path path = Paths.get(System.getProperty("user.home"), ".skidonion");
+                byte[] uuid;
+                if (!Files.exists(path)) {
+                    uuid = new byte[16];
+                    ThreadLocalRandom.current().nextBytes(uuid);
+                    Files.write(path, uuid);
+                } else {
+                    uuid = Files.readAllBytes(path);
                 }
+                Inline.trycatch();
+                current += 1 + uuid.length;
+                if (current > max) break uuid;
+                data.write(uuid.length & 0xFF);
+                data.write(uuid, 0, uuid.length);
             }
             data.writeByte(0x00);
             int rest = max - current;
             for (int i = 0; i < rest; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
-            data.writeByte(0x01);
+            data.writeByte(0x02);
             data.writeByte(0xFF);
         } catch (IOException ignore) {
         }
@@ -117,7 +121,7 @@ public class MachineIDUtils {
         DataInputStream data = new DataInputStream(bis);
         try {
             int valid = 0;
-            byte[] mark = new byte[]{(byte) 0xFF, 0x01};
+            byte[] mark = new byte[]{(byte) 0xFF, 0x02};
             byte[] header = new byte[2];
             byte[] tail = new byte[]{decoded[decoded.length - 1], decoded[decoded.length - 2]};
             data.read(header);
@@ -137,10 +141,9 @@ public class MachineIDUtils {
                         short length = data.readShort();
                         byte[] bytes = new byte[length];
                         data.read(bytes, 0, bytes.length);
-                        String src = new String(bytes, StandardCharsets.UTF_8);
                         String host = InetAddress.getLocalHost().getHostName();
                         Inline.trycatch();
-                        if (Objects.equals(host, src)) {
+                        if (Arrays.equals(host.getBytes(StandardCharsets.UTF_8), bytes)) {
                             valid++;
                         }
                         break;
@@ -149,28 +152,17 @@ public class MachineIDUtils {
                         short length = data.readShort();
                         byte[] bytes = new byte[length];
                         data.read(bytes, 0, bytes.length);
-                        String src = new String(bytes, StandardCharsets.UTF_8);
-                        if (Objects.equals(String.join("-", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), System.getProperty("user.name")), src))
+                        if (Arrays.equals(String.join("-", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), System.getProperty("user.name")).getBytes(StandardCharsets.UTF_8), bytes))
                             valid++;
                         break;
                     }
                     case 0x3: {
-                        Set<Integer> set = new HashSet<>();
-                        do {
-                            n = data.readByte();
-                            byte[] bytes = new byte[n];
-                            data.read(bytes, 0, bytes.length);
-                            set.add(Arrays.hashCode(bytes));
-                        } while (n != 0x00);
-                        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                        Inline.trycatch();
-                        while (interfaces.hasMoreElements()) {
-                            NetworkInterface networkInterface = interfaces.nextElement();
-                            byte[] hardwareAddress = networkInterface.getHardwareAddress();
-                            Inline.trycatch();
-                            if (set.contains(Arrays.hashCode(hardwareAddress))) {
-                                valid++;
-                            }
+                        byte length = data.readByte();
+                        byte[] bytes = new byte[length];
+                        data.read(bytes, 0, bytes.length);
+                        Path path = Paths.get(System.getProperty("user.home"), ".skidonion");
+                        if (Files.exists(path) && Arrays.equals(Files.readAllBytes(path), bytes)) {
+                            valid++;
                         }
                         break block;
                     }
