@@ -81,7 +81,8 @@ public class MachineIDUtils {
             for (int i = 0; i < rest; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
             data.writeByte(0x02);
             data.writeByte(0xFF);
-        } catch (IOException ignore) {
+        } catch (IOException exception) {
+            return;
         }
 
 
