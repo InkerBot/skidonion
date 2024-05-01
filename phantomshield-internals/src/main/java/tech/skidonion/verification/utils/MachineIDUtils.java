@@ -95,7 +95,7 @@ public class MachineIDUtils {
     }
 
     /**
-     * (long) array[0] >> 32 && ^ rand & 0xFF == 1
+     * ((long) array[0] >> 32 ^ rand) & 0b1) == 1
      *
      * @param array 数组大小至少为3，index = 0时，为返回值，index = size - 1时为要判断的hwid index = size - 2时为输入的随机数字
      */
