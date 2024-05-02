@@ -1,13 +1,12 @@
 /**
  * EdDSA-Java by str4d
- *
+ * <p>
  * To the extent possible under law, the person who associated CC0 with
  * EdDSA-Java has waived all copyright and related or neighboring rights
  * to EdDSA-Java.
- *
+ * <p>
  * You should have received a copy of the CC0 legalcode along with this
  * work. If not, see <https://creativecommons.org/publicdomain/zero/1.0/>.
- *
  */
 package tech.skidonion.verification.crypto.spec;
 
@@ -19,7 +18,7 @@ import tech.skidonion.verification.crypto.math.GroupElement;
  * @author str4d
  *
  */
-public class EdDSAPublicKeySpec implements KeySpec {
+public class EdDSAPublicKeySpec {
     private final GroupElement A;
     private GroupElement Aneg = null;
     private final EdDSAParameterSpec spec;
@@ -30,7 +29,7 @@ public class EdDSAPublicKeySpec implements KeySpec {
      * @throws IllegalArgumentException if key length is wrong
      */
     public EdDSAPublicKeySpec(byte[] pk, EdDSAParameterSpec spec) {
-        if (pk.length != spec.getCurve().getField().getb()/8)
+        if (pk.length != spec.getCurve().getField().getb() / 8)
             throw new IllegalArgumentException("public-key length is wrong");
 
         this.A = new GroupElement(spec.getCurve(), pk);
@@ -49,7 +48,7 @@ public class EdDSAPublicKeySpec implements KeySpec {
     public GroupElement getNegativeA() {
         // Only read Aneg once, otherwise read re-ordering might occur between here and return. Requires all GroupElement's fields to be final.
         GroupElement ourAneg = Aneg;
-        if(ourAneg == null) {
+        if (ourAneg == null) {
             ourAneg = A.negate();
             Aneg = ourAneg;
         }

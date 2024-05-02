@@ -48,7 +48,7 @@ public class EdDSAPublicKey  {
         this.edDsaSpec = spec.getParams();
     }
 
-    public EdDSAPublicKey(byte[] spec) throws InvalidKeySpecException {
+    public EdDSAPublicKey(byte[] spec) {
         this(new EdDSAPublicKeySpec(decode(spec),
                 EdDSANamedCurveTable.ED_25519_CURVE_SPEC));
     }
@@ -70,7 +70,7 @@ public class EdDSAPublicKey  {
      *
      * @return 32 bytes for Ed25519, throws for other curves
      */
-    private static byte[] decode(byte[] d) throws InvalidKeySpecException {
+    private static byte[] decode(byte[] d) {
         try {
             //
             // Setup and OID check

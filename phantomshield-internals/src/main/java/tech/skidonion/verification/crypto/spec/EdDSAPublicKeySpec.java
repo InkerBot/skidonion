@@ -19,7 +19,7 @@ import java.security.spec.KeySpec;
  * @author str4d
  *
  */
-public class EdDSAPublicKeySpec implements KeySpec {
+public class EdDSAPublicKeySpec {
     private final GroupElement A;
     private GroupElement Aneg = null;
     private final EdDSAParameterSpec spec;
