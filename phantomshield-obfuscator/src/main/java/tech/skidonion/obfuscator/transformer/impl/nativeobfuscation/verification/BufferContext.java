@@ -36,12 +36,58 @@ public class BufferContext {
             buffer = origin;
         } else {
             do {
-                buffer = encryptedBuffer[index];
+                buffer = (byte) ThreadLocalRandom.current().nextInt();
             } while (buffer == origin);
         }
         return new BufferPredicate(index, buffer, condition);
     }
 
+    public String generateCondition(String realValue, String fakeValue) {
+        return generateCondition(ConditionType.VALUE, realValue, fakeValue);
+    }
+
+    /**
+     * @return condition
+     */
+    public String generateCondition(ConditionType type, String realValue, String fakeValue) {
+        StringBuilder sb = new StringBuilder();
+        boolean position = ThreadLocalRandom.current().nextBoolean();
+        BufferContext.BufferPredicate predicate = this.generatePredicate();
+        if (type == ConditionType.CODE_BLOCK) {
+            sb.append("if (");
+        } else {
+            sb.append("((");
+        }
+        String left;
+        String right;
+        if (predicate.condition()) {
+            if (position) {
+                left = realValue;
+                right = fakeValue;
+                sb.append("!");
+            } else {
+                left = fakeValue;
+                right = realValue;
+            }
+        } else {
+            if (position) {
+                left = realValue;
+                right = fakeValue;
+            } else {
+                left = fakeValue;
+                right = realValue;
+                sb.append("!");
+            }
+        }
+        sb.append("(inlines::__buffer[").append(this.getIndex()).append("][").append(predicate.getIndex()).append("] ^ static_cast<jbyte>(").append(predicate.getBuffer()).append("))");
+        if (type == ConditionType.CODE_BLOCK) {
+            sb.append(") { ").append(left).append(" } else { ").append(right).append(" }");
+        } else {
+            sb.append(") ? (").append(left).append(") : (").append(right).append("))");
+        }
+
+        return sb.toString();
+    }
 
     public static class BufferPredicate {
         private final int index;
@@ -62,8 +108,12 @@ public class BufferContext {
             return buffer;
         }
 
-        public boolean isCondition() {
+        public boolean condition() {
             return condition;
         }
+    }
+
+    public static enum ConditionType {
+        CODE_BLOCK, VALUE;
     }
 }
