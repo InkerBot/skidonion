@@ -28,6 +28,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.Class
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.InlineSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.MainSourceBuilder;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
 import tech.skidonion.obfuscator.utils.*;
 import tech.skidonion.obfuscator.utils.commons.Pair;
@@ -90,10 +91,13 @@ public class NativeObfuscation extends Transformer {
 
     private ClassWrapper dummyInlineClassWrapper;
 
-    private final Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> encryptedClasses = new HashMap<>();
 
-    private byte[] sessionKey = new byte[16];
-    private byte[] nonce = new byte[12];
+    // verification
+    private final Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> encryptedClasses = new HashMap<>();
+    private final Map<String, BufferContext> verificationBuffer = new HashMap<>();
+
+    private final byte[] sessionKey = new byte[16];
+    private final byte[] nonce = new byte[12];
     private final Map<String, byte[]> magicKey = new HashMap<>();
 
     private void init() {
@@ -152,6 +156,7 @@ public class NativeObfuscation extends Transformer {
         getFilteredClasses().forEach(cw -> {
             boolean clinitIgnoreTryCatch = false;
             String clinitVirtualization = "NONE";
+            String clinitLock = null;
             {
                 Map<String, Object> map = getAnnotationValues(cw);
                 removeAnnotation(cw);
@@ -164,6 +169,10 @@ public class NativeObfuscation extends Transformer {
                     Object ignoreTryCatch = map.get("manualTryCatch");
                     if (ignoreTryCatch instanceof Boolean) {
                         clinitIgnoreTryCatch = (boolean) ignoreTryCatch;
+                    }
+                    Object lock = map.get("verificationLock");
+                    if (lock instanceof String) {
+                        clinitLock = (String) lock;
                     }
                 }
             }
@@ -239,6 +248,13 @@ public class NativeObfuscation extends Transformer {
                             if (ignoreTryCatch instanceof Boolean) {
                                 context.manualTryCatch = (boolean) ignoreTryCatch;
                             }
+                            Object lock = map.get("verificationLock");
+                            if (lock instanceof String) {
+                                BufferContext buffer;
+                                if ((buffer = verificationBuffer.get(lock)) != null) {
+                                    context.verificationLock = buffer;
+                                }
+                            }
                         }
                         if ("<clinit>".equals(method.getName())) {
                             if (!"NONE".equals(clinitVirtualization)) {
@@ -246,6 +262,10 @@ public class NativeObfuscation extends Transformer {
                                 context.virtualization = clinitVirtualization;
                             }
                             context.manualTryCatch = clinitIgnoreTryCatch;
+                            BufferContext buffer;
+                            if ((buffer = verificationBuffer.get(clinitLock)) != null) {
+                                context.verificationLock = buffer;
+                            }
                         }
                         if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                             methodProcessor.processMethod(context);
@@ -319,6 +339,11 @@ public class NativeObfuscation extends Transformer {
                 IntStream.range(0, computedClassNode.fields.size())
                         .forEach(i -> dummyInlineClassWrapper.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
             }
+            Map<MethodWrapper, String> inlineMethodsBi = new HashMap<>();
+            for (Map.Entry<String, Pair<String, MethodWrapper>> stringPairEntry : inlineMethods.entrySet()) {
+                inlineMethodsBi.put(stringPairEntry.getValue().getSecond(), stringPairEntry.getValue().getFirst());
+            }
+
 
             for (int i = 0; i < dummyInlineClassWrapper.getMethods().size(); i++) {
                 MethodWrapper method = dummyInlineClassWrapper.getMethods().get(i);
@@ -336,9 +361,16 @@ public class NativeObfuscation extends Transformer {
                     if (ignoreTryCatch instanceof Boolean) {
                         context.manualTryCatch = (boolean) ignoreTryCatch;
                     }
+                    Object lock = map.get("verificationLock");
+                    if (lock instanceof String) {
+                        BufferContext buffer;
+                        if ((buffer = verificationBuffer.get(lock)) != null) {
+                            context.verificationLock = buffer;
+                        }
+                    }
                 }
-                Pair<String, MethodWrapper> inlineInfo;
-                context.cppNativeMethodName = (inlineInfo = inlineMethods.get(method.getOwner().getName() + "." + method.getName() + method.getDescription())) != null ? inlineInfo.getFirst() : null;
+                String cname;
+                context.cppNativeMethodName = (cname = inlineMethodsBi.get(method)) != null ? cname : null;
                 if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
                     methodProcessor.processMethod(context);
                 shouldVirtualize |= context.shouldVirtualize;
@@ -537,6 +569,7 @@ public class NativeObfuscation extends Transformer {
         long verifySoftwareId;
         byte[] verifyPublicKey;
         String verifyVersion;
+        boolean verifyShouldCheckHwid;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
@@ -548,6 +581,7 @@ public class NativeObfuscation extends Transformer {
             verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
             verifyPublicKey = Base64.getDecoder().decode(entity.getAsJsonPrimitive("public_key").getAsString());
             verifyVersion = entity.getAsJsonPrimitive("version").getAsString();
+            verifyShouldCheckHwid = entity.getAsJsonPrimitive("check_hwid").getAsBoolean();
             for (JsonElement magic_key : entity.getAsJsonArray("magic_key")) {
                 JsonObject object = magic_key.getAsJsonObject();
                 magicKey.put(object.getAsJsonPrimitive("rank_name").getAsString(), Base64.getDecoder().decode(object.getAsJsonPrimitive("magic_key").getAsString()));
@@ -568,18 +602,19 @@ public class NativeObfuscation extends Transformer {
                     injectedWrapperMethods.put(origin + "." + mw.getOriginalName() + mw.getOriginalDescription(), mw);
                 }
             }
-
             injected.addAll(classes);
             injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
             verifySoftwareId = -1L;
             verifyPublicKey = new byte[0];
             verifyVersion = "";
+            verifyShouldCheckHwid = true;
         }
 
 
         // process for annotations
         AtomicInteger inlineFieldIndex = new AtomicInteger();
+        AtomicInteger verificationLockIndex = new AtomicInteger();
 
         getClassWrappers().forEach(classWrapper -> {
 
@@ -662,6 +697,78 @@ public class NativeObfuscation extends Transformer {
             i = 0;
             for (Iterator<MethodWrapper> iterator = classWrapper.getMethods().iterator(); iterator.hasNext(); i++) {
                 MethodWrapper methodWrapper = iterator.next();
+
+                if (hasAnnotation(methodWrapper)) {
+                    Map<String, Object> map = getAnnotationValues(methodWrapper);
+                    if (map != null) {
+                        Object lock = map.get("verificationLock");
+                        if (lock instanceof String) {
+                            if (magicKey.containsKey(lock)) {
+                                byte[] key = encryptedClasses.computeIfAbsent((String) lock, k -> {
+                                    byte[] des = new byte[32];
+                                    byte[] magic = magicKey.get(k);
+
+                                    for (int _i = des.length - 1; _i >= 0; _i--) {
+                                        int index = _i / 2;
+                                        int position = index % 2;
+                                        if (_i % 2 == 0) {
+                                            des[_i] = magic[index + (position == 1 ? -1 : 1)];
+                                        } else {
+                                            des[_i] = sessionKey[index + (position == 1 ? -1 : 1)];
+                                        }
+                                    }
+                                    byte temp = des[0];
+                                    des[0] = des[des.length - 1];
+                                    des[des.length - 1] = temp;
+
+                                    return new Pair<>(des, new ArrayList<>());
+                                }).getFirst();
+                                byte[] src = new byte[256];
+                                byte[] dst = new byte[256];
+                                byte[] s = new byte[256];
+                                ThreadLocalRandom.current().nextBytes(src);
+                                System.arraycopy(src, 0, dst, 0, src.length);
+                                generate_key:
+                                {
+                                    int _i, _j = 0;
+                                    byte[] k = new byte[256];
+                                    byte tmp;
+                                    for (_i = 0; _i < 256; _i++) {
+                                        s[_i] = (byte) _i;
+                                        k[_i] = key[_i % 32];
+                                    }
+                                    for (_i = 0; _i < 256; _i++) {
+                                        _j = (_j + s[_i] + k[_i]) & 0xFF;
+                                        tmp = s[_i];
+                                        s[_i] = s[_j];
+                                        s[_j] = tmp;
+                                    }
+                                }
+
+                                encrypt_buffer:
+                                {
+                                    int _i = 0, _j = 0, _t;
+                                    byte tmp;
+                                    for (int _k = 0; _k < 256; _k++) {
+                                        _j = (_j + s[_i]) & 0xFF;
+                                        tmp = s[_i];
+                                        s[_i] = s[_j];
+                                        s[_j] = tmp;
+                                        _t = (s[_i] + s[_j]) & 0xFF;
+                                        dst[_k] = (byte) (dst[_k] ^ (int) s[_t]);
+                                        _i = (_i + 1) & 0xFF;
+                                    }
+                                }
+//                                System.out.println(Arrays.toString(src));
+
+                                verificationBuffer.put((String) lock, new BufferContext(verificationLockIndex.getAndIncrement(), src, dst));
+                            } else {
+                                ERROR(TRANSLATION("phantom-shield-x.native.role-error"));
+                                System.exit(0);
+                            }
+                        }
+                    }
+                }
 
                 if (shouldAddGarbageCollection && Objects.equals("close()V", methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription())) {
                     InsnList instructions = methodWrapper.getInstructions();
@@ -926,6 +1033,11 @@ public class NativeObfuscation extends Transformer {
                                     }
                                     break;
                                 }
+                                case "tech/skidonion/verification/utils/Internals.shouldCheckHwid()Z": {
+                                    iterator.remove();
+                                    iterator.add(new InsnNode(verifyShouldCheckHwid ? ICONST_1 : ICONST_0));
+                                    break;
+                                }
                                 case "tech/skidonion/verification/utils/Internals.sessionKey()[B": {
                                     iterator.remove();
                                     for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(sessionKey)) {
@@ -988,6 +1100,10 @@ public class NativeObfuscation extends Transformer {
                                     i = 0;
                                     for (String roleName : roles) {
                                         iterator.add(labels[i]);
+                                        if (verificationBuffer.containsKey(roleName)) {
+                                            iterator.add(new VarInsnNode(ALOAD, keyIndex));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_decryptBuffer_" + roleName, "([B)V", false));
+                                        }
                                         for (PriorityObject<ClassWrapper> cw : encryptedClasses.get(roleName).getSecond()) {
                                             iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_encrypt_" + cw.getObject().getName(), "()[B", false));
                                             iterator.add(new VarInsnNode(ASTORE, srcIndex));
@@ -1118,5 +1234,13 @@ public class NativeObfuscation extends Transformer {
 
     public boolean isUseInternalVerificationInterface() {
         return use_internal_user_interface.isEnable();
+    }
+
+    public Map<String, BufferContext> getVerificationBuffer() {
+        return verificationBuffer;
+    }
+
+    public Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> getEncryptedClasses() {
+        return encryptedClasses;
     }
 }

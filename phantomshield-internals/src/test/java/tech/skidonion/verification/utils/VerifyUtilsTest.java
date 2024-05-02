@@ -40,6 +40,7 @@ class VerifyUtilsTest {
             case 123:
                 break;
             case 123456:
+                decryptBuffer(key);
                 src = _encrypt_();
                 dst = new byte[src.length];
                 crypto.decrypt(dst, src, src.length);
@@ -54,6 +55,10 @@ class VerifyUtilsTest {
     }
 
     private static void _defineClass_(byte[] bytes, int length) {
+    }
+
+    private static void decryptBuffer(byte[] key){
+
     }
 
     private static byte[] _encrypt_() {

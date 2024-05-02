@@ -38,6 +38,13 @@ public class Internals {
         return "";
     }
 
+    public static void initBuffer() {
+    }
+
+    public static boolean shouldCheckHwid() {
+        return true;
+    }
+
     public static byte[] getNonce() {
         return NONCE;
     }

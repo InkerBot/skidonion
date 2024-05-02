@@ -55,7 +55,7 @@ public class TestRun {
                 .setRepackageSetting(false) //
                 .setRepackageNameSetting("skidonion") //
 //                .setPrefixNameSetting("狼牙") //
-                .setPrintMappingsSetting(false) //
+                .setPrintMappingsSetting(true) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
@@ -69,14 +69,14 @@ public class TestRun {
 
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
-                .setPrintInstructionsSetting(false) //
+                .setPrintInstructionsSetting(true) //
                 .addTarget("x86_64-windows.win7-gnu") //
                 .setLegacyCompileModeSetting(false)//
                 .setNullSafetySetting(true)//
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(false)//
+                .setVerificationEnableSetting(true)//
                 .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
                 .setVerificationUserIdSetting("7")//

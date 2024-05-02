@@ -153,18 +153,19 @@ public class Mapper {
             obfuscator.classes.put(classWrapper.getName(), classWrapper);
             obfuscator.classpath.put(classWrapper.getName(), classWrapper);
         });
+        if (additionalClasses != null) {
+            new ArrayList<>(additionalClasses).forEach(classWrapper -> {
+                ClassNode classNode = classWrapper.getClassNode();
 
-        new ArrayList<>(additionalClasses).forEach(classWrapper -> {
-            ClassNode classNode = classWrapper.getClassNode();
+                ClassNode copy = new ClassNode();
+                classNode.accept(new ClassRemapper(copy, simpleRemapper));
 
-            ClassNode copy = new ClassNode();
-            classNode.accept(new ClassRemapper(copy, simpleRemapper));
-
-            IntStream.range(0, copy.methods.size()).forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
-            IntStream.range(0, copy.fields.size()).forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
-            classWrapper.setClassNode(copy);
-            classWrapper.updateMemberNames();
-        });
+                IntStream.range(0, copy.methods.size()).forEach(i -> classWrapper.getMethods().get(i).setMethodNode(copy.methods.get(i)));
+                IntStream.range(0, copy.fields.size()).forEach(i -> classWrapper.getFields().get(i).setFieldNode(copy.fields.get(i)));
+                classWrapper.setClassNode(copy);
+                classWrapper.updateMemberNames();
+            });
+        }
     }
 
 

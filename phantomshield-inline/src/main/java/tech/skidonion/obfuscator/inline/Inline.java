@@ -4,8 +4,10 @@ import java.util.Objects;
 
 public class Inline {
 
-    public static void trycatch() {
+    public static void processEnvironment() {
+    }
 
+    public static void trycatch() {
     }
 
     public static int _advanced_checkProtection(int expected) {

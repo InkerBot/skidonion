@@ -36,6 +36,7 @@ public class VerifyUtils {
             CLOUD_CONSTANT_MAP = new HashMap<>();
             EXPIRED_DATE = new HashMap<>();
         }
+        Inline.processEnvironment();
         int r = RANDOM.nextInt();
         byte result = -1;
         Map<String, String> headers = new HashMap<>();
@@ -159,7 +160,6 @@ public class VerifyUtils {
                     if (diff > 60000L) {
                         return Optional.of((byte) -1);
                     }
-
                     int rand = RANDOM.nextInt();
                     Object[] array = new Object[5];
                     array[0] = RANDOM.nextInt();
@@ -168,7 +168,7 @@ public class VerifyUtils {
                     array[3] = rand;
                     array[4] = hwid[0];
                     MachineIDUtils.check(array);
-                    if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1) {
+                    if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1 && Internals.shouldCheckHwid()) {
                         return Optional.of((byte) -2);
                     }
 
@@ -182,6 +182,7 @@ public class VerifyUtils {
                         JsonObject mem = (JsonObject) c;
                         CLOUD_CONSTANT_MAP.put(Integer.parseInt(mem.getString("h", "-1")), Base64.decode(mem.getString("e", "==")));
                     }
+                    Internals.initBuffer();
                     for (JsonValue k : result.get("k").asArray()) {
                         JsonObject mem = (JsonObject) k;
                         byte[] des = new byte[32];

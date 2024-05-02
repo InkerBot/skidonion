@@ -146,6 +146,7 @@ public class InlineSourceBuilder {
                 cpp.append("bool* licenced = new bool(false);\n");
                 hpp.append("extern bool* licenced;\n");
             }
+            cpp.append("jbyte** __buffer;\n");
             cpp.append("jbyteArray __psx_a;\n");
             cpp.append("jobject __psx_b;\n");
             cpp.append("jobject __psx_c;\n");
@@ -154,6 +155,7 @@ public class InlineSourceBuilder {
             cpp.append("jlong __psx_f;\n");
             cpp.append("jbyteArray __psx_g;\n");
 
+            hpp.append("extern jbyte** __buffer;\n");
 //            hpp.append("extern jbyteArray nonce;\n");
             hpp.append("extern jbyteArray __psx_a;\n");
 //            hpp.append("extern jobject crypto;\n");

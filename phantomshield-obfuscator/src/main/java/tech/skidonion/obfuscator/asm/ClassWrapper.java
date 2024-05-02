@@ -114,24 +114,28 @@ public class ClassWrapper {
 
     public void addMethod(MethodNode methodNode) {
         methodNames.add(methodNode.name);
+        methodDescriptors.add(methodNode.name + methodNode.desc);
         classNode.methods.add(methodNode);
         methods.add(new MethodWrapper(methodNode, this));
     }
 
     public void addMethod(MethodWrapper methodWrapper) {
         methodNames.add(methodWrapper.getName());
+        methodDescriptors.add(methodWrapper.getName() + methodWrapper.getDescription());
         classNode.methods.add(methodWrapper.getMethodNode());
         methods.add(methodWrapper);
     }
 
     public void addField(FieldNode fieldNode) {
         fieldNames.add(fieldNode.name);
+        fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
         classNode.fields.add(fieldNode);
         fields.add(new FieldWrapper(fieldNode, this));
     }
 
     public void addField(FieldWrapper fieldWrapper) {
         fieldNames.add(fieldWrapper.getName());
+        fieldDescriptors.add(fieldWrapper.getName() + "." + fieldWrapper.getDescription());
         classNode.fields.add(fieldWrapper.getFieldNode());
         fields.add(fieldWrapper);
     }

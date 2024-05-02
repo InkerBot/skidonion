@@ -2,7 +2,7 @@ package pack;
 
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 
-
+@NativeObfuscation
 public class Clazz implements AutoCloseable {
     @NativeObfuscation.Inline
     public String test;
@@ -13,6 +13,9 @@ public class Clazz implements AutoCloseable {
     public boolean test2;
 
     public static void main(String[] args) {
+        System.out.println("method lock:");
+        System.out.println(test());
+        System.out.println("-----");
         print(allocate());
         print(allocate());
         print(allocate());
@@ -48,6 +51,11 @@ public class Clazz implements AutoCloseable {
         System.out.println(123);
         System.out.println(clazz.test);
         System.out.println(clazz.test2);
+    }
+
+    @NativeObfuscation(verificationLock = "基础用户组")
+    public static String test() {
+        return "测试";
     }
 
     @Override

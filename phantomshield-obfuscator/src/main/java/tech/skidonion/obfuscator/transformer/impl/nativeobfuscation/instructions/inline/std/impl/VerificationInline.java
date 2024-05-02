@@ -4,7 +4,10 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.AbstractStandardMethodInline;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class VerificationInline extends AbstractStandardMethodInline {
     @Override
@@ -64,12 +67,17 @@ public class VerificationInline extends AbstractStandardMethodInline {
                 context.output.append("inlines::__psx_g = (jbyteArray) env->NewGlobalRef(cstack").append(context.stackPointer - 1).append(".l);\n");
                 context.output.append("refs.insert(cstack").append(context.stackPointer - 1).append(".l);\n");
                 break;
+            case "tech/skidonion/verification/utils/Internals.initBuffer()V": {
+                context.output.append("inlines::__buffer = new jbyte *[").append(context.obfuscator.getVerificationBuffer().size()).append("];\n");
+                break;
+            }
         }
     }
 
     @Override
     public String[] methods() {
         return new String[]{
+                "tech/skidonion/verification/utils/Internals.initBuffer()V",
                 "tech/skidonion/verification/utils/Internals.getNonce()[B",
                 "tech/skidonion/verification/utils/Internals.setNonce([B)V",
                 "tech/skidonion/verification/utils/Internals.getCrypto()Ljava/lang/Object;",

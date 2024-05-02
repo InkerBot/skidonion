@@ -15,6 +15,8 @@ public @interface NativeObfuscation {
 
     VirtualMachine virtualize() default VirtualMachine.NONE;
 
+    String verificationLock() default "";
+
     enum VirtualMachine {
         NONE,
         MUTATE_ONLY,

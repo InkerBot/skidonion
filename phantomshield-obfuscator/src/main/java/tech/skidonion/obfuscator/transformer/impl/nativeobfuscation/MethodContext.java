@@ -11,6 +11,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.Cache
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.snippets.Snippets;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.source.StringPool;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 
 import java.util.*;
 
@@ -45,6 +46,7 @@ public class MethodContext {
     public final String prefixVM;
     public boolean shouldVirtualize = false;
     public Set<String> headers = new HashSet<>();
+    public BufferContext verificationLock;
 
 
     public MethodContext(NativeObfuscation obfuscator, MethodWrapper method, int methodIndex, ClassWrapper clazz,

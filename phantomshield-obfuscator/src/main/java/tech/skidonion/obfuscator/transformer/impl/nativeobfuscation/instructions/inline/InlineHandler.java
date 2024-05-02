@@ -4,12 +4,14 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.utils.commons.Pair;
@@ -17,10 +19,12 @@ import tech.skidonion.obfuscator.utils.commons.Pair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class InlineHandler {
+    @NativeObfuscation.Inline
     public static void process(MethodContext context, MethodInsnNode node, String trimmedTryCatchBlock) {
         CppCompiler compiler = context.obfuscator.obfuscator.getCompiler();
         boolean verification = context.obfuscator.isVerificationEnable();
@@ -279,11 +283,63 @@ public class InlineHandler {
 //
 //            env->DeleteLocalRef(env->DefineClass(((char *)(string_pool + 67LL)), nullptr, src, length));
 //            delete src;
+        } else if (node.name.startsWith("_decryptBuffer_")) {
+            String key = node.name.substring(15);
+            BufferContext bufferContext = context.obfuscator.getVerificationBuffer().get(key);
+            if (bufferContext == null) {
+                ERROR(TRANSLATION("phantom-shield-x.native.role-error"), key);
+                System.exit(0);
+                return;
+            }
+
+            byte[] dst = bufferContext.getEncryptedBuffer();
+            List<Byte> data = new ArrayList<>(dst.length);
+            for (byte b : dst) {
+                data.add(b);
+            }
+
+//                {
+            context.output.append("{ jbyte *key = new jbyte[32]; env->GetByteArrayRegion((jbyteArray)cstack").append(context.stackPointer - 1)
+                    .append(".l, 0, 32, key); jbyte s[256] = {0}; jbyte *data = new jbyte[256]{")
+                    .append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")))
+                    .append(" }; { int i = 0, j = 0; jbyte k[256] = {0}; jbyte tmp = 0; for (i = 0; i < 256; i++) { ")
+                    .append("s[i] = static_cast<jbyte>(i); k[i] = key[i % 32]; } ")
+                    .append("for (i = 0; i < 256; i++) { j = (j + s[i] + k[i]) & 0xFF; tmp = s[i]; tmp = s[i]; s[i] = s[j]; s[j] = tmp; } } ")
+                    .append("{ int i = 0, j = 0, t = 0; jbyte tmp; for (int k = 0; k < 256; k++) {")
+                    .append("j = (j + s[i]) & 0xFF; tmp = s[i]; s[i] = s[j]; s[j] = tmp; t = (s[i] + s[j]) & 0xFF; data[k] = static_cast<jbyte>(data[k] ^ static_cast<int>(s[t])); ")
+                    .append("i = (i + 1) & 0xFF; } } inlines::__buffer[").append(bufferContext.getIndex()).append("] = data; }\n");
+
+
+            // debug
+//            context.output.append("printf(\"[\"); for (int i = 0; i < 256; i++) { printf(\"%d, \", inlines::__buffer[").append(bufferContext.getIndex()).append("][i]); ")
+//                    .append("} printf(\"\\b\\b]\\n\");\n");
+
         } else if (Objects.equals("trycatch", node.name)) {
             context.output.append(trimmedTryCatchBlock).append("\n");
+        } else if (Objects.equals("processEnvironment", node.name)) {
+            int size = context.obfuscator.getVerificationBuffer().size();
+
+            context.output.append("if(inlines::__buffer) { ");
+            for (int i = 0; i < size; i++) {
+                context.output.append("if(inlines::__buffer[").append(i).append("])").append("delete[] inlines::__buffer[").append(i).append("]; ");
+            }
+            context.output.append(" delete[] inlines::__buffer; inlines::__buffer = nullptr; } \n");
+
+//            if (rand_field)
+//            {
+//                if (rand_field[0])
+//                    delete[] rand_field[0];
+//                if (rand_field[1])
+//                    delete[] rand_field[1];
+//                if (rand_field[2])
+//                    delete[] rand_field[2];
+//                delete[] rand_field;
+//                rand_field = nullptr;
+//            }
         }
     }
 
+    @NativeObfuscation.Inline
     private static void processAdvanced(MethodContext context, MethodInsnNode node) {
         switch (node.name) {
             case "_advanced_checkProtection": {
