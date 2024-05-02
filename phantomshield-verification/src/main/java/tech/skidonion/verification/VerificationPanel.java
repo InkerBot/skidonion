@@ -5,6 +5,7 @@
 package tech.skidonion.verification;
 
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.verification.utils.Internals;
 
@@ -22,7 +23,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 
 /**
@@ -43,7 +43,10 @@ public class VerificationPanel extends JPanel {
         this.frame = frame;
         this.bundle = ResourceBundle.getBundle("tech.skidonion.verification.lang");
         initComponents();
+        readAccount();
+    }
 
+    private void readAccount() {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
             Properties properties = new Properties();
             properties.load(reader);
@@ -67,7 +70,6 @@ public class VerificationPanel extends JPanel {
         }
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE)
     private void login(ActionEvent e) {
         if (this.loginButton.isEnabled()) {
             this.loginButton.setEnabled(false);
@@ -75,24 +77,30 @@ public class VerificationPanel extends JPanel {
         }
     }
 
+    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     private void loginThread() {
         try {
             int result = (byte) Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword()));
+            Inline.trycatch();
             if (result == 0) {
                 try {
                     Path dataPath = Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode());
                     Files.createDirectories(dataPath);
+                    Inline.trycatch();
                     try (BufferedWriter writer = Files.newBufferedWriter(dataPath.resolve("userinfo"))) {
+                        Inline.trycatch();
                         Properties properties = new Properties();
                         properties.setProperty("username", this.usernameField.getText());
                         properties.setProperty("password", new String(this.passwordField.getPassword()));
                         properties.store(writer, "don't leak to anyone^^");
+                        Inline.trycatch();
                     }
                 } catch (Exception ignore) {
                 }
 
                 this.output.write(1);
                 SwingUtilities.invokeLater(frame::dispose);
+                Inline.trycatch();
             } else {
                 JOptionPane.showMessageDialog(this, bundle.getString("VerificationPanel.login.code." + result), "skidonion", JOptionPane.WARNING_MESSAGE);
             }
