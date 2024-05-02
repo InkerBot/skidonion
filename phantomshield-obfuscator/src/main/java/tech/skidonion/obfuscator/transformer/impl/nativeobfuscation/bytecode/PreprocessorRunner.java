@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
+import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 
 import java.util.Arrays;
@@ -64,13 +65,13 @@ public class PreprocessorRunner {
                 if (argument.getSize() == 1) {
                     if (argument.getSort() != Type.ARRAY && argument.getSort() != Type.OBJECT) {
                         iterator.add(new InsnNode(Opcodes.SWAP)); // 2
-                        iterator.add(getBoxingInsnNode(argument)); // 2
+                        iterator.add(ASMUtils.getBoxingInsnNode(argument)); // 2
                         iterator.add(new InsnNode(Opcodes.SWAP)); // 2
                     }
                 } else if (argument.getSize() == 2) {
                     iterator.add(new InsnNode(Opcodes.DUP_X2)); // 3
                     iterator.add(new InsnNode(Opcodes.POP)); // 2
-                    iterator.add(getBoxingInsnNode(argument)); // 2
+                    iterator.add(ASMUtils.getBoxingInsnNode(argument)); // 2
                     iterator.add(new InsnNode(Opcodes.SWAP)); // 2
                 }
                 iterator.add(new InsnNode(Opcodes.DUP)); // 3
@@ -169,16 +170,16 @@ public class PreprocessorRunner {
                         }
                     } else if (object instanceof Integer) {
                         iterator.add(new LdcInsnNode(object));
-                        iterator.add(getBoxingInsnNode(Type.INT_TYPE));
+                        iterator.add(ASMUtils.getBoxingInsnNode(Type.INT_TYPE));
                     } else if (object instanceof Long) {
                         iterator.add(new LdcInsnNode(object));
-                        iterator.add(getBoxingInsnNode(Type.LONG_TYPE));
+                        iterator.add(ASMUtils.getBoxingInsnNode(Type.LONG_TYPE));
                     } else if (object instanceof Float) {
                         iterator.add(new LdcInsnNode(object));
-                        iterator.add(getBoxingInsnNode(Type.FLOAT_TYPE));
+                        iterator.add(ASMUtils.getBoxingInsnNode(Type.FLOAT_TYPE));
                     } else if (object instanceof Double) {
                         iterator.add(new LdcInsnNode(object));
-                        iterator.add(getBoxingInsnNode(Type.DOUBLE_TYPE));
+                        iterator.add(ASMUtils.getBoxingInsnNode(Type.DOUBLE_TYPE));
                     } else if (object instanceof Handle) {
                         MethodHandleUtils.generateMethodHandleLdcInsn((Handle) object, iterator);
                     } else {
@@ -231,7 +232,7 @@ public class PreprocessorRunner {
         } else if (returnType.getSort() == Type.ARRAY) {
             iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, returnType.getDescriptor())); // 1
         } else {
-            getUnboxingTypeInsn(returnType, iterator);
+            ASMUtils.getUnboxingTypeInsn(returnType, iterator);
         }
         iterator.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "trycatch", "()V", false));
 
@@ -239,68 +240,5 @@ public class PreprocessorRunner {
     }
 
 
-    private static AbstractInsnNode getBoxingInsnNode(Type argument) {
-        switch (argument.getSort()) {
-            case Type.BOOLEAN:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
-            case Type.BYTE:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
-            case Type.CHAR:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
-            case Type.DOUBLE:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
-            case Type.FLOAT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
-            case Type.INT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
-            case Type.LONG:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
-            case Type.SHORT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
-            default:
-                throw new RuntimeException(String.format("Failed to box %s", argument));
-        }
-    }
 
-    private static void getUnboxingTypeInsn(Type argument, ListIterator<AbstractInsnNode> iterator) {
-        switch (argument.getSort()) {
-            case Type.BOOLEAN:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Boolean"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z"));
-                break;
-            case Type.BYTE:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Byte"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B"));
-                break;
-            case Type.CHAR:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Character"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C"));
-                break;
-            case Type.DOUBLE:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Double"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D"));
-                break;
-            case Type.FLOAT:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Float"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F"));
-                break;
-            case Type.INT:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Integer"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I"));
-                break;
-            case Type.LONG:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Long"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J"));
-                break;
-            case Type.SHORT:
-                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Short"));
-                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S"));
-                break;
-            case Type.VOID:
-                iterator.add(new InsnNode(Opcodes.POP));
-                break;
-            default:
-                throw new RuntimeException(String.format("Failed to unbox %s", argument));
-        }
-    }
 }

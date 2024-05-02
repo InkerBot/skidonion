@@ -82,6 +82,71 @@ public class ASMUtils implements Opcodes {
                || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Double);
     }
 
+    public static AbstractInsnNode getBoxingInsnNode(Type argument) {
+        switch (argument.getSort()) {
+            case Type.BOOLEAN:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
+            case Type.BYTE:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
+            case Type.CHAR:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
+            case Type.DOUBLE:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
+            case Type.FLOAT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
+            case Type.INT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
+            case Type.LONG:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
+            case Type.SHORT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
+            default:
+                throw new RuntimeException(String.format("Failed to box %s", argument));
+        }
+    }
+
+    public static void getUnboxingTypeInsn(Type argument, ListIterator<AbstractInsnNode> iterator) {
+        switch (argument.getSort()) {
+            case Type.BOOLEAN:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Boolean"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z"));
+                break;
+            case Type.BYTE:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Byte"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B"));
+                break;
+            case Type.CHAR:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Character"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C"));
+                break;
+            case Type.DOUBLE:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Double"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D"));
+                break;
+            case Type.FLOAT:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Float"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F"));
+                break;
+            case Type.INT:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Integer"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I"));
+                break;
+            case Type.LONG:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Long"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J"));
+                break;
+            case Type.SHORT:
+                iterator.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Short"));
+                iterator.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S"));
+                break;
+            case Type.VOID:
+                iterator.add(new InsnNode(Opcodes.POP));
+                break;
+            default:
+                throw new RuntimeException(String.format("Failed to unbox %s", argument));
+        }
+    }
+
     public static AbstractInsnNode getNumberInsn(int number) {
         if (number >= -1 && number <= 5)
             return new InsnNode(number + 3);

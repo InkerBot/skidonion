@@ -969,19 +969,26 @@ public class NativeObfuscation extends Transformer {
                                 if (obfuscated) {
                                     iterator.add(injectedNode);
                                 } else {
+                                    String originalDesc = injectedNode.desc;
+                                    String genericDesc = ASMUtils.getGenericMethodDesc(originalDesc);
+                                    Type returnType = Type.getReturnType(originalDesc);
+
                                     MethodNode inlineMethod = new MethodNode();
                                     inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
                                     inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
-                                    inlineMethod.desc = injectedNode.desc;
-                                    Type[] arguments = Type.getArgumentTypes(injectedNode.desc);
+                                    inlineMethod.desc = genericDesc;
+                                    Type[] arguments = Type.getArgumentTypes(genericDesc);
                                     for (int i = 0; i < arguments.length; i++) {
                                         Type argument = arguments[i];
                                         inlineMethod.instructions.add(new VarInsnNode(ASMUtils.getVarOpcode(argument, false), i));
                                     }
                                     inlineMethod.instructions.add(injectedNode);
-                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(Type.getReturnType(injectedNode.desc))));
+                                    inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(returnType)));
                                     inline.addMethod(inlineMethod);
                                     iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
+                                    if (returnType.getSort() != Type.VOID) {
+                                        iterator.add(new TypeInsnNode(CHECKCAST, returnType.getInternalName()));
+                                    }
                                 }
                             }
                         } else {

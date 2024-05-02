@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
 import tech.skidonion.obfuscator.utils.ASMUtils;
