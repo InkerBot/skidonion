@@ -79,6 +79,7 @@ public class BufferContext {
                 sb.append("!");
             }
         }
+
         sb.append("(inlines::__buffer[").append(this.getIndex()).append("][").append(predicate.getIndex()).append("] ^ static_cast<jbyte>(").append(predicate.getBuffer()).append("))");
         if (type == ConditionType.CODE_BLOCK) {
             sb.append(") { ").append(left).append(" } else { ").append(right).append(" }");

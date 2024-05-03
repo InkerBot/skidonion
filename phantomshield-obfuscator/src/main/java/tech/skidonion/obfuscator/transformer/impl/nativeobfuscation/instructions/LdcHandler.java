@@ -2,8 +2,12 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LdcInsnNode;
+import tech.skidonion.obfuscator.dictionary.generator.BibleGenerator;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class LdcHandler extends GenericInstructionHandler<LdcInsnNode> {
 
@@ -42,26 +46,63 @@ public class LdcHandler extends GenericInstructionHandler<LdcInsnNode> {
         Object cst = node.cst;
         if (cst instanceof String) {
             instructionName += "_STRING";
-            props.put("cst_ptr", context.getCachedStrings().getPointer(node.cst.toString()));
+
+            String ldc = context.getCachedStrings().getPointer(node.cst.toString());
+
+            if (context.verificationLock != null) {
+                String bible;
+
+                if (context.bible.size() < 10) {
+                    context.bible.add(bible = BibleGenerator.generate());
+                } else {
+                    bible = context.bible.get(ThreadLocalRandom.current().nextInt(context.bible.size()));
+                }
+
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, context.getCachedStrings().getPointer(bible));
+            }
+
+            props.put("cst_ptr", ldc);
+
         } else if (cst instanceof Integer) {
             instructionName += "_INT";
-            props.put("cst", getIntString((Integer) cst));
+            String ldc = getIntString((Integer) cst);
+            if (context.verificationLock != null) {
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, getIntString(ThreadLocalRandom.current().nextInt()));
+            }
+            props.put("cst", ldc);
         } else if (cst instanceof Long) {
             instructionName += "_LONG";
-            props.put("cst", getLongValue((Long) cst));
+            String ldc = getLongValue((Long) cst);
+            if (context.verificationLock != null) {
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, getLongValue(ThreadLocalRandom.current().nextLong()));
+            }
+            props.put("cst", ldc);
         } else if (cst instanceof Float) {
             instructionName += "_FLOAT";
-            props.put("cst", getFloatValue((Float) node.cst));
+            String ldc = getFloatValue((Float) node.cst);
+            if (context.verificationLock != null) {
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, getFloatValue(ThreadLocalRandom.current().nextFloat()));
+            }
+            props.put("cst", ldc);
         } else if (cst instanceof Double) {
             instructionName += "_DOUBLE";
-            props.put("cst", getDoubleValue((Double) node.cst));
+            String ldc = getDoubleValue((Double) node.cst);
+            if (context.verificationLock != null) {
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, getDoubleValue(ThreadLocalRandom.current().nextDouble()));
+            }
+            props.put("cst", ldc);
         } else if (cst instanceof Type) {
             instructionName += "_CLASS";
 
             int classId = context.getCachedClasses().getId(node.cst.toString());
             context.output.append(MethodProcessor.getClassCacher(context, classId, node.cst.toString(), trimmedTryCatchBlock));
 
-            props.put("cst_ptr", context.getCachedClasses().getPointer(node.cst.toString()));
+            String ldc = context.getCachedClasses().getPointer(node.cst.toString());
+            if (context.verificationLock != null) {
+                ldc = context.verificationLock.generateCondition(BufferContext.ConditionType.VALUE, ldc, "nullptr");
+            }
+
+            props.put("cst_ptr", ldc);
         } else {
             throw new UnsupportedOperationException();
         }

@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.CatchesBlock;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
@@ -19,6 +20,7 @@ public abstract class GenericInstructionHandler<T extends AbstractInsnNode> impl
     protected String originTryCatchBlock;
 
     @Override
+    @NativeObfuscation(verificationLock = "基础用户组")
     public void accept(MethodContext context, T node) {
         props = new HashMap<>();
         instructionName = MethodProcessor.INSTRUCTIONS.getOrDefault(node.getOpcode(), "NOTFOUND");

@@ -2,7 +2,6 @@ package tech.skidonion.obfuscator.cpp;
 
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.utils.IOUtils;
-import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;

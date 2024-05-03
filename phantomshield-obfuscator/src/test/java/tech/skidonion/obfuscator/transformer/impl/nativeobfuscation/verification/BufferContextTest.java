@@ -59,5 +59,9 @@ class BufferContextTest {
         for (int i = 0; i < 10; i++) {
             System.out.println(buffer.generateCondition("123", "345"));
         }
+
+        for (int i = 0; i < 10; i++) {
+            System.out.println(buffer.generateCondition(BufferContext.ConditionType.CODE_BLOCK,"printf(\"true halo\");","printf(\"fake halo\");"));
+        }
     }
 }

@@ -204,6 +204,7 @@ public class PhantomShield {
         writeOutput();
     }
 
+    @NativeObfuscation(verificationLock = "基础用户组")
     private void writeOutput() {
         File output = new File(config.getString("output"));
         INFO(BUNDLE.getString("phantom-shield-x.instance.output"), output.getAbsolutePath());

@@ -14,6 +14,7 @@ import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.Pre
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedMethodInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.InlineHandler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instructions.inline.std.InlineRegister;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -221,6 +222,11 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             }
         }
         props.put("args", argsBuilder.toString());
+
+        if (context.verificationLock != null) {
+            context.output.append(context.verificationLock.generateCondition(BufferContext.ConditionType.CODE_BLOCK, context.obfuscator.getSnippets().getSnippet(instructionName, props), "cstack" + props.get("objectstackindex") + " = {};"));
+            instructionName = null;
+        }
     }
 
     @Override

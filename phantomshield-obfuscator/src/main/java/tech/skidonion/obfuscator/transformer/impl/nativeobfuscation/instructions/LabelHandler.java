@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 
 import org.objectweb.asm.tree.LabelNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 
 public class LabelHandler extends GenericInstructionHandler<LabelNode> {
 

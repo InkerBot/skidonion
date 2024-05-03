@@ -17,6 +17,7 @@ import java.util.*;
 
 public class MethodContext {
 
+    public final List<String> bible = new ArrayList<>();
     public NativeObfuscation obfuscator;
     public final MethodWrapper method;
     public final ClassWrapper clazz;

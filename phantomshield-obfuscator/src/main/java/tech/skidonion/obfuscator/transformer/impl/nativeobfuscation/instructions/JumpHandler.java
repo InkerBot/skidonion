@@ -3,6 +3,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.JumpInsnNode;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 
 public class JumpHandler extends GenericInstructionHandler<JumpInsnNode> {
@@ -10,6 +11,10 @@ public class JumpHandler extends GenericInstructionHandler<JumpInsnNode> {
     @Override
     protected void process(MethodContext context, JumpInsnNode node) {
         props.put("label", String.valueOf(context.getLabelPool().getName(node.label.getLabel())));
+        if (context.verificationLock != null) {
+            context.output.append(context.verificationLock.generateCondition(BufferContext.ConditionType.CODE_BLOCK, context.obfuscator.getSnippets().getSnippet(instructionName, props), "goto " + context.getLabelPool().randomLabel() + ";"));
+            instructionName = null;
+        }
     }
 
     @Override

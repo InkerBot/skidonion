@@ -17,6 +17,7 @@ import static tech.skidonion.obfuscator.PhantomShield.ERROR;
 import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
 
 @LoadAfterLogin(value = "基础用户组", priority = 0)
+@tech.skidonion.obfuscator.annotations.NativeObfuscation
 public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 
@@ -77,6 +78,7 @@ public class TransformerRegister {
         }
     }
 
+    @tech.skidonion.obfuscator.annotations.NativeObfuscation(verificationLock = "基础用户组")
     public void process(PhantomShield obfuscator) {
         instances.values().stream().filter(instance -> Objects.nonNull(instance) && instance.isEnabled()).forEach(instance -> {
             instance.init(obfuscator);
