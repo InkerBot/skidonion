@@ -2,13 +2,9 @@
 // Created by Administrator on 2024/3/15.
 //
 
-#include "jvm_internal.hpp"
+#include "jvm_internal.h"
 
 //#define DEBUGGER
-
-#ifdef DEBUGGER
-#include <iostream>
-#endif
 
 JVMWrappers::struct_entries_t JVMWrappers::struct_entries;
 JVMWrappers::type_entries_t JVMWrappers::type_entries;

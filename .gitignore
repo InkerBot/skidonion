@@ -128,3 +128,7 @@ hs_err_pid*
 /.cache/
 /IK
 /test/input
+
+/phantomshield-cpputils/zig-cache
+/phantomshield-cpputils/zig-out
+/phantomshield-cpputils/.vscode

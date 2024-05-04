@@ -1,14 +1,13 @@
 //
-// Created by Baier on 2024/3/15.
+// Created by Administrator on 2024/3/15.
 //
 
 #ifndef JVM_INTERNAL_H
 #define JVM_INTERNAL_H
 
-#include <optional>
-#include <unordered_map>
-#include <string>
-#include "jni.h"
+#include "include_header.h"
+
+
 static constexpr uint32_t BitsPerWord = ((int32_t )32);
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 #define nth_bit(n)        (n >= BitsPerWord ? 0 : OneBit << (n))
@@ -46,6 +45,17 @@ constexpr static uintptr_t large_offset_mask = right_n_bits(large_offset_bits);
 constexpr static uintptr_t small_offset_mask = right_n_bits(small_offset_bits);
 constexpr static uintptr_t klass_mask        = right_n_bits(klass_bits);
 #endif
+
+namespace java_hotspot {
+    class oop_desc;
+}
+
+typedef unsigned int narrowOop; // Offset instead of address for an oop within a java object
+
+// If compressed klass pointers then use narrowKlass.
+typedef unsigned int narrowKlass;
+
+typedef java_hotspot::oop_desc *oop;
 
 enum JavaThreadState {
     _thread_uninitialized     =  0, // should never happen (missing initialization)
@@ -212,6 +222,11 @@ namespace jvm_internal {
         }
     };
 
+    template<typename T>
+    T get_locals_object(const uintptr_t parameters, const size_t local_index) {
+        const auto address = reinterpret_cast<uint8_t *>(parameters);
+        return *reinterpret_cast<T *>(address - local_index * 8);
+    }
 }
 
 inline int build_int_from_shorts(const uint16_t low, const uint16_t high) {
