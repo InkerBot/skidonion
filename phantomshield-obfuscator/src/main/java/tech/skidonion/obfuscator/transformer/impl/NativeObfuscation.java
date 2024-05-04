@@ -703,7 +703,10 @@ public class NativeObfuscation extends Transformer {
                     if (map != null) {
                         Object lock = map.get("verificationLock");
                         if (lock instanceof String) {
-                            if (magicKey.containsKey(lock)) {
+                            if (!magicKey.containsKey(lock)) {
+                                ERROR(TRANSLATION("phantom-shield-x.native.role-error"));
+                                System.exit(0);
+                            } else if (!verificationBuffer.containsKey(lock)) {
                                 byte[] key = encryptedClasses.computeIfAbsent((String) lock, k -> {
                                     byte[] des = new byte[32];
                                     byte[] magic = magicKey.get(k);
@@ -762,9 +765,6 @@ public class NativeObfuscation extends Transformer {
 //                                System.out.println(Arrays.toString(src));
 
                                 verificationBuffer.put((String) lock, new BufferContext(verificationLockIndex.getAndIncrement(), src, dst));
-                            } else {
-                                ERROR(TRANSLATION("phantom-shield-x.native.role-error"));
-                                System.exit(0);
                             }
                         }
                     }

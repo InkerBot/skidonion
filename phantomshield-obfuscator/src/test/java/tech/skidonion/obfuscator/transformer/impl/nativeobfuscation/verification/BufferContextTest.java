@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.Buffer;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +51,8 @@ class BufferContextTest {
                 _i = (_i + 1) & 0xFF;
             }
         }
-//                                System.out.println(Arrays.toString(src));
+
+//        System.out.println(Arrays.toString(src));
         buffer = new BufferContext(0, src, dst);
     }
 
@@ -61,7 +63,7 @@ class BufferContextTest {
         }
 
         for (int i = 0; i < 10; i++) {
-            System.out.println(buffer.generateCondition(BufferContext.ConditionType.CODE_BLOCK,"printf(\"true halo\");","printf(\"fake halo\");"));
+            System.out.println(buffer.generateCondition(BufferContext.ConditionType.CODE_BLOCK, "printf(\"true halo\\n\");", "printf(\"fake halo\\n\");"));
         }
     }
 }
