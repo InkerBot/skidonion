@@ -55,7 +55,7 @@ import java.util.zip.ZipOutputStream;
 public class PhantomShield {
     @NativeObfuscation.Inline
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.1.2.2";
+    public static final String VERSION = "v0.1.3";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
