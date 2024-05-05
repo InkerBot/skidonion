@@ -16,20 +16,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class ClassSourceBuilder implements AutoCloseable {
+public class ClassSourceBuilder {
     private final NativeObfuscation obfuscation;
     private final CppCompiler compiler;
-    private final Path cppFile;
-    private final Path hppFile;
-    private final BufferedWriter cppWriter;
-    private final BufferedWriter hppWriter;
+    private final StringBuilder cppWriter = new StringBuilder();
     private final String className;
     private final String filename;
 
     private final StringPool stringPool;
     private final String prefixVM;
 
-    public ClassSourceBuilder(NativeObfuscation obfuscation, Path cppOutputDir, String className, int classIndex, StringPool stringPool) throws IOException {
+    public ClassSourceBuilder(NativeObfuscation obfuscation, String className, int classIndex, StringPool stringPool) throws IOException {
         this.obfuscation = obfuscation;
         this.compiler = obfuscation.obfuscator.getCompiler();
         this.className = className;
@@ -37,30 +34,12 @@ public class ClassSourceBuilder implements AutoCloseable {
 
         this.prefixVM = compiler.isAdvancedModuleEnable() ? "VM" : "VIRTUALIZER";
         filename = String.format("%s_%d", StringUtils.escapeCppNameString(className.replace('/', '_')), classIndex);
-
-        cppFile = cppOutputDir.resolve(filename.concat(".cpp"));
-        hppFile = cppOutputDir.resolve(filename.concat(".hpp"));
-        cppWriter = Files.newBufferedWriter(cppFile, StandardCharsets.UTF_8);
-        hppWriter = Files.newBufferedWriter(hppFile, StandardCharsets.UTF_8);
     }
 
-    public void addHeader(Set<String> headers, int strings, int classes, int methods, int fields, int callsites, boolean virtualize) throws IOException {
-        for (String header : headers) {
-            cppWriter.append("#include ").append(header).append("\n");
-        }
+    public void addHeader(int strings, int classes, int methods, int fields, int callsites) throws IOException {
 
-        cppWriter.append("#include \"../native_jvm.hpp\"\n");
-        cppWriter.append("#include \"../string_pool.hpp\"\n");
-        cppWriter.append("#include \"../native_jvm_inline.hpp\"\n");
-        if (virtualize) {
-            if (compiler.isAdvancedModuleEnable()) {
-                cppWriter.append("#include \"../ThemidaSDK.h\"\n");
-            } else {
-                cppWriter.append("#include \"../VirtualizerSDK.h\"\n");
-            }
-        }
-        cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
-        cppWriter.append("\n");
+//        cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
+//        cppWriter.append("\n");
         cppWriter.append("// ").append(StringUtils.escapeCommentString(className)).append("\n");
         cppWriter.append("namespace native_jvm::classes::__ngen_").append(filename).append(" {\n\n");
         cppWriter.append("    char *string_pool;\n\n");
@@ -94,16 +73,6 @@ public class ClassSourceBuilder implements AutoCloseable {
         cppWriter.append("    ");
 
 
-        hppWriter.append("#include \"../native_jvm.hpp\"\n");
-        hppWriter.append("\n");
-        hppWriter.append("#ifndef ").append(filename.concat("_hpp").toUpperCase()).append("_GUARD\n");
-        hppWriter.append("\n");
-        hppWriter.append("#define ").append(filename.concat("_hpp").toUpperCase()).append("_GUARD\n");
-        hppWriter.append("\n");
-        hppWriter.append("// ").append(StringUtils.escapeCommentString(className)).append("\n");
-        hppWriter.append("namespace native_jvm::classes::__ngen_")
-                .append(filename)
-                .append(" {\n\n");
     }
 
     public void addInstructions(String instructions) throws IOException {
@@ -205,24 +174,14 @@ public class ClassSourceBuilder implements AutoCloseable {
         cppWriter.append("    }\n");
         cppWriter.append("}");
 
-        hppWriter.append("    void __ngen_register_methods(JNIEnv *env, jclass clazz);\n");
-        hppWriter.append("}\n\n#endif");
+    }
+
+    public String build() {
+        return cppWriter.toString();
     }
 
     public String getFilename() {
         return filename;
-    }
-
-    public String getHppFilename() {
-        return hppFile.getFileName().toString();
-    }
-
-    public String getCppFilename() {
-        return cppFile.getFileName().toString();
-    }
-
-    public Path getCppFile() {
-        return cppFile;
     }
 
     protected String vmStart() {
@@ -233,12 +192,4 @@ public class ClassSourceBuilder implements AutoCloseable {
         return prefixVM + "_TIGER_WHITE_END\n";
     }
 
-    @Override
-    public void close() throws IOException {
-        try {
-            cppWriter.close();
-        } finally {
-            hppWriter.close();
-        }
-    }
 }

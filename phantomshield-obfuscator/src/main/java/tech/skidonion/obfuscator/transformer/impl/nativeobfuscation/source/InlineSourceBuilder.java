@@ -53,7 +53,6 @@ public class InlineSourceBuilder {
                 cpp.append("#include \"VirtualizerSDK.h\"\n");
             }
         }
-        cpp.append("namespace native_jvm::inlines {\n");
 
 
         // hpp
@@ -61,6 +60,16 @@ public class InlineSourceBuilder {
         hpp.append("#include <unordered_map>\n");
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
+
+    }
+
+    public void buildEncryptedClasses(StringBuilder encryptedClassBuilder) {
+
+        cpp.append(encryptedClassBuilder);
+
+        cpp.append("namespace native_jvm::inlines {\n");
+
+
         hpp.append("namespace native_jvm::inlines {\n");
     }
 
@@ -198,4 +207,5 @@ public class InlineSourceBuilder {
     protected String vmEnd() {
         return prefixVM + "_TIGER_WHITE_END\n";
     }
+
 }

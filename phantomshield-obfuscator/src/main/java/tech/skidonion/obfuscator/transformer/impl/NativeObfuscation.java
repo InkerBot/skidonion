@@ -38,7 +38,6 @@ import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 import tech.skidonion.obfuscator.value.impls.StringValue;
 import tech.skidonion.obfuscator.value.impls.SubValue;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -119,8 +118,6 @@ public class NativeObfuscation extends Transformer {
     @Override
     public void postprocess() throws Exception {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
-        Path cppOutput = cppDir.resolve("output");
-        Files.createDirectories(cppOutput);
         CppCompiler compiler = obfuscator.getCompiler();
         compiler.setOutputDir(cppDir.toFile());
 
@@ -220,84 +217,92 @@ public class NativeObfuscation extends Transformer {
                 cachedFields.clear();
                 cachedCallSitesIndex = new AtomicInteger();
 
-                try (ClassSourceBuilder cppBuilder =
-                             new ClassSourceBuilder(this, cppOutput, cw.getName(), classIndexReference[0]++, stringPool)) {
-                    compiler.addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
-                    StringBuilder instructions = new StringBuilder();
+                ClassSourceBuilder cppBuilder =
+                        new ClassSourceBuilder(this, cw.getName(), classIndexReference[0]++, stringPool);
+//                    compiler.addCppFile(cppBuilder.getCppFile().toAbsolutePath().toString());
+                StringBuilder instructions = new StringBuilder();
 
-                    Set<String> headers = new HashSet<>();
+                Set<String> headers = new HashSet<>();
 
-                    boolean shouldVirtualize = false;
-                    for (int i = 0; i < cw.getMethods().size(); i++) {
-                        MethodWrapper method = cw.getMethods().get(i);
+                boolean shouldVirtualize = false;
+                for (int i = 0; i < cw.getMethods().size(); i++) {
+                    MethodWrapper method = cw.getMethods().get(i);
 
-                        if (!MethodProcessor.shouldProcess(method.getMethodNode()) || !match(method)) {
-                            continue;
+                    if (!MethodProcessor.shouldProcess(method.getMethodNode()) || !match(method)) {
+                        continue;
+                    }
+                    MethodContext context = new MethodContext(this, method, i, cw, currentClassId);
+                    Map<String, Object> map = getAnnotationValues(method);
+                    removeAnnotation(method);
+                    if (map != null) {
+                        Object virtualize = map.get("virtualize");
+                        if (virtualize instanceof String[]) {
+                            shouldVirtualize = true;
+                            context.virtualization = ((String[]) virtualize)[1];
+                            compiler.getVirtualizeMacroCount().getAndIncrement();
                         }
-                        MethodContext context = new MethodContext(this, method, i, cw, currentClassId);
-                        Map<String, Object> map = getAnnotationValues(method);
-                        removeAnnotation(method);
-                        if (map != null) {
-                            Object virtualize = map.get("virtualize");
-                            if (virtualize instanceof String[]) {
-                                shouldVirtualize = true;
-                                context.virtualization = ((String[]) virtualize)[1];
-                                compiler.getVirtualizeMacroCount().getAndIncrement();
-                            }
-                            Object ignoreTryCatch = map.get("manualTryCatch");
-                            if (ignoreTryCatch instanceof Boolean) {
-                                context.manualTryCatch = (boolean) ignoreTryCatch;
-                            }
-                            Object lock = map.get("verificationLock");
-                            if (lock instanceof String) {
-                                BufferContext buffer;
-                                if ((buffer = verificationBuffer.get(lock)) != null) {
-                                    context.verificationLock = buffer;
-                                }
-                            }
+                        Object ignoreTryCatch = map.get("manualTryCatch");
+                        if (ignoreTryCatch instanceof Boolean) {
+                            context.manualTryCatch = (boolean) ignoreTryCatch;
                         }
-                        if ("<clinit>".equals(method.getName())) {
-                            if (!"NONE".equals(clinitVirtualization)) {
-                                shouldVirtualize = true;
-                                context.virtualization = clinitVirtualization;
-                            }
-                            context.manualTryCatch = clinitIgnoreTryCatch;
+                        Object lock = map.get("verificationLock");
+                        if (lock instanceof String) {
                             BufferContext buffer;
-                            if ((buffer = verificationBuffer.get(clinitLock)) != null) {
+                            if ((buffer = verificationBuffer.get(lock)) != null) {
                                 context.verificationLock = buffer;
                             }
                         }
-                        if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
-                            methodProcessor.processMethod(context);
-                        shouldVirtualize |= context.shouldVirtualize;
-
-                        headers.addAll(context.headers);
-
-                        instructions.append(context.output.toString().replace("\n", "\n    "));
-
-                        nativeMethods.append(context.nativeMethods);
-
-                        if (context.proxyMethod != null) {
-                            hiddenMethods.add(new HiddenCppMethod(context.proxyMethod, context.cppNativeMethodName));
+                    }
+                    if ("<clinit>".equals(method.getName())) {
+                        if (!"NONE".equals(clinitVirtualization)) {
+                            shouldVirtualize = true;
+                            context.virtualization = clinitVirtualization;
                         }
-
-                        if ((computedClassNode.access & Opcodes.ACC_INTERFACE) > 0) {
-                            method.getMethodNode().access &= ~Opcodes.ACC_NATIVE;
+                        context.manualTryCatch = clinitIgnoreTryCatch;
+                        BufferContext buffer;
+                        if ((buffer = verificationBuffer.get(clinitLock)) != null) {
+                            context.verificationLock = buffer;
                         }
                     }
+                    if (opt.isPresent() && (Integer.parseInt(opt.get()) ^ 1825605542) == 1789160537)
+                        methodProcessor.processMethod(context);
+                    shouldVirtualize |= context.shouldVirtualize;
 
-                    shouldVirtualize |= isVerificationEnable();
+                    headers.addAll(context.headers);
 
-                    cppBuilder.addHeader(headers, cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
-                    cppBuilder.addInstructions(instructions.toString());
-                    cppBuilder.registerMethods(cw, cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
+                    instructions.append(context.output.toString().replace("\n", "\n    "));
 
+                    nativeMethods.append(context.nativeMethods);
+
+                    if (context.proxyMethod != null) {
+                        hiddenMethods.add(new HiddenCppMethod(context.proxyMethod, context.cppNativeMethodName));
+                    }
+
+                    if ((computedClassNode.access & Opcodes.ACC_INTERFACE) > 0) {
+                        method.getMethodNode().access &= ~Opcodes.ACC_NATIVE;
+                    }
+                }
+
+                shouldVirtualize |= isVerificationEnable();
+
+                cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get());
+                cppBuilder.addInstructions(instructions.toString());
+                cppBuilder.registerMethods(cw, cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
+
+                if (shouldVirtualize) {
+                    if (compiler.isAdvancedModuleEnable()) {
+                        mainSourceBuilder.addHeader("\"ThemidaSDK.h\"");
+                    } else {
+                        mainSourceBuilder.addHeader("\"VirtualizerSDK.h\"");
+                    }
+                }
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getHppFilename());
 //                    cMakeBuilder.addClassFile("output/" + cppBuilder.getCppFilename());
 
-                    mainSourceBuilder.addHeader(cppBuilder.getHppFilename());
-                    mainSourceBuilder.registerClassMethods(currentClassId, cppBuilder.getFilename());
-                }
+                mainSourceBuilder.addHeaders(headers);
+                mainSourceBuilder.addConvertedCode(cppBuilder.build());
+                mainSourceBuilder.registerClassMethods(currentClassId, cppBuilder.getFilename());
+
 
                 currentClassId++;
             } catch (IOException ex) {
@@ -386,6 +391,8 @@ public class NativeObfuscation extends Transformer {
         }
 
         // process encrypted classes
+        StringBuilder encryptedClassBuilder = new StringBuilder();
+
         if (!encryptedClasses.isEmpty()) {
             INFO(TRANSLATION("phantom-shield-x.native.encrypted-classes"));
 
@@ -401,7 +408,7 @@ public class NativeObfuscation extends Transformer {
 
                     String classFileName = "data_" + StringUtils.escapeCppNameString(classWrapper.getName().replace('/', '_'));
 
-                    headers.add("\"output/" + classFileName + ".hpp\"");
+//                    headers.add("\"output/" + classFileName + ".hpp\"");
 
                     CustomClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                     classWrapper.getClassNode().accept(classWriter);
@@ -413,30 +420,14 @@ public class NativeObfuscation extends Transformer {
                         data.add(b);
                     }
 
-                    try (BufferedWriter hppWriter = Files.newBufferedWriter(cppOutput.resolve(classFileName + ".hpp"))) {
-                        hppWriter.append("#include \"../native_jvm.hpp\"\n\n");
-                        hppWriter.append("#ifndef ").append(classFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                        hppWriter.append("#define ").append(classFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                        hppWriter.append("namespace native_jvm::data::__ngen_").append(classFileName).append(" {\n");
-                        hppWriter.append("    const jbyte* get_class_data();\n");
-                        hppWriter.append("    const jsize get_class_data_length();\n");
-                        hppWriter.append("}\n\n");
-                        hppWriter.append("#endif\n");
-                    }
-
-                    Path cppPath = cppOutput.resolve(classFileName + ".cpp");
-                    try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
-                        compiler.addCppFile(cppPath.toAbsolutePath().toString());
-                        cppWriter.append("#include \"").append(classFileName).append(".hpp\"\n\n");
-                        cppWriter.append("namespace native_jvm::data::__ngen_").append(classFileName).append(" {\n");
-                        cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
-                        cppWriter.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
-                        cppWriter.append("};\n");
-                        cppWriter.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
-                        cppWriter.append("    const jbyte* get_class_data() { return class_data; }\n");
-                        cppWriter.append("    const jsize get_class_data_length() { return class_data_length; }\n");
-                        cppWriter.append("}\n");
-                    }
+                    encryptedClassBuilder.append("namespace native_jvm::data::__ngen_").append(classFileName).append(" {\n");
+                    encryptedClassBuilder.append("    static const jbyte class_data[").append(data.size()).append("] = { ");
+                    encryptedClassBuilder.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+                    encryptedClassBuilder.append("};\n");
+                    encryptedClassBuilder.append("    static const jsize class_data_length = ").append(data.size()).append(";\n\n");
+                    encryptedClassBuilder.append("    const jbyte* get_class_data() { return class_data; }\n");
+                    encryptedClassBuilder.append("    const jsize get_class_data_length() { return class_data_length; }\n");
+                    encryptedClassBuilder.append("}\n\n");
 
 
                     for (MethodWrapper method : classWrapper.getMethods()) {
@@ -462,6 +453,7 @@ public class NativeObfuscation extends Transformer {
 
 
         inlineSourceBuilder.buildHeader(headers, shouldVirtualize);
+        inlineSourceBuilder.buildEncryptedClasses(encryptedClassBuilder);
         inlineSourceBuilder.buildInlineFields();
         inlineSourceBuilder.buildInlineMethods(instructions.toString(), declarations.toString(), cachedStrings, cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
         inlineSourceBuilder.buildVerificationField();
@@ -476,7 +468,7 @@ public class NativeObfuscation extends Transformer {
 //            cMakeBuilder.addClassFile("output/" + hiddenClassFileName + ".hpp");
 //            cMakeBuilder.addClassFile("output/" + hiddenClassFileName + ".cpp");
 
-                mainSourceBuilder.addHeader(hiddenClassFileName + ".hpp");
+//                mainSourceBuilder.addHeader(hiddenClassFileName + ".hpp");
                 mainSourceBuilder.registerDefine(stringPool.get(hiddenClass.name), hiddenClassFileName);
 
                 CustomClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
@@ -486,31 +478,16 @@ public class NativeObfuscation extends Transformer {
                 for (byte b : rawData) {
                     data.add(b);
                 }
-
-                try (BufferedWriter hppWriter = Files.newBufferedWriter(cppOutput.resolve(hiddenClassFileName + ".hpp"))) {
-                    hppWriter.append("#include \"../native_jvm.hpp\"\n\n");
-                    hppWriter.append("#ifndef ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                    hppWriter.append("#define ").append(hiddenClassFileName.toUpperCase()).append("_HPP_GUARD\n\n");
-                    hppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
-                    hppWriter.append("    const jbyte* get_class_data();\n");
-                    hppWriter.append("    const jsize get_class_data_length();\n");
-                    hppWriter.append("}\n\n");
-                    hppWriter.append("#endif\n");
-                }
-
-                Path cppPath = cppOutput.resolve(hiddenClassFileName + ".cpp");
-                try (BufferedWriter cppWriter = Files.newBufferedWriter(cppPath)) {
-                    compiler.addCppFile(cppPath.toAbsolutePath().toString());
-                    cppWriter.append("#include \"").append(hiddenClassFileName).append(".hpp\"\n\n");
-                    cppWriter.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
-                    cppWriter.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
-                    cppWriter.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
-                    cppWriter.append("};\n");
-                    cppWriter.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
-                    cppWriter.append("    const jbyte* get_class_data() { return class_data; }\n");
-                    cppWriter.append("    const jsize get_class_data_length() { return class_data_length; }\n");
-                    cppWriter.append("}\n");
-                }
+                StringBuilder codes = new StringBuilder();
+                codes.append("namespace native_jvm::data::__ngen_").append(hiddenClassFileName).append(" {\n");
+                codes.append("    static const jbyte class_data[").append(String.valueOf(data.size())).append("] = { ");
+                codes.append(data.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+                codes.append("};\n");
+                codes.append("    static const jsize class_data_length = ").append(String.valueOf(data.size())).append(";\n\n");
+                codes.append("    const jbyte* get_class_data() { return class_data; }\n");
+                codes.append("    const jsize get_class_data_length() { return class_data_length; }\n");
+                codes.append("}\n");
+                mainSourceBuilder.addConvertedCode(codes.toString());
             }
         } else {
             injectClassesAsResource(hiddenMethodsPool.getClasses());
@@ -520,7 +497,7 @@ public class NativeObfuscation extends Transformer {
         Files.write(cppDir.resolve("native_jvm_inline.cpp"), inlineSourceBuilder.buildCpp().getBytes(StandardCharsets.UTF_8));
         Files.write(cppDir.resolve("native_jvm_inline.hpp"), inlineSourceBuilder.buildHpp().getBytes(StandardCharsets.UTF_8));
 
-        mainSourceBuilder.addCode("        inlines::init(env);");
+        mainSourceBuilder.addAdditionCode("        inlines::init(env);");
         Files.write(cppDir.resolve("native_jvm_output.cpp"), mainSourceBuilder.build(nativeDir, currentClassId).getBytes(StandardCharsets.UTF_8));
 
         compiler.addCppFile(cppDir.resolve("native_jvm_inline.cpp").toAbsolutePath().toString());
@@ -624,7 +601,7 @@ public class NativeObfuscation extends Transformer {
                 if (values != null) {
                     Object value = values.get("value");
                     Object priority = values.getOrDefault("priority", 0);
-                    if (value instanceof String && priority instanceof Integer) {
+                    if (value instanceof String && priority instanceof Integer && isVerificationEnable()) {
                         if (magicKey.containsKey(value)) {
                             encryptedClasses.compute((String) value, (k, v) -> {
                                 Pair<byte[], List<PriorityObject<ClassWrapper>>> pair;
@@ -702,7 +679,7 @@ public class NativeObfuscation extends Transformer {
                     Map<String, Object> map = getAnnotationValues(methodWrapper);
                     if (map != null) {
                         Object lock = map.get("verificationLock");
-                        if (lock instanceof String) {
+                        if (lock instanceof String && isVerificationEnable()) {
                             if (!magicKey.containsKey(lock)) {
                                 ERROR(TRANSLATION("phantom-shield-x.native.role-error"));
                                 System.exit(0);

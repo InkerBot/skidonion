@@ -5,6 +5,8 @@
 
 $includes
 
+$converted_codes
+
 namespace native_jvm {
 
     typedef void (* reg_method)(JNIEnv *,jclass);
