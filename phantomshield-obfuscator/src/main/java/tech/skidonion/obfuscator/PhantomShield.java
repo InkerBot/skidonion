@@ -250,7 +250,7 @@ public class PhantomShield {
                         ioe.printStackTrace();
                     }
                 });
-                zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://obfuscator.fl0wowp4rty.top/"));
+                zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://skidonion.tech/"));
                 zos.close();
             } catch (IOException ioe) {
                 ioe.printStackTrace();
