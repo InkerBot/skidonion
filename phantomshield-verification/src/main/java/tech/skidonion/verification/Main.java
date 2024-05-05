@@ -18,35 +18,27 @@ import java.util.ResourceBundle;
 
 public class Main {
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
+    @NativeObfuscation
     public static int showVerification() {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
-            Inline.trycatch();
             Properties properties = new Properties();
             properties.load(reader);
-            Inline.trycatch();
             String username = properties.getProperty("username");
-            Inline.trycatch();
             String password = properties.getProperty("password");
-            Inline.trycatch();
             if (username != null && password != null) {
                 ResourceBundle bundle = ResourceBundle.getBundle("tech.skidonion.verification.lang");
-                Inline.trycatch();
                 System.out.println(bundle.getString("VerificationPanel.login.autologin"));
                 int result = Wrapper.login(username, password);
-                Inline.trycatch();
                 if (result == 0) {
                     return 1;
                 } else {
                     JOptionPane.showMessageDialog(null, bundle.getString("VerificationPanel.login.code." + result), "skidonion", JOptionPane.WARNING_MESSAGE);
-                    Inline.trycatch();
                 }
             }
         } catch (Exception ignore) {
         }
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            Inline.trycatch();
         } catch (Exception ignore) {
         }
         JFrame jFrame = new JFrame();
