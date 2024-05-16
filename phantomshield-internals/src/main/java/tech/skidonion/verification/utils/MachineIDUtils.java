@@ -32,7 +32,7 @@ public class MachineIDUtils {
         current += length;
         try {
             data.writeByte(0xFF);
-            data.writeByte(0x02);
+            data.writeByte(0x03);
             for (int i = 0; i < length; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
             data.write(0x00);
             host:
@@ -48,7 +48,7 @@ public class MachineIDUtils {
             }
             os:
             {
-                String os = String.join("-", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), System.getProperty("user.name"));
+                String os = String.join("-", System.getProperty("user.home"), System.getProperty("user.name"));
                 byte[] n = os.getBytes(StandardCharsets.UTF_8);
                 current += 3 + n.length;
                 if (current > max) break os;
@@ -79,7 +79,7 @@ public class MachineIDUtils {
             data.writeByte(0x00);
             int rest = max - current;
             for (int i = 0; i < rest; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
-            data.writeByte(0x02);
+            data.writeByte(0x03);
             data.writeByte(0xFF);
         } catch (IOException exception) {
             return;
@@ -122,7 +122,7 @@ public class MachineIDUtils {
         DataInputStream data = new DataInputStream(bis);
         try {
             int valid = 0;
-            byte[] mark = new byte[]{(byte) 0xFF, 0x02};
+            byte[] mark = new byte[]{(byte) 0xFF, 0x03};
             byte[] header = new byte[2];
             byte[] tail = new byte[]{decoded[decoded.length - 1], decoded[decoded.length - 2]};
             data.read(header);
