@@ -48,6 +48,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
@@ -191,10 +192,17 @@ public class NativeObfuscation extends Transformer {
 
                 if (displayName != null) INFO(TRANSLATION("phantom-shield-x.native.covert"), displayName);
 
-                cw.getMethods().stream().filter(this::match)
-                        .map(MethodWrapper::getMethodNode)
-                        .filter(MethodProcessor::shouldProcess)
-                        .forEach(PreprocessorRunner::preprocess);
+                Stream<MethodNode> antiLowIq =
+                        cw.getMethods().stream().filter(this::match)
+                                .map(MethodWrapper::getMethodNode);
+                List<MethodNode> methods = antiLowIq.collect(Collectors.toList());
+                if (methods.size() <= 1) {
+                    if (displayName != null)
+                        WARN(TRANSLATION("phantom-shield-x.native.no-methods"), displayName);
+                } else {
+                    methods.stream().filter(MethodProcessor::shouldProcess)
+                            .forEach(PreprocessorRunner::preprocess);
+                }
 
                 CustomClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                 cw.getClassNode().accept(computedWriter);
