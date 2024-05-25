@@ -209,14 +209,13 @@ public class CodeBlockResolver implements Opcodes {
                     case RET:
                         throw new RuntimeException("can't resolve RET opcode");
                 }
-            } else {
-                if (start == null) {
-                    start = new LabelNode();
-                    insns = new InsnList();
-                    block = new CodeBlock(start);
-                    insns.add(start);
-                    blockIndex++;
-                }
+            }
+            if (start == null) {
+                start = new LabelNode();
+                insns = new InsnList();
+                block = new CodeBlock(start);
+                insns.add(start);
+                blockIndex++;
             }
             insns.add(insn);
             insnIndex++;
