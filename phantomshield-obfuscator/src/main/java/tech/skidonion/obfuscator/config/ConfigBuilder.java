@@ -115,9 +115,9 @@ public class ConfigBuilder {
             config.add("cpp_compiler_is_aarch64", true);
         }
 
-        if (legacyCompileModeSetting) {
-            config.add("legacy_compile_mode", true);
-        }
+//        if (legacyCompileModeSetting) {
+//            config.add("legacy_compile_mode", true);
+//        }
 
         if (!targetsSettings.isEmpty()) {
             config.add("targets", targetsSettings);
@@ -514,6 +514,7 @@ public class ConfigBuilder {
         return this;
     }
 
+    @Deprecated
     public ConfigBuilder setLegacyCompileModeSetting(boolean legacyCompileModeSetting) {
         this.legacyCompileModeSetting = legacyCompileModeSetting;
         return this;

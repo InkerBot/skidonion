@@ -33,7 +33,8 @@ public class CppCompiler {
     private final AtomicInteger virtualizeMacroCount = new AtomicInteger();
     private final List<String> targets = new ArrayList<>();
     private final List<String> cppFiles = new ArrayList<>();
-    private boolean legacyCompileMode = false;
+    //    private boolean legacyCompileMode = false;
+    private static final boolean legacyCompileMode = true;
 
     public CppCompiler(String compiler) {
         this.compiler = compiler;
@@ -398,9 +399,9 @@ public class CppCompiler {
         isAarch64 = aarch64;
     }
 
-    public void setLegacyCompileMode(boolean value) {
-        legacyCompileMode = value;
-    }
+//    public void setLegacyCompileMode(boolean value) {
+//        legacyCompileMode = value;
+//    }
 
     static class CompileInfo {
         private final OS os;

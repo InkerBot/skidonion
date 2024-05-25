@@ -71,12 +71,12 @@ public class TestRun {
         builder.setNativeObfuscationEnable(true) //
                 .setPrintInstructionsSetting(true) //
                 .addTarget("x86_64-windows.win7-gnu") //
-                .setLegacyCompileModeSetting(false)//
+//                .setLegacyCompileModeSetting(false)//
                 .setNullSafetySetting(true)//
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(true)//
+                .setVerificationEnableSetting(false)//
                 .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
                 .setVerificationUserIdSetting("7")//
@@ -106,8 +106,8 @@ public class TestRun {
                 .setPrintClassesAsDirectorySetting(true)//
                 .setInputJar(new File("test\\input\\bench.jar")) //
                 .setOutputJar(new File("test\\output\\bench.jar")) //
-                .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar") //
-                .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "jce.jar") //
+                .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
+//                .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
                 ;
     }
 

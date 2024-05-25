@@ -162,9 +162,9 @@ public class PhantomShield {
         if (config.has("cpp_compiler_is_aarch64")) {
             compiler.setAarch64(config.getBoolean("cpp_compiler_is_aarch64"));
         }
-        if (config.has("legacy_compile_mode")) {
-            compiler.setLegacyCompileMode(config.getBoolean("legacy_compile_mode"));
-        }
+//        if (config.has("legacy_compile_mode")) {
+//            compiler.setLegacyCompileMode(config.getBoolean("legacy_compile_mode"));
+//        }
 
         if (Inline._advanced_checkProtection(0x65328212) == 0x65328212) {
             loadClassPath();
