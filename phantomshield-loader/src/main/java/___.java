@@ -33,7 +33,10 @@ public class ___ {
             libName.append(".so");
         }
 
-        String libFileName = String.format("/%s/%s", ___.class.getPackage().getName().replace(".", "/"), libName);
+        int pkgIndex = ___.class.getName().lastIndexOf(".");
+        String pkgName = ___.class.getName().substring(0, pkgIndex).replace(".", "/");
+
+        String libFileName = String.format("/%s/%s", pkgName, libName);
 
         File libFile;
         try {
