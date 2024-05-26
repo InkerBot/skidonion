@@ -30,15 +30,15 @@ public class FieldHandler extends GenericInstructionHandler<FieldInsnNode> {
 
         if (isStatic) {
             if (context.manualTryCatch) {
-                context.output.append("_CacheStaticField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+                context.output.append("_CacheStaticField(env, ").append(classId).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
-                context.output.append("if(_CacheStaticField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+                context.output.append("if(_CacheStaticField(env, ").append(classId).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
             }
         } else {
             if (context.manualTryCatch) {
-                context.output.append("_CacheField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+                context.output.append("_CacheField(env, ").append(classId).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
-                context.output.append("if(_CacheField(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+                context.output.append("if(_CacheField(env, ").append(classId).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
             }
         }
     }
