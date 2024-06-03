@@ -8,6 +8,7 @@ import pack.tests.basics.overwirte.Sub;
 import pack.tests.basics.runable.Task;
 import pack.tests.basics.sub.Solver;
 import pack.tests.bench.Calc;
+import pack.tests.dirty.CinitCall;
 import pack.tests.reflects.annot.annot;
 import pack.tests.reflects.counter.Count;
 import pack.tests.reflects.field.FTest;
@@ -79,6 +80,12 @@ public class Main {
         System.out.print("Test 1.7: InnerClass ");
         try {
             new Test().run();
+        } catch (Throwable t) {
+            System.out.println("ERROR");
+        }
+        System.out.print("Test 1.8: Dirty <cinit>");
+        try {
+            new CinitCall();
         } catch (Throwable t) {
             System.out.println("ERROR");
         }
