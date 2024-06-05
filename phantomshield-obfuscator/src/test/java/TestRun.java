@@ -17,12 +17,11 @@ public class TestRun {
 
 //        CompilerUpdater.updateCompiler();
         ConfigBuilder builder = basic();
-        builder.setHiddenStackTraceSetting(true);
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
 //        renamer(builder);
-        //string_encryption(builder);
+//        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
         native_obfuscation(builder);
@@ -74,7 +73,7 @@ public class TestRun {
 //                .setLegacyCompileModeSetting(false)//
                 .setNullSafetySetting(true)//
 //                .addTarget("x86_64-linux-gnu") //
-////                .addTarget("x86_64-macos") //
+//                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
                 .setVerificationEnableSetting(false)//
                 .setVerificationServerSetting("http://localhost:8694/")//
@@ -107,10 +106,9 @@ public class TestRun {
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
                 .setInputJar(new File("test\\input\\bench.jar")) //
-                .setOutputJar(new File("test\\output\\bench2.jar")) //
-                .addLibrary(System.getProperty("java.home") + File.separator + "lib" + File.separator + "rt.jar")
-                // .setLegacyCompileModeSetting(true)
-                // java 9+
+                .setOutputJar(new File("test\\output\\bench.jar")) //
+//                 .setLegacyCompileModeSetting(true)
+                .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
 //                .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
                 ;
     }

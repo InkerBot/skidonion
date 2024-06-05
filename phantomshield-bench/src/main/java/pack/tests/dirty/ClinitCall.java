@@ -1,6 +1,6 @@
 package pack.tests.dirty;
 
-public class CinitCall {
+public class ClinitCall {
     static {
         new Called().doPrint(Called.class);
     }

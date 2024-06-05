@@ -8,7 +8,7 @@ import pack.tests.basics.overwirte.Sub;
 import pack.tests.basics.runable.Task;
 import pack.tests.basics.sub.Solver;
 import pack.tests.bench.Calc;
-import pack.tests.dirty.CinitCall;
+import pack.tests.dirty.ClinitCall;
 import pack.tests.reflects.annot.annot;
 import pack.tests.reflects.counter.Count;
 import pack.tests.reflects.field.FTest;
@@ -83,10 +83,11 @@ public class Main {
         } catch (Throwable t) {
             System.out.println("ERROR");
         }
-        System.out.print("Test 1.8: Dirty <cinit>");
+        System.out.print("Test 1.8: Dirty <clinit>");
         try {
-            new CinitCall();
+            new ClinitCall();
         } catch (Throwable t) {
+            t.printStackTrace();
             System.out.println("ERROR");
         }
         System.out.println("-------------Test #2: Reflects-------------");

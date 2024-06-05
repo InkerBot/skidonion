@@ -12,7 +12,7 @@ public class Called implements CalledFace {
         if (Called.class.getName().hashCode() != cnHash) {
             ret = "FAIL";
         }
-        if (CinitCall.class.getName().hashCode() == CinitCall.getIpp()
+        if (ClinitCall.class.getName().hashCode() == ClinitCall.getIpp()
         ) {
             // Dumb : just let the javac don't optimize it
             ret = "FAIL";
