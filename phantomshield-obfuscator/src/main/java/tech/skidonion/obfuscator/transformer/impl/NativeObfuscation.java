@@ -1146,7 +1146,7 @@ public class NativeObfuscation extends Transformer {
             Mapper mapper = new Mapper(obfuscator, injected, Collections.singleton(dummyInlineClassWrapper));
             mapper.setRepackage(true);
             mapper.setPrefixName(renamer.prefix_name.getValue());
-            mapper.setRepakageName(renamer.repackage_name.getValue());
+            mapper.setRepakageName(loader_package.getValue());
             mapper.generateMappings();
             mapper.apply();
         }
