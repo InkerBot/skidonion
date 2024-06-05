@@ -271,7 +271,11 @@ namespace native_jvm::utils {
         if (env->ExceptionCheck()) {
             return nullptr;
         }
-        return result_classloader;
+
+        jobject _result_classloader = env->NewGlobalRef(result_classloader);
+        env->DeleteLocalRef(result_classloader);
+
+        return _result_classloader;
     }
 
     jobject get_lookup(JNIEnv *env, jclass clazz) {
@@ -279,7 +283,11 @@ namespace native_jvm::utils {
         if (env->ExceptionCheck()) {
             return nullptr;
         }
-        return lookup;
+
+        jobject _lookup = env->NewGlobalRef(lookup);
+        env->DeleteLocalRef(lookup);
+
+        return _lookup;
     }
 
     void clear_refs(JNIEnv *env, std::unordered_set<jobject> &refs) {
