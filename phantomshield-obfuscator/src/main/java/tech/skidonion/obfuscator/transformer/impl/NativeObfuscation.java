@@ -865,7 +865,7 @@ public class NativeObfuscation extends Transformer {
             final boolean classMatch = match(classWrapper);
             classWrapper.getMethods().forEach(methodWrapper -> {
                 final boolean methodMatch = match(methodWrapper);
-                final boolean obfuscated = classMatch && methodMatch || classWrapper == dummyInlineClassWrapper;
+                final boolean obfuscated = (classMatch && methodMatch || classWrapper == dummyInlineClassWrapper) && !"<init>".equals(methodWrapper.getOriginalName());
 
                 for (ListIterator<AbstractInsnNode> iterator = methodWrapper.getMethodNode().instructions.iterator(); iterator.hasNext(); ) {
                     AbstractInsnNode instruction = iterator.next();

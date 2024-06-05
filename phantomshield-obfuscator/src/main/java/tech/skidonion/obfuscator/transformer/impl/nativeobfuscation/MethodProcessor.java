@@ -198,7 +198,7 @@ public class MethodProcessor {
             output.append("    if (env->ExceptionCheck()) { ").append(String.format("return (%s) 0;",
                     CPP_TYPES[context.ret.getSort()])).append(" }\n");
         }
-        output.append("    jobject classloader = utils::get_classloader_from_class(env, clazz);\n");
+        output.append("    static jobject classloader = utils::get_classloader_from_class(env, clazz);\n");
         output.append("    if (env->ExceptionCheck()) { ").append(String.format("return (%s) 0;",
                 CPP_TYPES[context.ret.getSort()])).append(" }\n");
         output.append("    if (classloader == nullptr) { env->FatalError(").append(context.getStringPool()
@@ -212,7 +212,7 @@ public class MethodProcessor {
             output.append("    if (env->ExceptionCheck()) { ").append(String.format("return (%s) 0;",
                     CPP_TYPES[context.ret.getSort()])).append(" }\n");
         }
-        output.append("    jobject lookup = nullptr;\n");
+        output.append("    static jobject lookup = nullptr;\n");
 
         if (method.tryCatchBlocks != null) {
             for (TryCatchBlockNode tryCatch : method.tryCatchBlocks) {
