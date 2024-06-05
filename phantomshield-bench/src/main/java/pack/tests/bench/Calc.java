@@ -8,15 +8,15 @@ public class Calc {
 
     @NativeObfuscation.Inline
     public static void runAll() {
-//        System.out.println("[WARNING]: Huge performance drop, so we down to 1000 times loop");
+        System.out.println("[WARNING]: Huge performance drop, so we down to 1000 times loop");
         long start = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             call(100);
             runAdd();
             runStr();
         }
         System.out.println("Calc: " + (System.currentTimeMillis() - start) + "ms");
-        if (count != 30000)
+        if (count != 3000)
             throw new RuntimeException("[ERROR]: Errors occurred in calc!");
     }
 

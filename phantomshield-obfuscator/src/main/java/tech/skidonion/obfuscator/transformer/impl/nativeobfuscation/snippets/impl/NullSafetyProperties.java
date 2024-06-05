@@ -558,7 +558,7 @@ public class NullSafetyProperties {
         sb.append("INVOKESTATIC_9=cstack$returnstackindex.l = env->CallStaticObjectMethod($class_ptr, $methodid$args); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
         sb.append("INVOKESTATIC_10=cstack$returnstackindex.l = env->CallStaticObjectMethod($class_ptr, $methodid$args); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
         sb.append("INVOKESTATIC_11=cstack$returnstackindex.l = env->CallStaticObjectMethod($class_ptr, $methodid$args); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
-        sb.append("MULTIANEWARRAY=cstack$returnstackindex.l = utils::create_multidim_array(env, $count, $required_count, $desc, $line, $dims); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
+        sb.append("MULTIANEWARRAY=cstack$returnstackindex.l = utils::create_multidim_array(env, classloader, $count, $required_count, $desc, $line, $dims); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
         sb.append("MULTIANEWARRAY_S_VARS=$desc\n");
         sb.append("MULTIANEWARRAY_VALUE=cstack$returnstackindex.l = utils::create_multidim_array_value<$sort>(env, $count, $required_count, $desc, $line, $dims); refs.insert(cstack$returnstackindex.l); $trycatchhandler\n");
         sb.append("MULTIANEWARRAY_VALUE_S_VARS=$desc\n");

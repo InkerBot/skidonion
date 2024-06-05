@@ -63,24 +63,18 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
         }
 
         if (PreprocessorUtils.isLookupLocal(node)) {
-            int classId = context.getCachedClasses().getId(node.owner);
-            context.output.append(MethodProcessor.getClassCacher(context, classId, node.owner, trimmedTryCatchBlock));
-            context.output.append("if (lookup == nullptr) { lookup = utils::get_lookup(env, cclasses[").append(classId).append("]); ")
+            context.output.append("if (lookup == nullptr) { lookup = utils::get_lookup(env, clazz); ")
                     .append(trimmedTryCatchBlock).append(" } cstack").append(context.stackPointer).append(".l = lookup;");
             instructionName = null;
             return;
         }
         if (PreprocessorUtils.isClassLoaderLocal(node)) {
-            int classId = context.getCachedClasses().getId(node.owner);
-            context.output.append(MethodProcessor.getClassCacher(context, classId, node.owner, trimmedTryCatchBlock));
-            context.output.append("cstack").append(context.stackPointer).append(".l = utils::get_classloader_from_class(env, cclasses[").append(classId).append("]);");
+            context.output.append("cstack").append(context.stackPointer).append(".l = classloader;");
             instructionName = null;
             return;
         }
         if (PreprocessorUtils.isClassLocal(node)) {
-            int classId = context.getCachedClasses().getId(node.owner);
-            context.output.append(MethodProcessor.getClassCacher(context, classId, node.owner, trimmedTryCatchBlock));
-            context.output.append("cstack").append(context.stackPointer).append(".l = cclasses[").append(classId).append("];");
+            context.output.append("cstack").append(context.stackPointer).append(".l = clazz;");
             instructionName = null;
             return;
         }
@@ -138,8 +132,8 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             node.setOpcode(Opcodes.INVOKESTATIC);
         }
         if (node.owner.equals("java/lang/invoke/MethodHandle") &&
-                (node.name.equals("invokeExact") || node.name.equals("invoke")) &&
-                node.getOpcode() == Opcodes.INVOKEVIRTUAL) {
+            (node.name.equals("invokeExact") || node.name.equals("invoke")) &&
+            node.getOpcode() == Opcodes.INVOKEVIRTUAL) {
             // stack - mh, args
             String methodDesc = simplifyDesc(Type.getMethodType(Type.getReturnType(node.desc),
                     Stream.concat(Arrays.stream(new Type[]{
@@ -216,15 +210,15 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
 
         if (isStatic) {
             if (context.manualTryCatch) {
-                context.output.append("_CacheStaticMethod(env, ").append(classId).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+                context.output.append("_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
-                context.output.append("if(_CacheStaticMethod(env, ").append(classId).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+                context.output.append("if(_CacheStaticMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
             }
         } else {
             if (context.manualTryCatch) {
-                context.output.append("_CacheMethod(env, ").append(classId).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
+                context.output.append("_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(");");
             } else {
-                context.output.append("if(_CacheMethod(env, ").append(classId).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
+                context.output.append("if(_CacheMethod(env, ").append(context.getCachedClasses().getId(node.owner)).append(", ").append(methodId).append(", ").append(context.getStringPool().getOffset(node.name)).append(", ").append(context.getStringPool().getOffset(node.desc)).append(")) ").append(trimmedTryCatchBlock);
             }
         }
         props.put("args", argsBuilder.toString());
@@ -246,6 +240,6 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
             currentStackPointer -= 1;
         }
         return currentStackPointer - Arrays.stream(Type.getArgumentTypes(node.desc)).mapToInt(Type::getSize).sum()
-                + Type.getReturnType(node.desc).getSize();
+               + Type.getReturnType(node.desc).getSize();
     }
 }
