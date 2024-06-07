@@ -270,7 +270,8 @@ public class CppCompiler {
                     "-fno-optimize-sibling-calls",
                     "-fvisibility-inlines-hidden",
                     "-fvisibility=hidden",
-                    "-fPIC"
+                    "-fPIC",
+                    "-fsigned-char"
             ));
             // TODO: if you wanna virtualize methods you must stop optimize your shit code
             //  because optimization will change control flow graph
