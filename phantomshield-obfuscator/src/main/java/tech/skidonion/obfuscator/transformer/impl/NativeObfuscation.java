@@ -70,7 +70,8 @@ public class NativeObfuscation extends Transformer {
     private final StringValue verification_user_id = new StringValue("verification_user_id", "-1");
     private final StringValue verification_software_id = new StringValue("verification_software_id", "-1");
     private final StringValue verification_token = new StringValue("verification_token", "");
-    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_user_id, verification_software_id, verification_token);
+    private final BooleanValue verification_keep_alive = new BooleanValue("verification_keep_alive", true);
+    private final SubValue verification = new SubValue("verification", verification_enable, use_internal_user_interface, verification_server, verification_user_id, verification_software_id, verification_token, verification_keep_alive);
 
     public NativeObfuscation(String name) {
         super(name, false);
@@ -1028,6 +1029,11 @@ public class NativeObfuscation extends Transformer {
                                 case "tech/skidonion/verification/utils/Internals.shouldCheckHwid()Z": {
                                     iterator.remove();
                                     iterator.add(new InsnNode(verifyShouldCheckHwid ? ICONST_1 : ICONST_0));
+                                    break;
+                                }
+                                case "tech/skidonion/verification/utils/Internals.shouldKeepAlive()Z":{
+                                    iterator.remove();
+                                    iterator.add(new InsnNode(verification_keep_alive.isEnable() ? ICONST_1 : ICONST_0));
                                     break;
                                 }
                                 case "tech/skidonion/verification/utils/Internals.sessionKey()[B": {

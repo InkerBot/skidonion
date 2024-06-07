@@ -96,8 +96,10 @@ public class VerifyUtils {
                     if (result != 0) {
                         result += 100;
                     } else {
-                        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(VerifyUtils::daemonFactory);
-                        service.scheduleAtFixedRate(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
+                        if (Internals.shouldKeepAlive()) {
+                            ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(VerifyUtils::daemonFactory);
+                            service.scheduleAtFixedRate(VerifyUtils::heartbeat, 4, 4, TimeUnit.MINUTES);
+                        }
                     }
                 }
             }

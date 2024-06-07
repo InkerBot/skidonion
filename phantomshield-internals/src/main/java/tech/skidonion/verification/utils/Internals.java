@@ -41,6 +41,10 @@ public class Internals {
     public static void initBuffer() {
     }
 
+    public static boolean shouldKeepAlive() {
+        return true;
+    }
+
     public static boolean shouldCheckHwid() {
         return true;
     }
