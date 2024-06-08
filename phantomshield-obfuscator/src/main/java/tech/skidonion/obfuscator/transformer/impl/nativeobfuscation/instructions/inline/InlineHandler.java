@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class InlineHandler {
-    @NativeObfuscation.Inline
     @NativeObfuscation(verificationLock = "基础用户组")
     public static void process(MethodContext context, MethodInsnNode node, String trimmedTryCatchBlock) {
         CppCompiler compiler = context.obfuscator.obfuscator.getCompiler();
@@ -340,7 +339,6 @@ public class InlineHandler {
         }
     }
 
-    @NativeObfuscation.Inline
     @NativeObfuscation(verificationLock = "基础用户组")
     private static void processAdvanced(MethodContext context, MethodInsnNode node) {
         switch (node.name) {
