@@ -43,10 +43,15 @@ public class QQUtils {
                 File[] directoryFiles = defaultPathFile.listFiles();
                 if (directoryFiles != null) {
                     for (File qqData : directoryFiles) {
-                        String fileName = qqData.getName().substring(1);
-                        Inline.trycatch();
+                        String fileName = qqData.getName();
                         if (pattern.matcher(fileName).matches()) {
                             qqs.add(fileName);
+                        } else {
+                            fileName = fileName.substring(1);
+                            Inline.trycatch();
+                            if (pattern.matcher(fileName).matches()) {
+                                qqs.add(fileName);
+                            }
                         }
                     }
                 }
