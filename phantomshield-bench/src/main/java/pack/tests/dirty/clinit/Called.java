@@ -1,4 +1,4 @@
-package pack.tests.dirty;
+package pack.tests.dirty.clinit;
 
 public class Called implements CalledFace {
     private static String ret = "FAIL";

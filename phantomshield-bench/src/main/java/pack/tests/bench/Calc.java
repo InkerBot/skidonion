@@ -19,7 +19,7 @@ public class Calc {
         }
         System.out.println("Calc: " + (System.currentTimeMillis() - start) + "ms");
         if (count != 30000)
-            throw new RuntimeException("[ERROR]: Errors occurred in calc!");
+            throw new RuntimeException("[ERROR]: Errors occurred in calc! " + count);
     }
 
     @NativeObfuscation.Inline

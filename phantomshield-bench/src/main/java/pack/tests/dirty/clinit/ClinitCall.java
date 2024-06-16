@@ -1,4 +1,4 @@
-package pack.tests.dirty;
+package pack.tests.dirty.clinit;
 
 public class ClinitCall {
     static {
