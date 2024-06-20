@@ -54,8 +54,6 @@ public class InlineHandler {
             boolean isSet = Type.getReturnType(node.desc).getSort() == Type.VOID;
             boolean isStatic = fw.getAccess().isStatic();
             int sort = Type.getType(fw.getDescription()).getSort();
-            int classId = context.getCachedClasses().getId(fw.getOwner().getName());
-            context.output.append(MethodProcessor.getClassCacher(context, classId, fw.getOwner().getName(), "if (env->ExceptionCheck()) { return (" + MethodProcessor.CPP_TYPES[context.ret.getSort()] + ") 0; } "));
             if (isGarbageCollector && Objects.equals("(Ljava/lang/Object;)V", node.desc)) {
                 if (!isStatic) {
                     if (sort == Type.ARRAY || sort == Type.OBJECT || sort == Type.METHOD) {
@@ -166,7 +164,7 @@ public class InlineHandler {
             if (key.startsWith("-")) {
                 isStatic = false;
                 key = key.substring(1);
-            } else {
+            }else {
                 isStatic = true;
             }
 

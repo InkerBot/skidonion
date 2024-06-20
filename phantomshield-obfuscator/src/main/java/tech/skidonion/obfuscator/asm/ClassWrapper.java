@@ -164,24 +164,35 @@ public class ClassWrapper {
 
     public MethodNode getMethod(String name, String desc) {
         return getClassNode().methods.stream().filter(methodNode -> name.equals(methodNode.name)
-                                                                    && desc.equals(methodNode.desc)).findAny().orElse(null);
+                && desc.equals(methodNode.desc)).findAny().orElse(null);
     }
 
     public FieldNode getField(String name, String desc) {
         return getClassNode().fields.stream().filter(methodNode -> name.equals(methodNode.name)
-                                                                   && desc.equals(methodNode.desc)).findAny().orElse(null);
+                && desc.equals(methodNode.desc)).findAny().orElse(null);
     }
+
 
     public MethodNode getOrCreateClinit() {
         MethodNode clinit = getMethod("<clinit>", "()V");
-
         if (clinit == null) {
             clinit = new MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
             clinit.instructions.add(new InsnNode(Opcodes.RETURN));
             addMethod(clinit);
         }
-
         return clinit;
+    }
+
+    MethodNode dummy;
+
+    public MethodNode getOrCreateDummyMethod() {
+        if (dummy == null) {
+            dummy = new MethodNode(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, "$phantomshield$init", "()V", null, null);
+            dummy.instructions.add(new InsnNode(Opcodes.RETURN));
+            addMethod(dummy);
+        }
+
+        return dummy;
     }
 
     public boolean isMethodPresent(String name, String desc) {

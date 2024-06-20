@@ -44,9 +44,8 @@ public class ClassSourceBuilder {
         cppWriter.append("namespace native_jvm::classes::__ngen_").append(filename).append(" {\n\n");
         cppWriter.append("    char *string_pool;\n\n");
 
-        if (strings > 0) {
-            cppWriter.append(String.format("    jstring cstrings[%d];\n", strings));
-        }
+        cppWriter.append(String.format("    jstring cstrings[%d];\n", strings));
+
         if (classes > 0) {
             cppWriter.append(String.format("    std::mutex cclasses_mtx[%d];\n", classes));
             cppWriter.append(String.format("    jclass cclasses[%d] = {};\n", classes));

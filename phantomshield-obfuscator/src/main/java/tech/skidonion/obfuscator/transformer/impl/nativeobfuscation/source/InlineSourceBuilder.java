@@ -101,9 +101,7 @@ public class InlineSourceBuilder {
 
         cpp.append("    char *string_pool;\n\n");
 
-        if (!strings.isEmpty()) {
-            cpp.append(String.format("    jstring cstrings[%d];\n", strings.size()));
-        }
+        cpp.append(String.format("    jstring cstrings[%d];\n", strings.size()));
         if (classes > 0) {
             cpp.append(String.format("    std::mutex cclasses_mtx[%d];\n", classes));
             cpp.append(String.format("    jclass cclasses[%d] = {};\n", classes));
