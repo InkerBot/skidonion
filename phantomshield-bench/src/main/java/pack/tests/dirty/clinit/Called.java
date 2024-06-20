@@ -1,10 +1,17 @@
 package pack.tests.dirty.clinit;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class Called implements CalledFace {
     private static String ret = "FAIL";
 
     static {
         ret = "PASS";
+    }
+
+    @NativeObfuscation.Inline
+    private static void doCallInlined() {
+        ClinitCall.callMeInlined();
     }
 
     public void doPrint(Class<?> clazz) {
@@ -17,6 +24,14 @@ public class Called implements CalledFace {
             // Dumb : just let the javac don't optimize it
             ret = "FAIL";
         }
+        if (ClinitCall.called) {
+            ret = "FAIL";
+        }
+        ClinitCall.callMeInlined();
+        if (!ClinitCall.called) {
+            ret = "FAIL";
+        }
+
         System.out.println(ret);
     }
 }

@@ -7,6 +7,12 @@ public class ClinitCall {
 
     public static int i = 1;
 
+    public static boolean called = false;
+
+    public static void callMeInlined() {
+        called = !called;
+    }
+
     public static int getIpp() {
         return i++;
     }
