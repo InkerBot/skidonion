@@ -27,6 +27,8 @@ public class ConfigBuilder {
     private final Map<String, List<String>> subFiltersSettings = new HashMap<>();
 
     // ======= transformers settings =======
+    // field initialization
+    private boolean fieldInitializationSetting = false;
 
     // string encryption
     private boolean stringEncryptionEnable = false;
@@ -166,6 +168,19 @@ public class ConfigBuilder {
             });
             // 加入父对象
             config.add("native_obfuscation", native_obfuscation);
+        }
+
+        field_initialization:
+        {
+            if (!fieldInitializationSetting) break field_initialization;
+
+            Map<String, Object> field_initialization = new LinkedHashMap<>();
+
+            subFiltersSettings.computeIfPresent("field_initialization", (k, v) -> {
+                field_initialization.put("filters", v);
+                return v;
+            });
+            config.add("field_initialization", field_initialization);
         }
 
         string_encryption:
@@ -544,6 +559,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setVerificationKeepAliveSetting(boolean verificationKeepAliveSetting) {
         this.verificationKeepAliveSetting = verificationKeepAliveSetting;
+        return this;
+    }
+
+    public ConfigBuilder setFieldInitializationSetting(boolean fieldInitializationSetting) {
+        this.fieldInitializationSetting = fieldInitializationSetting;
         return this;
     }
 }

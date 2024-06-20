@@ -669,6 +669,7 @@ public class NativeObfuscation extends Transformer {
                     } else if (oldAnnotation) {
                         WARN(TRANSLATION("phantom-shield-x.native.inline-deprecated"));
                     }
+
                     inlineFields.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(fieldWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), fieldWrapper));
                     iterator.remove();
                     classWrapper.getClassNode().fields.remove(i--);
@@ -882,9 +883,9 @@ public class NativeObfuscation extends Transformer {
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
-                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName()) && !internalMatch(inlinedField)) {
-                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
-                                }
+//                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName()) && !internalMatch(inlinedField)) {
+//                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
+//                                }
                                 iterator.remove();
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
                             } else if (opcode == GETFIELD) {
@@ -940,7 +941,7 @@ public class NativeObfuscation extends Transformer {
                                 iterator.remove();
                                 StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
                                 descBuilder.insert(1, "Ljava/lang/Object;");
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, descBuilder.toString(), false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_-" + reference, descBuilder.toString(), false);
                             } else if (opcode == INVOKESPECIAL) {
                                 ERROR(TRANSLATION("phantom-shield-x.native.inline-method-error1"));
                                 System.exit(0);
@@ -1031,7 +1032,7 @@ public class NativeObfuscation extends Transformer {
                                     iterator.add(new InsnNode(verifyShouldCheckHwid ? ICONST_1 : ICONST_0));
                                     break;
                                 }
-                                case "tech/skidonion/verification/utils/Internals.shouldKeepAlive()Z":{
+                                case "tech/skidonion/verification/utils/Internals.shouldKeepAlive()Z": {
                                     iterator.remove();
                                     iterator.add(new InsnNode(verification_keep_alive.isEnable() ? ICONST_1 : ICONST_0));
                                     break;

@@ -22,6 +22,7 @@ public class TransformerRegister {
     private final Map<String, Transformer> instances = new LinkedHashMap<>();
 
     public TransformerRegister() {
+        this.register(new FieldInitialization("field_initialization"));
         this.register(new DebugInformationRemover("debug_information_remover"));
         this.register(new MemberShuffler("member_shuffler"));
         this.register(new Renamer("renamer"));

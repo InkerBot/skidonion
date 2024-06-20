@@ -19,9 +19,9 @@ public class TestRun {
         ConfigBuilder builder = basic();
 //         =================
 //        debug_information_remover(builder);
-//        shuffler(builder);
+        shuffler(builder);
 //        renamer(builder);
-//        string_encryption(builder);
+        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
         native_obfuscation(builder);
@@ -109,7 +109,7 @@ public class TestRun {
                 .setOutputJar(new File("test\\output\\bench.jar")) //
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
-//                .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
+                .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
                 ;
     }
 }
