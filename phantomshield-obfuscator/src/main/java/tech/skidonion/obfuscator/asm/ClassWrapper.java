@@ -187,7 +187,7 @@ public class ClassWrapper {
 
     public MethodNode getOrCreateDummyMethod() {
         if (dummy == null) {
-            dummy = new MethodNode(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, PhantomShield.initMethodName, "()V", null, null);
+            dummy = new MethodNode(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, PhantomShield.initMethodName, "()V", null, null);
             dummy.instructions.add(new InsnNode(Opcodes.RETURN));
             addMethod(dummy);
         }
