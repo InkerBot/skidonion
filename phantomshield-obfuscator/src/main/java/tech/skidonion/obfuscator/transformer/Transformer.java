@@ -124,6 +124,9 @@ public abstract class Transformer implements Opcodes {
 
 
     public boolean match(MethodWrapper method) {
+        if (method.getName().equals(PhantomShield.initMethodName)) {
+            return false;
+        }
         if (internalMatch(method))
             return true;
         if (hasAnnotation(method)) return matchAnnotation(method);
