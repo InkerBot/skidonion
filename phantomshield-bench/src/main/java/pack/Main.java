@@ -10,6 +10,7 @@ import pack.tests.basics.sub.Solver;
 import pack.tests.bench.Calc;
 import pack.tests.dirty.clinit.ClinitCall;
 import pack.tests.dirty.inline.Inlined;
+import pack.tests.dirty.interfaces.CallDirty;
 import pack.tests.reflects.annot.annot;
 import pack.tests.reflects.counter.Count;
 import pack.tests.reflects.field.FTest;
@@ -84,16 +85,22 @@ public class Main {
         } catch (Throwable t) {
             System.out.println("ERROR");
         }
-        System.out.print("Test 1.8: Dirty <clinit>");
+        System.out.print("Test 1.8: Dirty <clinit> ");
         try {
             new ClinitCall();
         } catch (Throwable t) {
             t.printStackTrace();
             System.out.println("ERROR");
         }
-        System.out.print("Test 1.9: Dirty inline");
+        System.out.print("Test 1.9: Dirty inline (Should be 20) ");
         try {
             Inlined.perform();
+        } catch (Throwable t) {
+            System.out.println("ERROR");
+        }
+        System.out.print("Test 1.10: Dirty interface ");
+        try {
+            new CallDirty().doPrint();
         } catch (Throwable t) {
             System.out.println("ERROR");
         }
