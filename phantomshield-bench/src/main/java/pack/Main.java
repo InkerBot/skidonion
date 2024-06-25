@@ -100,7 +100,7 @@ public class Main {
         }
         System.out.print("Test 1.10: Dirty interface ");
         try {
-            new CallDirty().doPrint();
+            CallDirty.doPrint();
         } catch (Throwable t) {
             System.out.println("ERROR");
         }

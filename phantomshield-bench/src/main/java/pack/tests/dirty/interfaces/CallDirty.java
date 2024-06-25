@@ -1,7 +1,10 @@
 package pack.tests.dirty.interfaces;
 
+import tech.skidonion.obfuscator.annotations.NativeObfuscation;
+
 public class CallDirty {
-    public void doPrint() {
+    @NativeObfuscation.Inline
+    public static void doPrint() {
         int t = DirtyInterface.count;
         int t2 = DirtyClass.count;
         DirtyClass.count++;
