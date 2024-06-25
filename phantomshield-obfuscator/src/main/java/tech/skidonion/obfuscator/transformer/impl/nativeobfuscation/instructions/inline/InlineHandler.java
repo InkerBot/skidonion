@@ -193,7 +193,7 @@ public class InlineHandler {
                 argumentOffset += argType.getSize();
             }
 
-            int objectOffset = isStatic ? 0 : 1;
+//            int objectOffset = isStatic ? 0 : 1;
             int argSize = argOffsets.size() - (isStatic ? 1 : 0);
 
             if (isStatic) {
@@ -207,7 +207,8 @@ public class InlineHandler {
                         StringUtils.createStringMap("index", argOffsets.get(i))));
             }
 
-            int returnStackIndex = stackOffset - objectOffset;
+//            int returnStackIndex = stackOffset - objectOffset;
+            int returnStackIndex = stackOffset;
 
             switch (returnType.getSort()) {
                 case Type.VOID:
