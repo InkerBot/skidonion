@@ -19,9 +19,9 @@ public class TestRun {
         ConfigBuilder builder = basic();
 //         =================
 //        debug_information_remover(builder);
-//        shuffler(builder);
+        shuffler(builder);
 //        renamer(builder);
-//        string_encryption(builder);
+        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
         native_obfuscation(builder);

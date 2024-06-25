@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 import tech.skidonion.obfuscator.inline.Inline;
+import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.HiddenMethodsPool;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
@@ -49,7 +50,7 @@ public class MethodHandler extends GenericInstructionHandler<MethodInsnNode> {
 
     @Override
     protected void process(MethodContext context, MethodInsnNode node) {
-        if (node.owner.equals(Type.getInternalName(Inline.class))) {
+        if (node.owner.equals(NativeObfuscation.INLINE_DECLARE)) {
             InlineHandler.process(context, node, originTryCatchBlock);
             instructionName = null;
             return;

@@ -79,6 +79,10 @@ public class MethodContext {
         return obfuscator.getCachedClasses();
     }
 
+    public NodeCache<String> getCachedInitClasses() {
+        return obfuscator.getCachedInitClasses();
+    }
+
     public NodeCache<CachedMethodInfo> getCachedMethods() {
         return obfuscator.getCachedMethods();
     }

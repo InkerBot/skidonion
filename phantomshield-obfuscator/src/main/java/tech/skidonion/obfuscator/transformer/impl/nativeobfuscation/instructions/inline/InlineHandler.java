@@ -164,7 +164,7 @@ public class InlineHandler {
             if (key.startsWith("-")) {
                 isStatic = false;
                 key = key.substring(1);
-            }else {
+            } else {
                 isStatic = true;
             }
 
@@ -260,6 +260,20 @@ public class InlineHandler {
                     }
                     break;
             }
+        } else if (node.name.startsWith("_init_")) {
+            String key = node.name.substring(6);
+            int classId = context.getCachedClasses().getId(key);
+            int cacheId = context.getCachedInitClasses().getId(key);
+            context.output.append(MethodProcessor.getClassCacher(context, classId, key, trimmedTryCatchBlock));
+            context.output.append("if (!cinits[").append(cacheId).append("]) { env->DeleteLocalRef(env->AllocObject(cclasses[").append(classId).append("])); cinits[").append(cacheId).append("] = true; }\n");
+
+//            if (!(cinits[1]))
+//            {
+//                env->DeleteLocalRef(env->AllocObject((cclasses[1])));
+//                cinits[1] = true;
+//            }
+
+
         } else if (node.name.startsWith("_encrypt_")) {
             String key = node.name.substring(9);
             ClassWrapper cw = context.obfuscator.obfuscator.getClassWrapper(key);

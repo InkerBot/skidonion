@@ -183,18 +183,6 @@ public class ClassWrapper {
         return clinit;
     }
 
-    MethodNode dummy;
-
-    public MethodNode getOrCreateDummyMethod() {
-        if (dummy == null) {
-            dummy = new MethodNode(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, PhantomShield.initMethodName, "()V", null, null);
-            dummy.instructions.add(new InsnNode(Opcodes.RETURN));
-            addMethod(dummy);
-        }
-
-        return dummy;
-    }
-
     public boolean isMethodPresent(String name, String desc) {
         return classNode.methods.stream().anyMatch(methodNode -> methodNode.name.equals(name) && methodNode.desc.equals(desc));
     }

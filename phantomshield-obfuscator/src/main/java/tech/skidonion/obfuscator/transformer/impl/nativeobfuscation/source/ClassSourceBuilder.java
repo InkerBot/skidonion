@@ -36,7 +36,7 @@ public class ClassSourceBuilder {
         filename = String.format("%s_%d", StringUtils.escapeCppNameString(className.replace('/', '_')), classIndex);
     }
 
-    public void addHeader(int strings, int classes, int methods, int fields, int callsites) throws IOException {
+    public void addHeader(int strings, int classes, int methods, int fields, int callsites, int inits) throws IOException {
 
 //        cppWriter.append("#include \"").append(getHppFilename()).append("\"\n");
 //        cppWriter.append("\n");
@@ -48,7 +48,7 @@ public class ClassSourceBuilder {
 
         if (classes > 0) {
             cppWriter.append(String.format("    std::mutex cclasses_mtx[%d];\n", classes));
-            cppWriter.append(String.format("    jclass cclasses[%d] = {};\n", classes));
+            cppWriter.append(String.format("    jclass cclasses[%d];\n", classes));
 
             cppWriter.append("    bool _CacheClass0(JNIEnv *env, jobject classloader, int class_index , int class_name_index){if (!cclasses[class_index]){cclasses_mtx[class_index].lock();if (!cclasses[class_index]){if (jclass clazz = utils::find_class_wo_static(env, classloader, (cstrings[class_name_index]))){cclasses[class_index] = (jclass)env->NewGlobalRef(clazz);env->DeleteLocalRef(clazz);}}cclasses_mtx[class_index].unlock();return true;}return false;}\n");
             cppWriter.append("    bool _CacheClass1(JNIEnv *env, int class_index, long long offset){if (!cclasses[class_index]){cclasses_mtx[class_index].lock();if (!cclasses[class_index]){if (jclass clazz = env->FindClass((char *)(string_pool + offset))){cclasses[class_index] = (jclass)env->NewGlobalRef(clazz);env->DeleteLocalRef(clazz);}}cclasses_mtx[class_index].unlock();return true;}return false;}\n");
@@ -66,6 +66,10 @@ public class ClassSourceBuilder {
 
         if (callsites > 0) {
             cppWriter.append(String.format("    jobject ccallsites[%d];\n", callsites));
+        }
+
+        if (inits > 0) {
+            cppWriter.append(String.format("    bool cinits[%d];\n", inits));
         }
 
         cppWriter.append("\n");

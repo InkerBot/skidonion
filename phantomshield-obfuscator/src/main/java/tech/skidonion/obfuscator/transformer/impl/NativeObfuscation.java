@@ -17,6 +17,7 @@ import tech.skidonion.obfuscator.asm.FieldWrapper;
 import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.crypto.ChaCha20;
+import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.*;
@@ -55,6 +56,7 @@ import static tech.skidonion.obfuscator.PhantomShield.*;
 
 @LoadAfterLogin(value = "基础用户组", priority = 1)
 public class NativeObfuscation extends Transformer {
+    public static final String INLINE_DECLARE = Type.getInternalName(Inline.class);
     public static final String INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.Inline.class);
     public static final String OLD_INLINE_DESC = Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.InlineStaticFieldAccess.class);
     public static final String CLASS_ENCRYPTION_DESC = Type.getDescriptor(LoadAfterLogin.class);
@@ -84,6 +86,7 @@ public class NativeObfuscation extends Transformer {
     private MethodProcessor methodProcessor;
     private NodeCache<String> cachedStrings;
     private NodeCache<String> cachedClasses;
+    private NodeCache<String> cachedInitClasses;
     private NodeCache<CachedMethodInfo> cachedMethods;
     private NodeCache<CachedFieldInfo> cachedFields;
     private AtomicInteger cachedCallSitesIndex;
@@ -109,6 +112,7 @@ public class NativeObfuscation extends Transformer {
         cachedClasses = new NodeCache<>("(cclasses[%d])");
         cachedMethods = new NodeCache<>("(cmethods[%d])");
         cachedFields = new NodeCache<>("(cfields[%d])");
+        cachedInitClasses = new NodeCache<>("(cinits[%d])");
         methodProcessor = new MethodProcessor(this);
         nativeDir = loader_package.getValue();
         nativeDir = nativeDir.substring(0, nativeDir.length() - 1);
@@ -221,6 +225,7 @@ public class NativeObfuscation extends Transformer {
 
                 cw.setClassNode(computedClassNode);
 
+                cachedInitClasses.clear();
                 cachedStrings.clear();
                 cachedClasses.clear();
                 cachedMethods.clear();
@@ -295,7 +300,7 @@ public class NativeObfuscation extends Transformer {
 
                 shouldVirtualize |= isVerificationEnable();
 
-                cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get());
+                cppBuilder.addHeader(cachedStrings.size(), cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), cachedInitClasses.size());
                 cppBuilder.addInstructions(instructions.toString());
                 cppBuilder.registerMethods(cw, cachedStrings, cachedClasses, nativeMethods.toString(), hiddenMethods, shouldVirtualize, isInternal);
 
@@ -330,6 +335,7 @@ public class NativeObfuscation extends Transformer {
         cachedClasses.clear();
         cachedMethods.clear();
         cachedFields.clear();
+        cachedInitClasses.clear();
         cachedCallSitesIndex = new AtomicInteger();
 
         if (!inlineMethods.isEmpty()) {
@@ -465,7 +471,7 @@ public class NativeObfuscation extends Transformer {
         inlineSourceBuilder.buildHeader(headers, shouldVirtualize);
         inlineSourceBuilder.buildEncryptedClasses(encryptedClassBuilder);
         inlineSourceBuilder.buildInlineFields();
-        inlineSourceBuilder.buildInlineMethods(instructions.toString(), declarations.toString(), cachedStrings, cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), shouldVirtualize);
+        inlineSourceBuilder.buildInlineMethods(instructions.toString(), declarations.toString(), cachedStrings, cachedClasses.size(), cachedMethods.size(), cachedFields.size(), cachedCallSitesIndex.get(), cachedInitClasses.size(), shouldVirtualize);
         inlineSourceBuilder.buildVerificationField();
         inlineSourceBuilder.buildTail();
 
@@ -763,7 +769,7 @@ public class NativeObfuscation extends Transformer {
                     for (String inlineVirtualField : inlineVirtualFields) {
                         InsnList insnList = new InsnList();
                         insnList.add(new VarInsnNode(ALOAD, 0));
-                        insnList.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_-" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
+                        insnList.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_-" + inlineVirtualField, "(Ljava/lang/Object;)V", false));
                         instructions.insert(insnList);
                     }
                 } else if (ASMUtils.hasAnnotation(methodWrapper, INLINE_DESC)) {
@@ -864,7 +870,6 @@ public class NativeObfuscation extends Transformer {
 
         // then process for inline
 
-        Set<ClassWrapper> needAddInit = new HashSet<>();
 
         classWrappers.forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
@@ -884,27 +889,23 @@ public class NativeObfuscation extends Transformer {
                             MethodInsnNode injectedNode = null;
                             if (opcode == GETSTATIC) {
                                 iterator.remove();
-                                needAddInit.add(obfuscator.getClassWrapper(fieldInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, fieldInsnNode.owner, PhantomShield.initMethodName, "()V", false));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "()" + fieldInsnNode.desc, false);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
 //                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName()) && !internalMatch(inlinedField)) {
 //                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
 //                                }
                                 iterator.remove();
-                                needAddInit.add(obfuscator.getClassWrapper(fieldInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, fieldInsnNode.owner, PhantomShield.initMethodName, "()V", false));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
                             } else if (opcode == GETFIELD) {
                                 iterator.remove();
-                                needAddInit.add(obfuscator.getClassWrapper(fieldInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, fieldInsnNode.owner, PhantomShield.initMethodName, "()V", false));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTFIELD) {
                                 iterator.remove();
-                                needAddInit.add(obfuscator.getClassWrapper(fieldInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, fieldInsnNode.owner, PhantomShield.initMethodName, "()V", false));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_field_" + reference, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
                             }
 
                             if (injectedNode != null) {
@@ -945,18 +946,16 @@ public class NativeObfuscation extends Transformer {
                                 List<Type> arguments = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(methodInsnNode.desc)));
                                 arguments.add(Type.getType("Ljava/lang/Class;"));
                                 String modifiedDesc = Type.getMethodDescriptor(returnType, arguments.toArray(new Type[0]));
-                                needAddInit.add(obfuscator.getClassWrapper(methodInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, PhantomShield.initMethodName, "()V", false));
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
 
                                 iterator.add(new LdcInsnNode(Type.getObjectType(methodInsnNode.owner)));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_" + reference, modifiedDesc, false);
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_method_" + reference, modifiedDesc, false);
                             } else if (opcode == INVOKEVIRTUAL) {
                                 iterator.remove();
                                 StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
                                 descBuilder.insert(1, "Ljava/lang/Object;");
-                                needAddInit.add(obfuscator.getClassWrapper(methodInsnNode.owner));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, methodInsnNode.owner, PhantomShield.initMethodName, "()V", false));
-                                injectedNode = new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_method_-" + reference, descBuilder.toString(), false);
+                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
+                                injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_method_-" + reference, descBuilder.toString(), false);
                             } else if (opcode == INVOKESPECIAL) {
                                 ERROR(TRANSLATION("phantom-shield-x.native.inline-method-error1"));
                                 System.exit(0);
@@ -1116,10 +1115,10 @@ public class NativeObfuscation extends Transformer {
                                         iterator.add(labels[i]);
                                         if (verificationBuffer.containsKey(roleName)) {
                                             iterator.add(new VarInsnNode(ALOAD, keyIndex));
-                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_decryptBuffer_" + roleName, "([B)V", false));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_decryptBuffer_" + roleName, "([B)V", false));
                                         }
                                         for (PriorityObject<ClassWrapper> cw : encryptedClasses.get(roleName).getSecond()) {
-                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_encrypt_" + cw.getObject().getName(), "()[B", false));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_encrypt_" + cw.getObject().getName(), "()[B", false));
                                             iterator.add(new VarInsnNode(ASTORE, srcIndex));
                                             iterator.add(new VarInsnNode(ALOAD, srcIndex));
                                             iterator.add(new InsnNode(ARRAYLENGTH));
@@ -1134,7 +1133,7 @@ public class NativeObfuscation extends Transformer {
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new InsnNode(ARRAYLENGTH));
-                                            iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/obfuscator/inline/Inline", "_defineClass_" + cw.getObject().getName(), "([BI)V"));
+                                            iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_defineClass_" + cw.getObject().getName(), "([BI)V"));
                                         }
                                         iterator.add(new JumpInsnNode(GOTO, defaultLabel));
                                         i++;
@@ -1153,10 +1152,6 @@ public class NativeObfuscation extends Transformer {
                 }
             });
         });
-
-        for (ClassWrapper classWrapper : needAddInit) {
-            classWrapper.getOrCreateDummyMethod();
-        }
 
         // join classpath
         if (!inline.getMethods().isEmpty()) {
@@ -1212,6 +1207,10 @@ public class NativeObfuscation extends Transformer {
 
     public AtomicInteger getCachedCallSitesIndex() {
         return cachedCallSitesIndex;
+    }
+
+    public NodeCache<String> getCachedInitClasses() {
+        return cachedInitClasses;
     }
 
     public Snippets getSnippets() {
