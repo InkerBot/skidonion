@@ -889,33 +889,31 @@ public class NativeObfuscation extends Transformer {
                             MethodInsnNode injectedNode = null;
                             if (opcode == GETSTATIC) {
                                 iterator.remove();
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "()" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTSTATIC) {
 //                                if (Objects.equals("<clinit>", methodWrapper.getName()) && Objects.equals(classWrapper.getOriginalName(), inlinedField.getOwner().getOriginalName()) && !internalMatch(inlinedField)) {
 //                                    WARN(TRANSLATION("phantom-shield-x.native.inline-static-field-warn"), inlinedField.getOwner().getOriginalName() + "." + inlinedField.getOriginalName() + "." + inlinedField.getDescription());
 //                                }
                                 iterator.remove();
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(" + fieldInsnNode.desc + ")V", false);
                             } else if (opcode == GETFIELD) {
                                 iterator.remove();
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(Ljava/lang/Object;)" + fieldInsnNode.desc, false);
                             } else if (opcode == PUTFIELD) {
                                 iterator.remove();
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_field_" + reference, "(Ljava/lang/Object;" + fieldInsnNode.desc + ")V", false);
                             }
 
                             if (injectedNode != null) {
                                 if (obfuscated) {
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                     iterator.add(injectedNode);
                                 } else {
                                     MethodNode inlineMethod = new MethodNode();
                                     inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
                                     inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
                                     inlineMethod.desc = injectedNode.desc;
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + fieldInsnNode.owner, "()V", false));
                                     Type[] arguments = Type.getArgumentTypes(injectedNode.desc);
                                     for (int i = 0; i < arguments.length; i++) {
                                         Type argument = arguments[i];
@@ -946,15 +944,12 @@ public class NativeObfuscation extends Transformer {
                                 List<Type> arguments = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(methodInsnNode.desc)));
                                 arguments.add(Type.getType("Ljava/lang/Class;"));
                                 String modifiedDesc = Type.getMethodDescriptor(returnType, arguments.toArray(new Type[0]));
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
-
                                 iterator.add(new LdcInsnNode(Type.getObjectType(methodInsnNode.owner)));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_method_" + reference, modifiedDesc, false);
                             } else if (opcode == INVOKEVIRTUAL) {
                                 iterator.remove();
                                 StringBuilder descBuilder = new StringBuilder(methodInsnNode.desc);
                                 descBuilder.insert(1, "Ljava/lang/Object;");
-                                iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
                                 injectedNode = new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_method_-" + reference, descBuilder.toString(), false);
                             } else if (opcode == INVOKESPECIAL) {
                                 ERROR(TRANSLATION("phantom-shield-x.native.inline-method-error1"));
@@ -968,6 +963,7 @@ public class NativeObfuscation extends Transformer {
 
                             if (injectedNode != null) {
                                 if (obfuscated) {
+                                    iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
                                     iterator.add(injectedNode);
                                 } else {
                                     String originalDesc = injectedNode.desc;
@@ -978,6 +974,7 @@ public class NativeObfuscation extends Transformer {
                                     inlineMethod.access = ACC_PUBLIC | ACC_STATIC;
                                     inlineMethod.name = String.valueOf(inlineIndex.getAndIncrement());
                                     inlineMethod.desc = genericDesc;
+                                    inlineMethod.instructions.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_init_" + methodInsnNode.owner, "()V", false));
                                     Type[] arguments = Type.getArgumentTypes(genericDesc);
                                     for (int i = 0; i < arguments.length; i++) {
                                         Type argument = arguments[i];
