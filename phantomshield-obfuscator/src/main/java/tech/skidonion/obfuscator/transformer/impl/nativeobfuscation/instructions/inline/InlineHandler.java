@@ -262,9 +262,14 @@ public class InlineHandler {
             }
         } else if (node.name.startsWith("_init_")) {
             String key = node.name.substring(6);
-            int classId = context.getCachedClasses().getId(key);
-            int cacheId = context.getCachedInitClasses().getId(key);
-            context.output.append(MethodProcessor.getClassCacher(context, classId, key, trimmedTryCatchBlock));
+
+            ClassWrapper cw = context.obfuscator.obfuscator.getClassWrapper(key);
+
+            String owner = cw.getName();
+
+            int classId = context.getCachedClasses().getId(owner);
+            int cacheId = context.getCachedInitClasses().getId(owner);
+            context.output.append(MethodProcessor.getClassCacher(context, classId, owner, trimmedTryCatchBlock));
             context.output.append("if (!cinits[").append(cacheId).append("]) { env->DeleteLocalRef(env->AllocObject(cclasses[").append(classId).append("])); cinits[").append(cacheId).append("] = true; }\n");
 
 //            if (!(cinits[1]))
