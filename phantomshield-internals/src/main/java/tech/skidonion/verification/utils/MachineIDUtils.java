@@ -32,7 +32,7 @@ public class MachineIDUtils {
         current += length;
         try {
             data.writeByte(0xFF);
-            data.writeByte(0x03);
+            data.writeByte(0x04);
             for (int i = 0; i < length; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
             data.write(0x00);
             host:
@@ -61,7 +61,17 @@ public class MachineIDUtils {
             {
                 current++;
                 data.writeByte(0x03);
-                Path path = Paths.get(System.getProperty("user.home"), ".skidonion");
+
+                int hashHome = System.getProperty("user.home").hashCode();
+                Random rand = new Random(hashHome);
+                String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                StringBuilder result = new StringBuilder(".");
+                for (int i = 0; i < 16; i++) {
+                    int number = rand.nextInt(str.length());
+                    result.append(str.charAt(number));
+                }
+
+                Path path = Paths.get(System.getProperty("user.home"), result.toString());
                 byte[] uuid;
                 if (!Files.exists(path)) {
                     uuid = new byte[16];
@@ -79,7 +89,7 @@ public class MachineIDUtils {
             data.writeByte(0x00);
             int rest = max - current;
             for (int i = 0; i < rest; i++) data.write((byte) ThreadLocalRandom.current().nextInt(1, 256));
-            data.writeByte(0x03);
+            data.writeByte(0x04);
             data.writeByte(0xFF);
         } catch (IOException exception) {
             return;
@@ -111,7 +121,7 @@ public class MachineIDUtils {
         byte[] encoded = new byte[l / 2];
         for (int i = 0; i < l; i += 2) {
             encoded[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
-                                     + Character.digit(hexString.charAt(i + 1), 16));
+                    + Character.digit(hexString.charAt(i + 1), 16));
         }
 
         byte[] decoded = new byte[encoded.length];
@@ -122,7 +132,7 @@ public class MachineIDUtils {
         DataInputStream data = new DataInputStream(bis);
         try {
             int valid = 0;
-            byte[] mark = new byte[]{(byte) 0xFF, 0x03};
+            byte[] mark = new byte[]{(byte) 0xFF, 0x04};
             byte[] header = new byte[2];
             byte[] tail = new byte[]{decoded[decoded.length - 1], decoded[decoded.length - 2]};
             data.read(header);
@@ -161,7 +171,16 @@ public class MachineIDUtils {
                         byte length = data.readByte();
                         byte[] bytes = new byte[length];
                         data.read(bytes, 0, bytes.length);
-                        Path path = Paths.get(System.getProperty("user.home"), ".skidonion");
+                        int hashHome = System.getProperty("user.home").hashCode();
+                        Random rand = new Random(hashHome);
+                        String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                        StringBuilder result = new StringBuilder(".");
+                        for (int i = 0; i < 16; i++) {
+                            int number = rand.nextInt(str.length());
+                            result.append(str.charAt(number));
+                        }
+
+                        Path path = Paths.get(System.getProperty("user.home"), result.toString());
                         if (Files.exists(path) && Arrays.equals(Files.readAllBytes(path), bytes)) {
                             valid++;
                         }
