@@ -13,7 +13,7 @@ class VerifyUtilsTest {
 
     @Test
     void testLogin() {
-        System.out.println(VerifyUtils.login("imfl0wow", "fyx.flix1324") >> 8 & 0xFF);
+        System.out.println(VerifyUtils.login("imfl0wow", "41aae1446c6c0190a97de6a73d35fc3b", true) >> 8 & 0xFF);
 
         System.out.println(VerifyUtils.getUserId());
         System.out.println(VerifyUtils.getUsername());
@@ -57,7 +57,7 @@ class VerifyUtilsTest {
     private static void _defineClass_(byte[] bytes, int length) {
     }
 
-    private static void decryptBuffer(byte[] key){
+    private static void decryptBuffer(byte[] key) {
 
     }
 

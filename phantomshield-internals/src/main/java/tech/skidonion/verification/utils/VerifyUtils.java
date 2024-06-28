@@ -30,7 +30,7 @@ public class VerifyUtils {
 
     @NativeObfuscation.Inline
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
-    public static int login(String username, String password) {
+    public static int login(String username, String password, boolean useHashedPassword) {
         if (RANDOM == null) {
             RANDOM = new SecureRandom();
             CLOUD_CONSTANT_MAP = new HashMap<>();
@@ -54,6 +54,7 @@ public class VerifyUtils {
             params.put("p", URLEncoder.encode(Base64.encode(p.toByteArray())));
             params.put("q", URLEncoder.encode(Base64.encode(q.toByteArray())));
             params.put("m", URLEncoder.encode(Base64.encode(m.toByteArray())));
+            params.put("e", URLEncoder.encode(String.valueOf(useHashedPassword)));
             String res = HttpUtils.post(Internals.verificationServer() + "api/verify/login", params, headers);
             Inline.trycatch();
             if (res != null) {

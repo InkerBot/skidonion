@@ -850,7 +850,7 @@ public class NativeObfuscation extends Transformer {
                                 iterator.add(new MethodInsnNode(INVOKESTATIC, "tech/skidonion/verification/utils/VerifyUtils", methodInsnNode.name, methodInsnNode.desc, false));
                                 break;
                             }
-                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;)I": {
+                            case "tech/skidonion/obfuscator/inline/Wrapper.login(Ljava/lang/String;Ljava/lang/String;Z)I": {
                                 if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
                                     break;
                                 iterator.remove();

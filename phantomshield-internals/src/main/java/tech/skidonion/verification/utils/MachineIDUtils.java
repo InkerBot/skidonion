@@ -163,7 +163,7 @@ public class MachineIDUtils {
                         short length = data.readShort();
                         byte[] bytes = new byte[length];
                         data.read(bytes, 0, bytes.length);
-                        if (Arrays.equals(String.join("-", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"), System.getProperty("user.name")).getBytes(StandardCharsets.UTF_8), bytes))
+                        if (Arrays.equals(String.join("-", System.getProperty("user.home"), System.getProperty("user.name")).getBytes(StandardCharsets.UTF_8), bytes))
                             valid++;
                         break;
                     }
@@ -182,6 +182,7 @@ public class MachineIDUtils {
 
                         Path path = Paths.get(System.getProperty("user.home"), result.toString());
                         if (Files.exists(path) && Arrays.equals(Files.readAllBytes(path), bytes)) {
+                            Inline.trycatch();
                             valid++;
                         }
                         break block;

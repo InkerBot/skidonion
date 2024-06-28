@@ -14,13 +14,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.Random;
 import java.util.ResourceBundle;
 
 public class Main {
 
     @NativeObfuscation
     public static int showVerification() {
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
+        Random rand = new Random(Internals.softwareId() * 1337 + Internals.softwareId());
+        String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        StringBuilder directory = new StringBuilder(".");
+        for (int i = 0; i < 16; i++) {
+            int number = rand.nextInt(str.length());
+            directory.append(str.charAt(number));
+        }
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", directory.toString()))) {
             Properties properties = new Properties();
             properties.load(reader);
             String username = properties.getProperty("username");
@@ -28,7 +36,7 @@ public class Main {
             if (username != null && password != null) {
                 ResourceBundle bundle = ResourceBundle.getBundle("tech.skidonion.verification.lang");
                 System.out.println(bundle.getString("VerificationPanel.login.autologin"));
-                int result = Wrapper.login(username, password);
+                int result = Wrapper.login(username, password, true);
                 if (result == 0) {
                     return 1;
                 } else {

@@ -4,9 +4,12 @@ import org.junit.jupiter.api.Test;
 import tech.skidonion.verification.utils.Internals;
 
 import java.io.BufferedWriter;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,4 +29,18 @@ class VerificationPanelTest {
         } catch (Exception ignore) {
         }
     }
+
+    @Test
+    void md5() {
+        String pwd = "123456";
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(pwd.getBytes());
+            String hashedPwd = new BigInteger(1, md.digest()).toString(16);
+            System.out.println(hashedPwd);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

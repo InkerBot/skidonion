@@ -4,6 +4,8 @@
 
 package tech.skidonion.verification;
 
+import java.awt.event.*;
+
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
@@ -15,11 +17,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.Properties;
+import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +38,7 @@ public class VerificationPanel extends JPanel {
     private final JFrame frame;
     private PipedInputStream input;
     private PipedOutputStream output;
+    private boolean useHashedPassword;
     private static final ExecutorService service = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r);
         thread.setDaemon(true);
@@ -47,14 +53,23 @@ public class VerificationPanel extends JPanel {
     }
 
     private void readAccount() {
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode(), "userinfo"))) {
+        Random rand = new Random(Internals.softwareId() * 1337 + Internals.softwareId());
+        String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        StringBuilder directory = new StringBuilder(".");
+        for (int i = 0; i < 16; i++) {
+            int number = rand.nextInt(str.length());
+            directory.append(str.charAt(number));
+        }
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(System.getProperty("user.home"), "skidonion", directory.toString()))) {
             Properties properties = new Properties();
             properties.load(reader);
             String username = properties.getProperty("username");
             String password = properties.getProperty("password");
             this.usernameField.setText(username);
             this.passwordField.setText(password);
+            this.useHashedPassword = true;
         } catch (Exception ignore) {
+            this.useHashedPassword = false;
         }
     }
 
@@ -80,18 +95,31 @@ public class VerificationPanel extends JPanel {
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
     private void loginThread() {
         try {
-            int result = (byte) Wrapper.login(this.usernameField.getText(), new String(this.passwordField.getPassword()));
+            String password = new String(this.passwordField.getPassword());
+            if (!useHashedPassword) {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                md.update(password.getBytes());
+                password = new BigInteger(1, md.digest()).toString(16);
+            }
+            int result = (byte) Wrapper.login(this.usernameField.getText(), password, true);
             Inline.trycatch();
             if (result == 0) {
                 try {
-                    Path dataPath = Paths.get(System.getProperty("user.home"), "skidonion", "." + Internals.verificationServer().hashCode());
+                    Random rand = new Random(Internals.softwareId() * 1337 + Internals.softwareId());
+                    String str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    StringBuilder directory = new StringBuilder(".");
+                    for (int i = 0; i < 16; i++) {
+                        int number = rand.nextInt(str.length());
+                        directory.append(str.charAt(number));
+                    }
+
+                    Path dataPath = Paths.get(System.getProperty("user.home"), "skidonion");
                     Files.createDirectories(dataPath);
-                    Inline.trycatch();
-                    try (BufferedWriter writer = Files.newBufferedWriter(dataPath.resolve("userinfo"))) {
+                    try (BufferedWriter writer = Files.newBufferedWriter(dataPath.resolve(directory.toString()))) {
                         Inline.trycatch();
                         Properties properties = new Properties();
                         properties.setProperty("username", this.usernameField.getText());
-                        properties.setProperty("password", new String(this.passwordField.getPassword()));
+                        properties.setProperty("password", password);
                         properties.store(writer, "don't leak to anyone^^");
                         Inline.trycatch();
                     }
@@ -104,7 +132,7 @@ public class VerificationPanel extends JPanel {
             } else {
                 JOptionPane.showMessageDialog(this, bundle.getString("VerificationPanel.login.code." + result), "skidonion", JOptionPane.WARNING_MESSAGE);
             }
-        } catch (IOException exception) {
+        } catch (Exception exception) {
             JOptionPane.showMessageDialog(this, this.bundle.getString("VerificationPanel.login.exception"));
         }
         this.loginButton.setEnabled(true);
@@ -155,6 +183,13 @@ public class VerificationPanel extends JPanel {
         registerLabel.setForeground(Color.black);
     }
 
+    private void onPasswordChanged(KeyEvent e) {
+        if (this.useHashedPassword) {
+            this.passwordField.setText("");
+        }
+        this.useHashedPassword = false;
+    }
+
 
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents  @formatter:off
@@ -200,6 +235,12 @@ public class VerificationPanel extends JPanel {
 
         //---- passwordField ----
         passwordField.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 18));
+        passwordField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                onPasswordChanged(e);
+            }
+        });
         add(passwordField, new GridBagConstraints(4, 6, 5, 1, 0.0, 0.0,
             GridBagConstraints.CENTER, GridBagConstraints.BOTH,
             new Insets(0, 0, 5, 5), 0, 0));

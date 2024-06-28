@@ -25,7 +25,7 @@ public class Wrapper {
         return Optional.of("development");
     }
 
-    public static int login(String username, String password) {
+    public static int login(String username, String password, boolean useHashedPassword) {
         return 0;
     }
 
