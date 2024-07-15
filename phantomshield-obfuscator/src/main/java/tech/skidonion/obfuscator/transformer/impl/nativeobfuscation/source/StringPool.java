@@ -60,7 +60,7 @@ public class StringPool {
         int i;
         for (i = 0; i < strlen; i++) {
            c = str.charAt(i);
-           if (!((c >= 0x0001) && (c <= 0x007F))) 
+           if (!((c >= 0x0001) && (c <= 0x007F)))
                break;
            bytearr[count++] = (byte) c;
         }
@@ -79,7 +79,7 @@ public class StringPool {
                 bytearr[count++] = (byte) (0x80 | ((c) & 0x3F));
             }
         }
-        
+
         return bytearr;
     }
 
@@ -100,7 +100,7 @@ public class StringPool {
 
         String template = FileUtils.readResource("sources/string_pool.cpp");
         return StringUtils.dynamicFormat(template, StringUtils.createStringMap(
-                "size", bytes.size() + "LL",
+                "size", Math.max(1, bytes.size()) + "LL",
                 "value", result
         ));
     }

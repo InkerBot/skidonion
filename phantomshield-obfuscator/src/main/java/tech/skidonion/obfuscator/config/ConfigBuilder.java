@@ -6,6 +6,7 @@ import java.util.*;
 public class ConfigBuilder {
 
     // attributions
+    private boolean debugSetting;
     private File inputJarSetting;
     private File outputJarSetting;
     private boolean generatePhantomClassesSetting = false;
@@ -81,6 +82,10 @@ public class ConfigBuilder {
         config.add("input", Objects.requireNonNull(inputJarSetting, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJarSetting, "output is null").getAbsoluteFile().toString());
         config.add("dictionary", dictionarySetting);
+
+        if (debugSetting) {
+            config.add("__debug", true);
+        }
 
         if (generatePhantomClassesSetting) {
             config.add("generate_phantom_classes", true);
@@ -564,6 +569,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setFieldInitializationSetting(boolean fieldInitializationSetting) {
         this.fieldInitializationSetting = fieldInitializationSetting;
+        return this;
+    }
+
+    public ConfigBuilder setDebugSetting(boolean debugSetting) {
+        this.debugSetting = debugSetting;
         return this;
     }
 }

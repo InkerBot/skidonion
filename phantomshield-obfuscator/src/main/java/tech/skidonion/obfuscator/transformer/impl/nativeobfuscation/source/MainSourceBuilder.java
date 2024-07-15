@@ -61,7 +61,7 @@ public class MainSourceBuilder {
                 "register_code", registerMethods,
                 "includes", includesBuilder,
                 "native_dir", nativeDir,
-                "class_count", classCount,
+                "class_count", Math.max(1, classCount),
                 "converted_codes", codes
         ));
     }
