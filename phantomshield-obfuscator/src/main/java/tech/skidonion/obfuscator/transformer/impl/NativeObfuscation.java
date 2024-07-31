@@ -984,7 +984,7 @@ public class NativeObfuscation extends Transformer {
                                     inlineMethod.instructions.add(new InsnNode(ASMUtils.getReturnOpcode(returnType)));
                                     inline.addMethod(inlineMethod);
                                     iterator.add(new MethodInsnNode(INVOKESTATIC, inline.getOriginalName(), inlineMethod.name, inlineMethod.desc));
-                                    if (returnType.getSort() != Type.VOID) {
+                                    if (returnType.getSort() == Type.ARRAY || returnType.getSort() == Type.OBJECT) {
                                         iterator.add(new TypeInsnNode(CHECKCAST, returnType.getInternalName()));
                                     }
                                 }

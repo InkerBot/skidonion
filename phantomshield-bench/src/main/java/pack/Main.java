@@ -11,6 +11,7 @@ import pack.tests.bench.Calc;
 import pack.tests.dirty.clinit.ClinitCall;
 import pack.tests.dirty.inline.Inlined;
 import pack.tests.dirty.interfaces.CallDirty;
+import pack.tests.dirty.ret.AllTypeReturn;
 import pack.tests.reflects.annot.annot;
 import pack.tests.reflects.counter.Count;
 import pack.tests.reflects.field.FTest;
@@ -101,6 +102,12 @@ public class Main {
         System.out.print("Test 1.10: Dirty interface ");
         try {
             CallDirty.doPrint();
+        } catch (Throwable t) {
+            System.out.println("ERROR");
+        }
+        System.out.print("Test 1.11: All type return ");
+        try {
+            AllTypeReturn.run();
         } catch (Throwable t) {
             System.out.println("ERROR");
         }
