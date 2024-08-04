@@ -35,9 +35,12 @@ public class StringEncryption extends Transformer {
 
     public boolean isNativeObfuscationEnable;
 
+    private NativeObfuscation j2cInstance;
+
     @Override
     public void transform() throws Exception {
-        isNativeObfuscationEnable = Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).isEnabled();
+        j2cInstance = (NativeObfuscation) Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation"));
+        isNativeObfuscationEnable = j2cInstance.isEnabled();
 
         long current = System.currentTimeMillis();
         getFilteredClasses().forEach(cw -> {
@@ -82,9 +85,9 @@ public class StringEncryption extends Transformer {
                         dummys.add(fieldNode);
                     }
                 } else {
-                    if (isNativeObfuscationEnable) {
+                    if (isNativeObfuscationEnable && j2cInstance.match(cw)) {
                         realStringField.visitAnnotation(NativeObfuscation.INLINE_DESC, false);
-                        Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptedStringsFieldName + ".Ljava/lang/Object;");
+                        j2cInstance.addInternalInclusion(cw.getOriginalName(), decryptedStringsFieldName + ".Ljava/lang/Object;");
                     }
                     cw.addField(realStringField);
                 }
@@ -111,7 +114,9 @@ public class StringEncryption extends Transformer {
 
     private MethodNode getPullMethod(ClassWrapper cw, String decryptorMethodName, String decryptedStringsFieldName) {
         final MethodNode methodNode = new MethodNode(ACC_PRIVATE | ACC_STATIC, decryptorMethodName, "(C)Ljava/lang/Object;", null, null);
-        Objects.requireNonNull(obfuscator.getRegister().get("native_obfuscation")).addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");
+        if (isNativeObfuscationEnable && j2cInstance.match(cw)) {
+            j2cInstance.addInternalInclusion(cw.getOriginalName(), decryptorMethodName + "(C)Ljava/lang/Object;");
+        }
 //        methodNode.visitAnnotation(Type.getDescriptor(NativeObfuscation.class), false);
         final InsnList insnList = new InsnList();
         insnList.add(new FieldInsnNode(GETSTATIC, cw.getName(), decryptedStringsFieldName, "Ljava/lang/Object;"));
