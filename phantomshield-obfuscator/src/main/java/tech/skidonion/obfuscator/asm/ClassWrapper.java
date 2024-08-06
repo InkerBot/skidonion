@@ -187,7 +187,7 @@ public class ClassWrapper {
 
     public FieldNode getOrCreateInitDummyField() {
         String target = "$skidonion$" + Math.abs(getOriginalName().hashCode());
-        if (dummyField == null || (dummyField = getField(target, "Z")) == null) {
+        if (dummyField == null && (dummyField = getField(target, "Z")) == null) {
             dummyField = new FieldNode(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, target, "Z", null, null);
             addField(dummyField);
         }
