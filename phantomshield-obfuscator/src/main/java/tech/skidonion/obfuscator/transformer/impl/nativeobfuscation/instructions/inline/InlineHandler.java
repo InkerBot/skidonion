@@ -3,6 +3,7 @@ package tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.instruction
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
 import tech.skidonion.obfuscator.asm.ClassWrapper;
@@ -11,6 +12,7 @@ import tech.skidonion.obfuscator.asm.MethodWrapper;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodContext;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
+import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.verification.BufferContext;
 import tech.skidonion.obfuscator.utils.ASMUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
@@ -264,17 +266,25 @@ public class InlineHandler {
             String key = node.name.substring(6);
 
             ClassWrapper cw = context.obfuscator.obfuscator.getClassWrapper(key);
+            FieldNode fn = cw.getOrCreateInitDummyField();
 
             String owner = cw.getName();
 
             int classId = context.getCachedClasses().getId(owner);
             int cacheId = context.getCachedInitClasses().getId(owner);
-            context.output.append(MethodProcessor.getClassCacher(context, classId, owner, trimmedTryCatchBlock));
-            context.output.append("if (!cinits[").append(cacheId).append("]) { env->DeleteLocalRef(env->AllocObject(cclasses[").append(classId).append("])); cinits[").append(cacheId).append("] = true; }\n");
 
+            CachedFieldInfo info = new CachedFieldInfo(owner, fn.name, fn.desc, true);
+
+            int fieldId = context.getCachedFields().getId(info);
+
+//            env->SetStaticBooleanField($class_ptr, $fieldid, (jboolean) cstack$stackindexm1.i);
+            context.output.append(MethodProcessor.getClassCacher(context, classId, owner, trimmedTryCatchBlock));
+            context.output.append("_CacheStaticField(env, ").append(context.getCachedClasses().getId(owner)).append(", ").append(fieldId).append(", ").append(context.getStringPool().getOffset(fn.name)).append(", ").append(context.getStringPool().getOffset(fn.desc)).append(");");
+            context.output.append("if (!cinits[").append(cacheId).append("]) { env->SetStaticBooleanField(").append(context.getCachedClasses().getPointer(owner)).append(", ")
+                    .append(context.getCachedFields().getPointer(info)).append(", (jboolean) 1); cinits[").append(cacheId).append("] = true; }\n");
 //            if (!(cinits[1]))
 //            {
-//                env->DeleteLocalRef(env->AllocObject((cclasses[1])));
+//                env->SetStaticBooleanField($class_ptr, $fieldid, (jboolean) cstack$stackindexm1.i);
 //                cinits[1] = true;
 //            }
 
