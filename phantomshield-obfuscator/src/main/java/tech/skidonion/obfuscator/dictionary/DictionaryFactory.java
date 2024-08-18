@@ -36,16 +36,16 @@ public class DictionaryFactory {
                 return dictionary;
             }
         }
-        if (s.contains(";") || s.contains(">") || s.contains("%"))
-            throw new RuntimeException("';' '>' '%' is not valid as a dictionary character");
+        if (s.contains(";") || s.contains(">") || s.contains("%") || s.contains("/") || s.contains("."))
+            throw new RuntimeException("';' '>' '%' '/' '.' is not valid as a dictionary character");
 
         return new CustomDictionary(s);
     }
 
     public static Dictionary getCustom(List<String> charset) {
         for (String s : charset) {
-            if (s.contains(";") || s.contains(">"))
-                throw new RuntimeException("';' or '>' is not valid as a dictionary character");
+            if (s.contains(";") || s.contains(">") || s.contains("%") || s.contains("/") || s.contains("."))
+                throw new RuntimeException("';' '>' '%' '/' '.' is not valid as a dictionary character");
         }
         return new CustomDictionary(charset);
     }

@@ -144,6 +144,17 @@ public class PhantomShield {
             dictionary = DictionaryFactory.get("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         }
 
+        if (config.has("minimum_generated_name_length")) {
+            int length = config.getNumber("minimum_generated_name_length").intValue();
+            if (length > 1) {
+                int n = 0;
+                for (int i = 1; i < length; i++) {
+                    n += (int) Math.pow(dictionary.size(), i);
+                }
+                dictionary.getOffset().set(n);
+            }
+        }
+
         if (config.has("cpp_compiler")) {
             compiler = new CppCompiler(config.getString("cpp_compiler"));
         } else {
@@ -476,25 +487,29 @@ public class PhantomShield {
         if (type1.equals(type2))
             return true;
 
-        getClassWrapper(type1);
         getClassWrapper(type2);
 
-        ClassTree firstTree = getTree(type1);
-        if (firstTree == null)
-            throw new RuntimeException(String.format(BUNDLE.getString("phantom-shield-x.instance.hierarchy-error"), type1));
+        return buildAllSubClasses(type1).contains(type2);
+    }
 
-        Set<String> allChildren = new HashSet<>();
-        Deque<String> toProcess = new ArrayDeque<>(firstTree.getSubClasses());
-        while (!toProcess.isEmpty()) {
-            String s = toProcess.poll();
+    private Set<String> buildAllSubClasses(String clazz) {
 
-            if (allChildren.add(s)) {
-                getClassWrapper(s);
-                ClassTree tempTree = getTree(s);
-                toProcess.addAll(tempTree.getSubClasses());
+        ClassTree tree = getTree(clazz);
+        if (tree == null)
+            throw new RuntimeException(String.format(BUNDLE.getString("phantom-shield-x.instance.hierarchy-error"), clazz));
+
+        if (tree.getAllSubClasses() == null) {
+            Set<String> visited = new HashSet<>();
+            for (String subClazz : tree.getSubClasses()) {
+                if (visited.add(subClazz)) {
+                    visited.addAll(buildAllSubClasses(subClazz));
+                }
             }
+            tree.setAllSubClasses(visited);
+            return visited;
+        } else {
+            return tree.getAllSubClasses();
         }
-        return allChildren.contains(type2);
     }
 
     /**
@@ -529,7 +544,7 @@ public class PhantomShield {
         if (hierarchy.get(wrapper.getName()) == null) {
             ClassTree tree = new ClassTree(wrapper);
 
-            if (wrapper.getSuperName() != null) {
+            if (wrapper.getSuperName() != null && !"java/lang/Object".equals(wrapper.getSuperName())) {
                 tree.getParentClasses().add(wrapper.getSuperName());
 
                 buildHierarchy(getClassWrapper(wrapper.getSuperName()), wrapper);
@@ -618,6 +633,10 @@ public class PhantomShield {
 
     public static void ERROR(String s, Throwable throwable) {
         LOGGER.error(s, throwable);
+    }
+
+    public static void ERROR(Throwable throwable) {
+        LOGGER.error("", throwable);
     }
 
     public static String TRANSLATION(String key) {

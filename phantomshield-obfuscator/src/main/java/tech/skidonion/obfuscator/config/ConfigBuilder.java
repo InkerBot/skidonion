@@ -18,8 +18,8 @@ public class ConfigBuilder {
     private long randomSeedSetting;
     private boolean printClassesAsDirectorySetting = false;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private int minimumGeneratedNameLengthSetting = 1;
     private String inputMappingsFileSetting;
-    private boolean legacyCompileModeSetting = false;
     private final List<String> targetsSettings = new ArrayList<>();
     private final List<String> librariesSettings = new ArrayList<>();
     private final List<String> filtersSettings = new ArrayList<>();
@@ -82,6 +82,7 @@ public class ConfigBuilder {
         config.add("input", Objects.requireNonNull(inputJarSetting, "input is null").getAbsoluteFile().toString());
         config.add("output", Objects.requireNonNull(outputJarSetting, "output is null").getAbsoluteFile().toString());
         config.add("dictionary", dictionarySetting);
+        config.add("minimum_generated_name_length", minimumGeneratedNameLengthSetting);
 
         if (debugSetting) {
             config.add("__debug", true);
@@ -536,11 +537,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    @Deprecated
-    public ConfigBuilder setLegacyCompileModeSetting(boolean legacyCompileModeSetting) {
-        this.legacyCompileModeSetting = legacyCompileModeSetting;
-        return this;
-    }
 
     public ConfigBuilder setVerificationUserIdSetting(String verificationUserIdSetting) {
         this.verificationUserIdSetting = verificationUserIdSetting;
@@ -574,6 +570,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setDebugSetting(boolean debugSetting) {
         this.debugSetting = debugSetting;
+        return this;
+    }
+
+    public ConfigBuilder setMinimumGeneratedNameLengthSetting(int minimumGeneratedNameLengthSetting) {
+        this.minimumGeneratedNameLengthSetting = minimumGeneratedNameLengthSetting;
         return this;
     }
 }
