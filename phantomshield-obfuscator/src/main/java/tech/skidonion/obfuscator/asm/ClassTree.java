@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.asm;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,6 +12,7 @@ public class ClassTree {
     private final ClassWrapper classWrapper;
     private final Set<String> parentClasses = new HashSet<>();
     private final Set<String> subClasses = new HashSet<>();
+    private Set<String> allSubClasses;
 
     /**
      * Creates a ClassTree object.
@@ -39,5 +42,14 @@ public class ClassTree {
      */
     public Set<String> getSubClasses() {
         return subClasses;
+    }
+
+
+    public Set<String> getAllSubClasses() {
+        return allSubClasses;
+    }
+
+    public void setAllSubClasses(Set<String> allSubClasses) {
+        this.allSubClasses = allSubClasses;
     }
 }

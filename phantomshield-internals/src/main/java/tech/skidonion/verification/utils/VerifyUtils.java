@@ -225,7 +225,8 @@ public class VerifyUtils {
                 }
                 return Optional.of(code);
             }
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
         }
         return Optional.empty();
     }

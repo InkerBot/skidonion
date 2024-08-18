@@ -52,7 +52,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                     packageName = "";
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 } else if (package_mode.is("unique")) {
-                    packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).nextUniqueString() + "/";
+                    packageName = obfuscator.packageDictionaries.computeIfAbsent("", name -> obfuscator.getDictionary().copy()).next() + "/";
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 } else if (package_mode.is("random_existed")) {
                     List<ClassWrapper> wrappers = new ArrayList<>(getClassWrappers());
@@ -64,7 +64,7 @@ public class InvokeWrapperObfuscation extends Transformer {
                     classDictionary = obfuscator.classesDictionaries.computeIfAbsent(packageName, name -> obfuscator.getDictionary().copy());
                 }
 
-                String name = packageName + classDictionary.nextUniqueString();
+                String name = packageName + classDictionary.next();
                 targetNode.visit(V1_8, ACC_PUBLIC, name, null, "java/lang/Object", null);
                 target = injectClass(targetNode);
             } else {
@@ -96,19 +96,17 @@ public class InvokeWrapperObfuscation extends Transformer {
                             continue;
 
                         if (methodInsnNode.getOpcode() == INVOKESTATIC) {
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                            MethodNode methodNode = createStaticMethod(methodInsnNode, methodName);
+                            MethodNode methodNode = createStaticMethod(methodInsnNode, target);
 
                             syntheticMethods.add(new Pair<>(target, methodNode));
-                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodInsnNode.desc, false));
+                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodInsnNode.desc, false));
 
                             counter.incrementAndGet();
                         } else if (methodInsnNode.getOpcode() == INVOKEVIRTUAL) {
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                            MethodNode methodNode = createVirtualMethod(methodInsnNode, methodName);
+                            MethodNode methodNode = createVirtualMethod(methodInsnNode, target);
 
                             syntheticMethods.add(new Pair<>(target, methodNode));
-                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
 
                             counter.incrementAndGet();
                         }
@@ -123,10 +121,9 @@ public class InvokeWrapperObfuscation extends Transformer {
                             continue;
 
                         if (fieldInsnNode.getOpcode() == GETSTATIC) {
-                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                            MethodNode methodNode = createGetStaticMethod(fieldInsnNode, methodName);
+                            MethodNode methodNode = createGetStaticMethod(fieldInsnNode, target);
                             syntheticMethods.add(new Pair<>(target, methodNode));
-                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
                             counter.incrementAndGet();
                         } else if (fieldInsnNode.getOpcode() == PUTSTATIC) {
                             if (fieldInsnNode.owner.equals(node.name)) {
@@ -134,35 +131,31 @@ public class InvokeWrapperObfuscation extends Transformer {
                                     if (fieldInsnNode.name.equals(fieldNode.name)) {
                                         boolean isFinal = (fieldNode.access & ACC_FINAL) != 0;
                                         if (!isFinal) {
-                                            String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                                            MethodNode methodNode = createPutStaticMethod(fieldInsnNode, methodName);
+                                            MethodNode methodNode = createPutStaticMethod(fieldInsnNode, target);
                                             syntheticMethods.add(new Pair<>(target, methodNode));
-                                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                                            modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
                                         }
                                     }
                                 }
                             } else {
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                                MethodNode methodNode = createPutStaticMethod(fieldInsnNode, methodName);
+                                MethodNode methodNode = createPutStaticMethod(fieldInsnNode, target);
                                 syntheticMethods.add(new Pair<>(target, methodNode));
-                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
                             }
                             counter.incrementAndGet();
                         } else if (fieldInsnNode.getOpcode() == GETFIELD) {
                             if (!method.name.equals("<init>")) {
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                                MethodNode methodNode = createGetFieldMethod(fieldInsnNode, methodName);
+                                MethodNode methodNode = createGetFieldMethod(fieldInsnNode, target);
                                 syntheticMethods.add(new Pair<>(target, methodNode));
-                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
                                 counter.incrementAndGet();
                             }
                         } else if (fieldInsnNode.getOpcode() == PUTFIELD) {
                             if (!method.name.equals("<init>")) {
-                                String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName() : target.getMethodDictionary().nextUniqueString();
-                                MethodNode methodNode = createPutFieldMethod(fieldInsnNode, methodName);
+                                MethodNode methodNode = createPutFieldMethod(fieldInsnNode, target);
 
                                 syntheticMethods.add(new Pair<>(target, methodNode));
-                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodName, methodNode.desc, false));
+                                modifier.replace(instruction, new MethodInsnNode(INVOKESTATIC, target.getClassNode().name, methodNode.name, methodNode.desc, false));
 
                                 counter.incrementAndGet();
                             }
@@ -196,8 +189,10 @@ public class InvokeWrapperObfuscation extends Transformer {
         return null;
     }
 
-    private MethodNode createStaticMethod(MethodInsnNode methodInsnNode, String methodName) {
+    private MethodNode createStaticMethod(MethodInsnNode methodInsnNode, ClassWrapper target) {
         String desc = methodInsnNode.desc;
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(desc) : target.getMethodDictionary().next();
+
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, desc, null, null);
         Type returnType = Type.getReturnType(desc);
 
@@ -208,7 +203,7 @@ public class InvokeWrapperObfuscation extends Transformer {
         return methodNode;
     }
 
-    private MethodNode createVirtualMethod(MethodInsnNode methodInsnNode, String methodName) {
+    private MethodNode createVirtualMethod(MethodInsnNode methodInsnNode, ClassWrapper target) {
         Type[] types = Type.getArgumentTypes(methodInsnNode.desc);
         Type[] desc = new Type[types.length + 1];
 
@@ -221,6 +216,8 @@ public class InvokeWrapperObfuscation extends Transformer {
         }
 
         String methodDesc = Type.getMethodDescriptor(Type.getReturnType(methodInsnNode.desc), desc);
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(methodDesc) : target.getMethodDictionary().next();
+
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, methodDesc, null, null);
 
         methodNode.visitVarInsn(ALOAD, 0);
@@ -231,9 +228,11 @@ public class InvokeWrapperObfuscation extends Transformer {
         return methodNode;
     }
 
-    private MethodNode createGetStaticMethod(FieldInsnNode fieldInsnNode, String methodName) {
+    private MethodNode createGetStaticMethod(FieldInsnNode fieldInsnNode, ClassWrapper target) {
         Type type = Type.getType(fieldInsnNode.desc);
         String methodDescriptor = Type.getMethodDescriptor(type);
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(methodDescriptor) : target.getMethodDictionary().next();
+
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, methodDescriptor, null, null);
 
         methodNode.visitFieldInsn(GETSTATIC, fieldInsnNode.owner, fieldInsnNode.name, fieldInsnNode.desc);
@@ -242,9 +241,11 @@ public class InvokeWrapperObfuscation extends Transformer {
         return methodNode;
     }
 
-    private MethodNode createPutStaticMethod(FieldInsnNode fieldInsnNode, String methodName) {
+    private MethodNode createPutStaticMethod(FieldInsnNode fieldInsnNode, ClassWrapper target) {
         Type type = Type.getType(fieldInsnNode.desc);
         String methodDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, type);
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(methodDescriptor) : target.getMethodDictionary().next();
+
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, methodDescriptor, null, null);
 
         visitArgs(0, new Type[]{type}, methodNode);
@@ -254,10 +255,12 @@ public class InvokeWrapperObfuscation extends Transformer {
         return methodNode;
     }
 
-    private MethodNode createGetFieldMethod(FieldInsnNode fieldInsnNode, String methodName) {
+    private MethodNode createGetFieldMethod(FieldInsnNode fieldInsnNode, ClassWrapper target) {
         Type type = Type.getType(fieldInsnNode.desc);
         Type objectType = Type.getObjectType(fieldInsnNode.owner);
         String methodDescriptor = Type.getMethodDescriptor(type, objectType);
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(methodDescriptor) : target.getMethodDictionary().next();
+
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, methodDescriptor, null, null);
 
         visitArgs(0, new Type[]{objectType}, methodNode);
@@ -267,10 +270,11 @@ public class InvokeWrapperObfuscation extends Transformer {
         return methodNode;
     }
 
-    private MethodNode createPutFieldMethod(FieldInsnNode fieldInsnNode, String methodName) {
+    private MethodNode createPutFieldMethod(FieldInsnNode fieldInsnNode, ClassWrapper target) {
         Type type = Type.getType(fieldInsnNode.desc);
         Type objectType = Type.getObjectType(fieldInsnNode.owner);
         String methodDescriptor = Type.getMethodDescriptor(Type.VOID_TYPE, objectType, type);
+        String methodName = inject_to_other_class.isEnable() ? target.generateRandomMethodName(methodDescriptor) : target.getMethodDictionary().next();
         MethodNode methodNode = new MethodNode(ACC_PUBLIC | ACC_STATIC, methodName, methodDescriptor, null, null);
 
         visitArgs(0, new Type[]{objectType, type}, methodNode);

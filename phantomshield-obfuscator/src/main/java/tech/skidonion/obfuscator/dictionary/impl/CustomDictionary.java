@@ -4,6 +4,7 @@ import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.StringSequence;
 import tech.skidonion.obfuscator.utils.RandomUtils;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,6 +12,7 @@ import java.util.List;
  */
 public class CustomDictionary extends Dictionary {
     private final StringSequence sequences;
+
     public CustomDictionary(String charset) {
         this(new StringSequence(charset.toCharArray()));
     }
@@ -24,41 +26,33 @@ public class CustomDictionary extends Dictionary {
         sequences = strSequence;
     }
 
+
     @Override
-    public String randomString(int length) {
-        String[] c = new String[length];
-
-        for (int i = 0; i < length; i++)
-            c[i] = sequences.stringAt(RandomUtils.getRandomInt(sequences.size()));
-
-        return String.join("", c);
+    public String next() {
+        return generate(offset.get() + uniqueIndex.getAndIncrement());
     }
 
+    @Override
+    public int size() {
+        return sequences.size();
+    }
 
     @Override
-    public String nextUniqueString() {
-        int size = sequences.size();
-        int i = uniqueIndex.getAndIncrement();
-        String[] buf = new String[33];
-        int position = 32;
+    public String generate(int index) {
+        int totalCharacterCount = size();
 
-        if ((i = -i) > 0) {
-            throw new RuntimeException("Unique Index Can't be negative while generating dictionaries.");
-        }
+        int baseIndex = index / totalCharacterCount;
+        int offset = index % totalCharacterCount;
 
-        while (i <= -size) {
-            buf[position--] = sequences.stringAt(-(i % size));
-            i /= size;
-        }
-        buf[position] = sequences.stringAt(-i);
-        String[] result = new String[33 - position];
+        String newString = sequences.stringAt(offset);
 
-        System.arraycopy(buf, position, result, 0, result.length);
-        return String.join("", result);
+        return baseIndex == 0 ? newString : (generate(baseIndex - 1) + newString);
     }
 
     @Override
     public Dictionary copy() {
-        return new CustomDictionary(sequences);
+        CustomDictionary copy = new CustomDictionary(sequences);
+        copy.getOffset().set(this.getOffset().get());
+        return copy;
     }
 }

@@ -20,11 +20,11 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-//        renamer(builder);
-//        string_encryption(builder);
+        renamer(builder);
+        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
-        native_obfuscation(builder);
+//        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);
@@ -54,7 +54,9 @@ public class TestRun {
                 .setRepackageSetting(false) //
                 .setRepackageNameSetting("skidonion") //
 //                .setPrefixNameSetting("狼牙") //
-                .setPrintMappingsSetting(true) //
+                .setDictionarySetting("Iil1") //
+                .setMinimumGeneratedNameLengthSetting(10) //
+                .setPrintMappingsSetting(false) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //

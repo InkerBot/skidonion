@@ -14,7 +14,6 @@ import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.transformer.impl.Renamer;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.MapUtils;
-import tech.skidonion.obfuscator.utils.RandomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.*;
@@ -67,7 +66,7 @@ public class Mapper {
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
                     RenamerResult result = genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getMethodDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(prefix_name + classWrapper.getMethodDictionary().nextUniqueString());
+                    result.setObfuscatedName(prefix_name + classWrapper.getMethodDictionary().next());
                     processRenamerResult(result);
                 }
                 if (renamer != null) renamer.removeAnnotation(methodWrapper);
@@ -79,7 +78,7 @@ public class Mapper {
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
                     RenamerResult result = genFieldMappings(fieldWrapper, fieldWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getFieldDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(prefix_name + classWrapper.getFieldDictionary().nextUniqueString());
+                    result.setObfuscatedName(prefix_name + classWrapper.getFieldDictionary().next());
                     processRenamerResult(result);
                 }
                 if (renamer != null) renamer.removeAnnotation(fieldWrapper);
@@ -110,7 +109,7 @@ public class Mapper {
                             Dictionary packageDictionary = obfuscator.packageDictionaries.computeIfAbsent(dictionaryPackage.substring(0, dictionaryPackage.lastIndexOf("/") + 1), subpackage_name -> obfuscator.getDictionary().copy());
                             String mappedPackageName = packageMappings.get(subpackage);
                             if (mappedPackageName == null) {
-                                lastPackageName.append(prefix_name).append(packageDictionary.nextUniqueString()).append("/");
+                                lastPackageName.append(prefix_name).append(packageDictionary.next()).append("/");
                                 packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
                             } else {
                                 lastPackageName = new StringBuilder(mappedPackageName);
@@ -120,7 +119,7 @@ public class Mapper {
                     });
                 }
                 newName += prefix_name;
-                newName += classDictionary.nextUniqueString();
+                newName += classDictionary.next();
                 classMappings.putIfAbsent(classWrapper.getOriginalName(), newName);
             }
         });
@@ -239,15 +238,15 @@ public class Mapper {
     }
 
     private boolean cannotRenameMethod(ClassTree tree, MethodWrapper wrapper, Set<String> visited) {
-        String check = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + wrapper.getOriginalDescription();
+        String ref = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + wrapper.getOriginalDescription();
         // Don't check these
-        if (visited.contains(check)) return false;
+        if (visited.contains(ref)) return false;
 
-        visited.add(check);
+        visited.add(ref);
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (methodMappings.containsKey(check) || (renamer != null && !renamer.match(wrapper))) return true;
+        if (methodMappings.containsKey(ref) || (renamer != null && !renamer.match(wrapper))) return true;
 
         // Methods which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
@@ -262,16 +261,16 @@ public class Mapper {
     }
 
     private boolean cannotRenameField(ClassTree tree, FieldWrapper wrapper, Set<String> visited) {
-        String check = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + '.' + wrapper.getOriginalDescription();
+        String ref = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + '.' + wrapper.getOriginalDescription();
 
         // Don't check these
-        if (visited.contains(check)) return false;
+        if (visited.contains(ref)) return false;
 
-        visited.add(check);
+        visited.add(ref);
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (fieldMappings.containsKey(check) || (renamer != null && !renamer.match(wrapper))) return true;
+        if (fieldMappings.containsKey(ref) || (renamer != null && !renamer.match(wrapper))) return true;
 
         // Fields which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
@@ -503,7 +502,7 @@ public class Mapper {
             for (Map.Entry<String, String> entry : mapped.entrySet()) {
                 String origin = entry.getKey();
                 String obfuscated = entry.getValue();
-                dummy.computeIfAbsent(className + "." + origin, k -> obfuscated);
+                dummy.putIfAbsent(className + "." + origin, obfuscated);
                 generateDummy(className, mapped, visited);
             }
         }
@@ -511,7 +510,7 @@ public class Mapper {
             for (Map.Entry<String, String> entry : mapped.entrySet()) {
                 String origin = entry.getKey();
                 String obfuscated = entry.getValue();
-                dummy.computeIfAbsent(className + "." + origin, k -> obfuscated);
+                dummy.putIfAbsent(className + "." + origin, obfuscated);
                 generateDummy(className, mapped, visited);
             }
         }

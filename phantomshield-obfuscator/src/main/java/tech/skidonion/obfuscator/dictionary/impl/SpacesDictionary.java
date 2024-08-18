@@ -18,40 +18,34 @@ public class SpacesDictionary extends Dictionary {
         super("spaces");
     }
 
+
     @Override
-    public String randomString(int length) {
-        char[] c = new char[length];
-
-        for (int i = 0; i < length; i++)
-            c[i] = CHARSET[RandomUtils.getRandomInt(CHARSET.length)];
-
-        return new String(c);
+    public String next() {
+        return generate(offset.get() + uniqueIndex.getAndIncrement());
     }
 
+    @Override
+    public int size() {
+        return 0xF + 1;
+    }
 
     @Override
-    public String nextUniqueString() {
-        int charsetLength = CHARSET.length;
-        int i = uniqueIndex.getAndIncrement();
-        char[] buf = new char[33];
-        int charPos = 32;
+    public String generate(int index) {
+        int totalCharacterCount = size();
 
-        if ((i = -i) > 0) {
-            throw new RuntimeException("Unique Index Can't be negative while generating dictionaries.");
-        }
+        int baseIndex = index / totalCharacterCount;
+        int offset = index % totalCharacterCount;
 
-        while (i <= -charsetLength) {
-            buf[charPos--] = CHARSET[-(i % charsetLength)];
-            i /= charsetLength;
-        }
-        buf[charPos] = CHARSET[-i];
+        char newChar = CHARSET[offset];
 
-        return new String(buf, charPos, (33 - charPos));
+        return baseIndex == 0 ? String.valueOf(newChar) : (generate(baseIndex - 1) + newChar);
     }
 
 
     @Override
     public Dictionary copy() {
-        return new SpacesDictionary();
+        SpacesDictionary copy = new SpacesDictionary();
+        copy.getOffset().set(this.getOffset().get());
+        return copy;
     }
 }

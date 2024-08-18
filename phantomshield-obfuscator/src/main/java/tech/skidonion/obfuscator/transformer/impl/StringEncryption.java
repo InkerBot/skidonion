@@ -48,8 +48,8 @@ public class StringEncryption extends Transformer {
             if (cw.getAccess().isInterface()) return;
             Map<String, Integer> strings = new LinkedHashMap<>();
             List<FieldNode> dummys = new ArrayList<>();
-            String decryptorMethodName = cw.generateRandomStaticMethodName();
-            String decryptedStringsFieldName = cw.generateRandomStaticFieldName();
+            String decryptorMethodName = cw.generateRandomMethodName("(C)Ljava/lang/Object;");
+            String decryptedStringsFieldName = cw.generateRandomFieldName("Ljava/lang/Object;");
             cw.getMethods().stream().filter(this::match).forEach(method -> {
                 removeAnnotation(method);
                 ListIterator<AbstractInsnNode> iter = method.getInstructions().iterator();
@@ -80,7 +80,7 @@ public class StringEncryption extends Transformer {
                         if (i == theReal) {
                             cw.addField(realStringField);
                         }
-                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomStaticFieldName(), "Ljava/lang/Object;", null, null);
+                        final FieldNode fieldNode = new FieldNode(ACC_STATIC, cw.generateRandomFieldName("Ljava/lang/Object;"), "Ljava/lang/Object;", null, null);
                         cw.addField(fieldNode);
                         dummys.add(fieldNode);
                     }
