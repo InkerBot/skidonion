@@ -777,12 +777,16 @@ public class NativeObfuscation extends Transformer {
                         System.exit(0);
                         return;
                     }
-                    String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
+                    if (methodWrapper.hasInstructions()) {
+                        String key = classWrapper.getName() + "." + methodWrapper.getName() + methodWrapper.getDescription();
 //                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + StringUtils.escapeCppNameString(methodWrapper.getName().replace('/', '_')) + inlineFieldIndex.getAndIncrement(), methodWrapper));
-                    inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + inlineFieldIndex.getAndIncrement(), methodWrapper));
+                        inlineMethods.put(key, new Pair<>("__phantom_shield_x_" + inlineFieldIndex.getAndIncrement(), methodWrapper));
 //                    addInternalInclusion(classWrapper.getOriginalName(), methodWrapper.getOriginalName() + methodWrapper.getOriginalDescription());
-                    iterator.remove();
-                    classWrapper.getClassNode().methods.remove(i--);
+                        iterator.remove();
+                        classWrapper.getClassNode().methods.remove(i--);
+                    } else {
+                        ASMUtils.removeAnnotation(methodWrapper, INLINE_DESC);
+                    }
                 }
             }
         });
