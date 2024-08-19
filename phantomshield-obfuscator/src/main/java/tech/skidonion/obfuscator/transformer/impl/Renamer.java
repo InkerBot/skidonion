@@ -1,27 +1,28 @@
 package tech.skidonion.obfuscator.transformer.impl;
 
+import com.google.gson.*;
 import org.objectweb.asm.Type;
 import tech.skidonion.obfuscator.annotations.verification.LoadAfterLogin;
+import tech.skidonion.obfuscator.filter.AntPathMatcher;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.impl.renamer.Mapper;
-import tech.skidonion.obfuscator.value.impls.BooleanValue;
-import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
-import tech.skidonion.obfuscator.value.impls.StringArrayValue;
-import tech.skidonion.obfuscator.value.impls.StringValue;
+import tech.skidonion.obfuscator.value.impls.*;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
-import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 @LoadAfterLogin(value = "基础用户组", priority = 1)
 public class Renamer extends Transformer {
+    private final static AntPathMatcher matcher = new AntPathMatcher();
+    private final static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private final BooleanValue print_mappings = new BooleanValue("print_mappings", false);
     private final StringValue print_mappings_file = new StringValue("print_mappings_file", "mappings.txt");
@@ -31,12 +32,19 @@ public class Renamer extends Transformer {
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     public final ClassPackageValue repackage_name = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adapt_resources = new StringArrayValue("adapt_resources");
+
+    // --- mixin support ---
+    public final BooleanValue mixins_support = new BooleanValue("mixins_support", false);
+    private final StringValue mixins_json = new StringValue("mixins_json", "mixins.json");
+    private final StringValue mixins_ref_json = new StringValue("mixins_ref_json", "mixins.ref.json");
+    private final SubValue mixin = new SubValue("mixin", mixins_support, mixins_json, mixins_ref_json);
+
     private Mapper mapper;
 
 
     public Renamer(String name) {
         super(name);
-        addSettings(print_mappings, print_mappings_file/*, encrypted_number_line*/, prefix_name, repackage, repackage_name, adapt_resources);
+        addSettings(print_mappings, print_mappings_file/*, encrypted_number_line*/, prefix_name, repackage, repackage_name, adapt_resources, mixin);
     }
 
 
@@ -52,7 +60,7 @@ public class Renamer extends Transformer {
     public void preprocess() throws Exception {
         mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
         mapper.setPrefixName(prefix_name.getValue());
-        mapper.setRepackage(repackage.isEnable());
+        mapper.setRepackage(mixins_support.isEnable() ? false : repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());
 
         if (obfuscator.getConfig().has("input_mappings_file")) {
@@ -86,9 +94,8 @@ public class Renamer extends Transformer {
         current = System.currentTimeMillis();
         AtomicInteger fixed = new AtomicInteger();
         getResources().forEach((name, byteArray) -> adapt_resources.getValue().forEach(s -> {
-            Pattern pattern = Pattern.compile(s);
 
-            if (pattern.matcher(name).matches()) {
+            if (matcher.match(s, name)) {
                 String stringVer = new String(byteArray, StandardCharsets.UTF_8);
 
                 for (String mapping : mapper.getClassMappings().keySet()) {
@@ -98,8 +105,8 @@ public class Renamer extends Transformer {
                         // manifest.
                         // Example: name == Main
                         if ("META-INF/MANIFEST.MF".equals(name) // Manifest
-                            || "plugin.yml".equals(name) // Spigot plugin
-                            || "bungee.yml".equals(name)) // Bungeecord plugin
+                                || "plugin.yml".equals(name) // Spigot plugin
+                                || "bungee.yml".equals(name)) // Bungeecord plugin
                             stringVer = stringVer.replaceAll("(?<=[: ])" + original, mapper.getClassMappings().get(mapping).replace("/", "."));
                         else
                             stringVer = stringVer.replace(original, mapper.getClassMappings().get(mapping).replace("/", "."));
@@ -112,12 +119,82 @@ public class Renamer extends Transformer {
         }));
         INFO(TRANSLATION("phantom-shield-x.renamer.mapped2"), fixed.get(), System.currentTimeMillis() - current);
 
+        if (mixins_support.isEnable()) {
+            INFO(TRANSLATION("phantom-shield-x.renamer.mixin-resource"));
+            current = System.currentTimeMillis();
+            byte[] bytes;
+            bytes = getResources().get(mixins_json.getValue());
+            process:
+            if (bytes != null) {
+                JsonObject mixinJson = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
+
+                if (mixinJson.has("package")) {
+                    String pkg = mixinJson.get("package").getAsString();
+                    String npkg = mapper.getPackageMappings().get(pkg.replace('.', '/') + "/").replace('/', '.');
+                    mixinJson.addProperty("package", npkg.substring(0, npkg.length() - 1));
+
+                    remapMixinConfig(mixinJson, "mixins", pkg, npkg);
+                    remapMixinConfig(mixinJson, "client", pkg, npkg);
+                    remapMixinConfig(mixinJson, "server", pkg, npkg);
+                } else {
+                    ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-miss-package"));
+                    break process;
+                }
+
+                getResources().put(mixins_json.getValue(), GSON.toJson(mixinJson).getBytes(StandardCharsets.UTF_8));
+            } else {
+                ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-config-not-found"), mixins_json.getValue());
+            }
+
+            bytes = getResources().get(mixins_ref_json.getValue());
+
+            process:
+            if (bytes != null) {
+                JsonObject refJson = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
+                if (refJson.has("mappings")) {
+                    JsonObject mappings = refJson.get("mappings").getAsJsonObject();
+                    JsonObject mapped = new JsonObject();
+                    for (Map.Entry<String, JsonElement> entry : mappings.entrySet()) {
+                        String key = entry.getKey();
+                        JsonElement value = entry.getValue();
+                        mapped.add(mapper.getClassMappings().get(key), value);
+                    }
+                    refJson.add("mappings", mapped);
+
+                } else {
+                    ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-miss-mappings"));
+                    break process;
+                }
+
+                getResources().put(mixins_ref_json.getValue(), GSON.toJson(refJson).getBytes(StandardCharsets.UTF_8));
+
+            } else {
+                ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-config-not-found"), mixins_ref_json.getValue());
+            }
+
+            INFO(TRANSLATION("phantom-shield-x.renamer.mixin-resource-finish"), System.currentTimeMillis() - current);
+        }
+
+
         if (print_mappings.isEnable()) {
             current = System.currentTimeMillis();
             INFO(TRANSLATION("phantom-shield-x.renamer.print"));
             File file = new File(print_mappings_file.getValue());
             mapper.printMappings(file);
             INFO(TRANSLATION("phantom-shield-x.renamer.finished2"), file.getAbsolutePath(), System.currentTimeMillis() - current);
+        }
+    }
+
+    private void remapMixinConfig(JsonObject mixinJson, String element, String pkg, String npkg) {
+        int subLength = npkg.length();
+        if (!mixinJson.has(element))
+            return;
+        JsonArray array = mixinJson.get(element).getAsJsonArray();
+
+        for (int i = 0; array.size() > i; i++) {
+            String clz = array.get(i).getAsString();
+
+            array.set(i, new JsonPrimitive(mapper.getClassMappings().get((pkg + "." + clz).replace('.', '/')).substring(subLength).replace('/', '.')));
         }
     }
 

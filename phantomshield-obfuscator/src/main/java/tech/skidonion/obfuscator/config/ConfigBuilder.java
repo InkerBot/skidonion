@@ -18,7 +18,7 @@ public class ConfigBuilder {
     private long randomSeedSetting;
     private boolean printClassesAsDirectorySetting = false;
     private String dictionarySetting = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private int minimumGeneratedNameLengthSetting = 1;
+    private long minimumGeneratedNameLengthSetting = 1;
     private String inputMappingsFileSetting;
     private final List<String> targetsSettings = new ArrayList<>();
     private final List<String> librariesSettings = new ArrayList<>();
@@ -56,6 +56,9 @@ public class ConfigBuilder {
     private String printMappingsFileSetting = "mappings.txt";
     private String prefixNameSetting = "";
     private final List<String> adaptResourcesSetting = new ArrayList<>();
+    private boolean mixinsSupportSetting = false;
+    private String mixinsJsonSetting = "mixins.json";
+    private String mixinsRefJsonSetting = "mixins.ref.json";
 
     // member shuffler
     private boolean memberShufflerEnable = false;
@@ -212,6 +215,13 @@ public class ConfigBuilder {
             renamer.put("repackage", repackageSetting);
             renamer.put("repackage_name", repackageNameSetting);
             renamer.put("adapt_resources", adaptResourcesSetting);
+
+            Map<String, Object> mixins = new LinkedHashMap<>();
+            mixins.put("mixins_support", mixinsSupportSetting);
+            mixins.put("mixins_json", mixinsJsonSetting);
+            mixins.put("mixins_ref_json", mixinsRefJsonSetting);
+
+            renamer.put("mixin", mixins);
 
             subFiltersSettings.computeIfPresent("renamer", (k, v) -> {
                 renamer.put("filters", v);
@@ -573,8 +583,23 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setMinimumGeneratedNameLengthSetting(int minimumGeneratedNameLengthSetting) {
+    public ConfigBuilder setMinimumGeneratedNameLengthSetting(long minimumGeneratedNameLengthSetting) {
         this.minimumGeneratedNameLengthSetting = minimumGeneratedNameLengthSetting;
+        return this;
+    }
+
+    public ConfigBuilder setMixinsJsonSetting(String mixinsJsonSetting) {
+        this.mixinsJsonSetting = mixinsJsonSetting;
+        return this;
+    }
+
+    public ConfigBuilder setMixinsRefJsonSetting(String mixinsRefJsonSetting) {
+        this.mixinsRefJsonSetting = mixinsRefJsonSetting;
+        return this;
+    }
+
+    public ConfigBuilder setMixinsSupportSetting(boolean mixinsSupportSetting) {
+        this.mixinsSupportSetting = mixinsSupportSetting;
         return this;
     }
 }

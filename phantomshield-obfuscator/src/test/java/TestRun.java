@@ -21,7 +21,7 @@ public class TestRun {
 //        debug_information_remover(builder);
 //        shuffler(builder);
         renamer(builder);
-        string_encryption(builder);
+//        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
 //        native_obfuscation(builder);
@@ -54,13 +54,18 @@ public class TestRun {
                 .setRepackageSetting(false) //
                 .setRepackageNameSetting("skidonion") //
 //                .setPrefixNameSetting("狼牙") //
-                .setDictionarySetting("Iil1") //
-                .setMinimumGeneratedNameLengthSetting(10) //
+//                .setDictionarySetting("Iil1") //
+                .setMinimumGeneratedNameLengthSetting(1) //
                 .setPrintMappingsSetting(false) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
-//                .addSubFilters("renamer","-dev.sim0n.app.**")
+                .setMixinsSupportSetting(true) //
+                .setMixinsJsonSetting("liquidbounce.forge.mixins.json") //
+                .setMixinsRefJsonSetting("liquidbounce.mixins.refmap.json") //
+                .addSubFilters("renamer","+net.ccbluex.liquidbounce.**", //
+                        "+net.ccbluex.liquidbounce.** * *(*)", //
+                        "+net.ccbluex.liquidbounce.** * *") //
         ;
     }
 
@@ -107,8 +112,8 @@ public class TestRun {
         return new ConfigBuilder() //
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test\\input\\bench.jar")) //
-                .setOutputJar(new File("test\\output\\bench.jar")) //
+                .setInputJar(new File("test/input/liquidbounce.jar")) //
+                .setOutputJar(new File("test/output/liquidbounce.jar")) //
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8

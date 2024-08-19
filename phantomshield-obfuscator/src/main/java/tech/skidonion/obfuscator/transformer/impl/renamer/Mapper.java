@@ -60,7 +60,7 @@ public class Mapper {
     public void generateMappings() {
         classes.forEach(classWrapper -> {
             final Set<String> generated = new HashSet<>();
-            classWrapper.getMethods().stream().filter(Mapper::methodCanBeRenamed).forEach(methodWrapper -> {
+            classWrapper.getMethods().stream().filter(this::methodCanBeRenamed).forEach(methodWrapper -> {
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
@@ -72,7 +72,7 @@ public class Mapper {
                 if (renamer != null) renamer.removeAnnotation(methodWrapper);
             });
 
-            classWrapper.getFields().forEach(fieldWrapper -> {
+            classWrapper.getFields().stream().filter(this::fieldCanBeRenamed).forEach(fieldWrapper -> {
                 Set<String> visited = new HashSet<>();
 
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
@@ -246,7 +246,9 @@ public class Mapper {
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (methodMappings.containsKey(ref) || (renamer != null && !renamer.match(wrapper))) return true;
+        if (methodMappings.containsKey(ref) || renamer != null && (!renamer.match(wrapper) ||  // is excluded
+                renamer.mixins_support.isEnable() && MixinSupport.isMixinMethod(wrapper)) // mixin support
+        ) return true;
 
         // Methods which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
@@ -270,7 +272,11 @@ public class Mapper {
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
-        if (fieldMappings.containsKey(ref) || (renamer != null && !renamer.match(wrapper))) return true;
+        // If it is a mixin member if mixin support is enabled, we don't rename it;
+        if (fieldMappings.containsKey(ref) ||
+                renamer != null && (!renamer.match(wrapper) ||  // is excluded
+                        renamer.mixins_support.isEnable() && MixinSupport.isMixinField(wrapper)) // mixin support
+        ) return true;
 
         // Fields which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
@@ -516,8 +522,16 @@ public class Mapper {
         }
     }
 
-    private static boolean methodCanBeRenamed(MethodWrapper wrapper) {
-        return !wrapper.getAccess().isNative() && !"main".equals(wrapper.getOriginalName()) && !"premain".equals(wrapper.getOriginalName()) && !wrapper.getOriginalName().startsWith("<");
+    private boolean methodCanBeRenamed(MethodWrapper wrapper) {
+        return !wrapper.getAccess().isNative() && // do not change native method
+                !"main".equals(wrapper.getOriginalName()) && // exclude main
+                !wrapper.getOriginalName().startsWith("<") // exclude <init> and <clinit>
+                ;
+    }
+
+    private boolean fieldCanBeRenamed(FieldWrapper wrapper) {
+        return !"serialVersionUID".equals(wrapper.getOriginalName()) // exclude serial version
+                ;
     }
 
     public Map<String, String> getMethodMappings() {

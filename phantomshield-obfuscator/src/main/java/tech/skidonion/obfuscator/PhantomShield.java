@@ -54,7 +54,7 @@ import java.util.zip.ZipOutputStream;
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.1.6.3";
+    public static final String VERSION = "v0.1.6.4";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();

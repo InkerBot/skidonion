@@ -38,11 +38,11 @@ public class CustomDictionary extends Dictionary {
     }
 
     @Override
-    public String generate(int index) {
+    public String generate(long index) {
         int totalCharacterCount = size();
 
-        int baseIndex = index / totalCharacterCount;
-        int offset = index % totalCharacterCount;
+        int baseIndex = (int) (index / totalCharacterCount);
+        int offset = (int) (index % totalCharacterCount);
 
         String newString = sequences.stringAt(offset);
 

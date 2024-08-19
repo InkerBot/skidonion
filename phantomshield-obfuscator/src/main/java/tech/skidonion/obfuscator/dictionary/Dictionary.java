@@ -1,11 +1,12 @@
 package tech.skidonion.obfuscator.dictionary;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class Dictionary {
     private String name;
-    protected final AtomicInteger uniqueIndex = new AtomicInteger(0);
-    protected final AtomicInteger offset = new AtomicInteger(0);
+    protected final AtomicLong uniqueIndex = new AtomicLong(0);
+    protected final AtomicLong offset = new AtomicLong(0);
 
     public Dictionary(String name) {
         this.name = name;
@@ -20,21 +21,21 @@ public abstract class Dictionary {
 
     public abstract int size();
 
-    public abstract String generate(int index);
+    public abstract String generate(long index);
 
     public final String getDictionaryName() {
         return this.name;
     }
 
-    public final void setUniqueIndex(int index) {
+    public final void setUniqueIndex(long index) {
         this.uniqueIndex.set(index);
     }
 
-    public final int getUniqueIndex() {
+    public final long getUniqueIndex() {
         return this.uniqueIndex.get();
     }
 
-    public AtomicInteger getOffset() {
+    public AtomicLong getOffset() {
         return offset;
     }
 

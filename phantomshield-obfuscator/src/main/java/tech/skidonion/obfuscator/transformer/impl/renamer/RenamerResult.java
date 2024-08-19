@@ -6,7 +6,7 @@ import java.util.Map;
 public class RenamerResult {
     private String obfuscatedName;
     private final Map<String, RenamerType> influences = new HashMap<>();
-    private int maximumIndex;
+    private long maximumIndex;
 
     public String getObfuscatedName() {
         return obfuscatedName;
@@ -20,11 +20,11 @@ public class RenamerResult {
         this.obfuscatedName = obfuscatedName;
     }
 
-    public int getMaximumIndex() {
+    public long getMaximumIndex() {
         return maximumIndex;
     }
 
-    public void setMaximumIndex(int maximumIndex) {
+    public void setMaximumIndex(long maximumIndex) {
         this.maximumIndex = maximumIndex;
     }
 
