@@ -60,7 +60,7 @@ public class TestRun {
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
-                .setMixinsSupportSetting(true) //
+                .setMixinSupportSetting(true) //
                 .setMixinsJsonSetting("liquidbounce.forge.mixins.json") //
                 .setMixinsRefJsonSetting("liquidbounce.mixins.refmap.json") //
                 .addSubFilters("renamer","+net.ccbluex.liquidbounce.**", //

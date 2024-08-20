@@ -247,7 +247,7 @@ public class Mapper {
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
         if (methodMappings.containsKey(ref) || renamer != null && (!renamer.match(wrapper) ||  // is excluded
-                renamer.mixins_support.isEnable() && MixinSupport.isMixinMethod(wrapper)) // mixin support
+                renamer.mixin_support.isEnable() && MixinSupport.isMixinMethod(wrapper)) // mixin support
         ) return true;
 
         // Methods which are static don't need to be checked for inheritance
@@ -275,7 +275,7 @@ public class Mapper {
         // If it is a mixin member if mixin support is enabled, we don't rename it;
         if (fieldMappings.containsKey(ref) ||
                 renamer != null && (!renamer.match(wrapper) ||  // is excluded
-                        renamer.mixins_support.isEnable() && MixinSupport.isMixinField(wrapper)) // mixin support
+                        renamer.mixin_support.isEnable() && MixinSupport.isMixinField(wrapper)) // mixin support
         ) return true;
 
         // Fields which are static don't need to be checked for inheritance

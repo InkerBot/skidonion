@@ -56,7 +56,7 @@ public class ConfigBuilder {
     private String printMappingsFileSetting = "mappings.txt";
     private String prefixNameSetting = "";
     private final List<String> adaptResourcesSetting = new ArrayList<>();
-    private boolean mixinsSupportSetting = false;
+    private boolean mixinSupportSetting = false;
     private String mixinsJsonSetting = "mixins.json";
     private String mixinsRefJsonSetting = "mixins.ref.json";
 
@@ -217,7 +217,7 @@ public class ConfigBuilder {
             renamer.put("adapt_resources", adaptResourcesSetting);
 
             Map<String, Object> mixins = new LinkedHashMap<>();
-            mixins.put("mixins_support", mixinsSupportSetting);
+            mixins.put("mixin_support", mixinSupportSetting);
             mixins.put("mixins_json", mixinsJsonSetting);
             mixins.put("mixins_ref_json", mixinsRefJsonSetting);
 
@@ -598,8 +598,8 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setMixinsSupportSetting(boolean mixinsSupportSetting) {
-        this.mixinsSupportSetting = mixinsSupportSetting;
+    public ConfigBuilder setMixinSupportSetting(boolean mixinSupportSetting) {
+        this.mixinSupportSetting = mixinSupportSetting;
         return this;
     }
 }

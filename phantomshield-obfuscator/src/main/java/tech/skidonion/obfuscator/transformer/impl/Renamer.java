@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
@@ -34,10 +33,10 @@ public class Renamer extends Transformer {
     private final StringArrayValue adapt_resources = new StringArrayValue("adapt_resources");
 
     // --- mixin support ---
-    public final BooleanValue mixins_support = new BooleanValue("mixins_support", false);
+    public final BooleanValue mixin_support = new BooleanValue("mixin_support", false);
     private final StringValue mixins_json = new StringValue("mixins_json", "mixins.json");
     private final StringValue mixins_ref_json = new StringValue("mixins_ref_json", "mixins.ref.json");
-    private final SubValue mixin = new SubValue("mixin", mixins_support, mixins_json, mixins_ref_json);
+    private final SubValue mixin = new SubValue("mixin", mixin_support, mixins_json, mixins_ref_json);
 
     private Mapper mapper;
 
@@ -60,7 +59,7 @@ public class Renamer extends Transformer {
     public void preprocess() throws Exception {
         mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
         mapper.setPrefixName(prefix_name.getValue());
-        mapper.setRepackage(mixins_support.isEnable() ? false : repackage.isEnable());
+        mapper.setRepackage(mixin_support.isEnable() ? false : repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());
 
         if (obfuscator.getConfig().has("input_mappings_file")) {
@@ -119,7 +118,7 @@ public class Renamer extends Transformer {
         }));
         INFO(TRANSLATION("phantom-shield-x.renamer.mapped2"), fixed.get(), System.currentTimeMillis() - current);
 
-        if (mixins_support.isEnable()) {
+        if (mixin_support.isEnable()) {
             INFO(TRANSLATION("phantom-shield-x.renamer.mixin-resource"));
             current = System.currentTimeMillis();
             byte[] bytes;
@@ -130,7 +129,12 @@ public class Renamer extends Transformer {
 
                 if (mixinJson.has("package")) {
                     String pkg = mixinJson.get("package").getAsString();
-                    String npkg = mapper.getPackageMappings().get(pkg.replace('.', '/') + "/").replace('/', '.');
+                    String npkg = pkg.replace('.', '/') + "/";
+                    if (mapper.getPackageMappings().containsKey(npkg)) {
+                        npkg = mapper.getPackageMappings().get(npkg).replace('/', '.');
+                    } else {
+                        WARN(TRANSLATION("phantom-shield-x.renamer.mixin-package-not-found"));
+                    }
                     mixinJson.addProperty("package", npkg.substring(0, npkg.length() - 1));
 
                     remapMixinConfig(mixinJson, "mixins", pkg, npkg);
@@ -157,7 +161,11 @@ public class Renamer extends Transformer {
                     for (Map.Entry<String, JsonElement> entry : mappings.entrySet()) {
                         String key = entry.getKey();
                         JsonElement value = entry.getValue();
-                        mapped.add(mapper.getClassMappings().get(key), value);
+                        if (mapper.getClassMappings().containsKey(key)) {
+                            mapped.add(mapper.getClassMappings().get(key), value);
+                        } else {
+                            WARN(TRANSLATION("phantom-shield-x.renamer.mixin-not-found"), key);
+                        }
                     }
                     refJson.add("mappings", mapped);
 
@@ -193,8 +201,12 @@ public class Renamer extends Transformer {
 
         for (int i = 0; array.size() > i; i++) {
             String clz = array.get(i).getAsString();
-
-            array.set(i, new JsonPrimitive(mapper.getClassMappings().get((pkg + "." + clz).replace('.', '/')).substring(subLength).replace('/', '.')));
+            clz = (pkg + "." + clz).replace('.', '/');
+            if (mapper.getClassMappings().containsKey(clz)) {
+                array.set(i, new JsonPrimitive(mapper.getClassMappings().get(clz).substring(subLength).replace('/', '.')));
+            } else {
+                WARN(TRANSLATION("phantom-shield-x.renamer.mixin-not-found"), clz);
+            }
         }
     }
 
