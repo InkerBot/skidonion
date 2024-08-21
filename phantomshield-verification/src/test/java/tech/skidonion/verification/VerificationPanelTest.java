@@ -36,8 +36,15 @@ class VerificationPanelTest {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(pwd.getBytes());
-            String hashedPwd = new BigInteger(1, md.digest()).toString(16);
-            System.out.println(hashedPwd);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : md.digest()) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            System.out.println(hexString);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }

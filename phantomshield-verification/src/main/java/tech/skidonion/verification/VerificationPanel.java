@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -99,7 +100,16 @@ public class VerificationPanel extends JPanel {
             if (!useHashedPassword) {
                 MessageDigest md = MessageDigest.getInstance("MD5");
                 md.update(password.getBytes());
-                password = new BigInteger(1, md.digest()).toString(16);
+                StringBuilder hexString = new StringBuilder();
+                for (byte b : md.digest()) {
+                    String hex = Integer.toHexString(0xff & b);
+                    if (hex.length() == 1) {
+                        hexString.append('0');
+                    }
+                    hexString.append(hex);
+                }
+                password = hexString.toString();
+
             }
             int result = (byte) Wrapper.login(this.usernameField.getText(), password, true);
             Inline.trycatch();

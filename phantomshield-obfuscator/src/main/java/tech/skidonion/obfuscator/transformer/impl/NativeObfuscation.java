@@ -805,7 +805,7 @@ public class NativeObfuscation extends Transformer {
         wrapper.superName = "java/lang/Object";
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
-        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false,null);
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -816,7 +816,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.version = V1_8;
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
-        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false);
+        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false,null);
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)

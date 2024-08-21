@@ -51,11 +51,13 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static org.objectweb.asm.ClassReader.*;
+
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.1.7.0";
+    public static final String VERSION = "v0.1.7.1";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -240,17 +242,17 @@ public class PhantomShield {
                         addAll(softExclusions.values());
                     }
                 }.forEach(classWrapper -> {
-                            try {
-                                ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
-                                entry.setTime(timestamp);
-                                zos.putNextEntry(entry);
-                                zos.write(classWrapper.toByteArray());
-                                zos.closeEntry();
-                            } catch (IOException ioe) {
-                                ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
-                                ioe.printStackTrace();
-                            }
-                        });
+                    try {
+                        ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
+                        entry.setTime(timestamp);
+                        zos.putNextEntry(entry);
+                        zos.write(classWrapper.toByteArray());
+                        zos.closeEntry();
+                    } catch (IOException ioe) {
+                        ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
+                        ioe.printStackTrace();
+                    }
+                });
 
                 resources.forEach((name, bytes) -> {
                     try {
@@ -301,7 +303,7 @@ public class PhantomShield {
 
                         if (!entry.isDirectory() && entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
                                 classpath.put(cw.getName(), cw);
                             } catch (Throwable t) {
                                 ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error"), entry.getName().replace(".class", ""));
@@ -362,13 +364,17 @@ public class PhantomShield {
                         if (entry.getName().endsWith(".class"))
                             try {
                                 byte[] bytes = IOUtils.toByteArray(in);
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false);
-                                data.put(cw.getName(), bytes);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
+
                                 if (filter == null || !filter.match(cw)) {
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_FRAMES, null);
                                     classes.put(cw.getName(), cw);
                                 } else {
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, 0, 0);
                                     softExclusions.put(cw.getName(), cw);
                                 }
+
+                                data.put(cw.getName(), bytes);
                                 classpath.put(cw.getName(), cw);
 
                                 String entryName = entry.getName();
@@ -438,7 +444,7 @@ public class PhantomShield {
                         reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
                         if (!classpath.containsKey(node.name)) {
-                            classpath.put(node.name, new ClassWrapper(this, node, true));
+                            classpath.put(node.name, new ClassWrapper(this, node, true,  null));
                         }
 
                     });

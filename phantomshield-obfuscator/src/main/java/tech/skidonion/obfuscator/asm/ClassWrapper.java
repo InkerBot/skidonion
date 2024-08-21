@@ -18,11 +18,10 @@ import static tech.skidonion.obfuscator.PhantomShield.*;
  * Wrapper for ClassNodes.
  */
 public class ClassWrapper {
-    private static final int LIB_FLAGS = ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE;
-    private static final int INPUT_FLAGS = ClassReader.SKIP_FRAMES;
     private static final String DEFAULT_ENTRY_PREFIX = "";
 
     private final PhantomShield obfuscator;
+    private final Integer writeFlag;
     private ClassNode classNode;
     private final String originalName;
     private final String originalSuperName;
@@ -42,10 +41,12 @@ public class ClassWrapper {
     private final Map<String, MethodWrapper> methodDescriptors = new HashMap<>();
     private final Map<String, FieldWrapper> fieldDescriptors = new HashMap<>();
 
-    public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode) {
+    public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode, int readFlag, Integer writeFlag) {
+        this.writeFlag = writeFlag;
+
         this.obfuscator = obfuscator;
         ClassNode classNode = new ClassNode();
-        cr.accept(classNode, libraryNode ? LIB_FLAGS : INPUT_FLAGS);
+        cr.accept(classNode, readFlag);
 
         this.classNode = classNode;
         this.originalName = classNode.name;
@@ -77,7 +78,8 @@ public class ClassWrapper {
         });
     }
 
-    public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, boolean libraryNode) {
+    public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, boolean libraryNode, Integer writeFlag) {
+        this.writeFlag = writeFlag;
         this.obfuscator = obfuscator;
         this.classNode = classNode;
         this.originalName = classNode.name;
@@ -339,7 +341,7 @@ public class ClassWrapper {
 
     public byte[] toByteArray() {
         // Construct byte writer
-        ClassWriter writer = new CustomClassWriter(allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES, obfuscator);
+        ClassWriter writer = new CustomClassWriter(writeFlag != null ? writeFlag : allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES, obfuscator);
 
         try {
             writer.newUTF8("PHANTOMSHIELD" + PhantomShield.VERSION);

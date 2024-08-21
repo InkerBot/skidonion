@@ -17,6 +17,9 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.util.*;
 
+import static tech.skidonion.obfuscator.PhantomShield.INFO;
+import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
+
 public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     private Random rnd;
@@ -38,6 +41,8 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     @Override
     public void transform() throws Exception {
+        long current = System.currentTimeMillis();
+        INFO(TRANSLATION("phantom-shield-x.contol-flow.processing"));
         getFilteredClasses().forEach(cw -> {
             removeAnnotation(cw);
             cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
@@ -97,6 +102,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 method.instructions = shuffled;
             });
         });
+        INFO(TRANSLATION("phantom-shield-x.contol-flow.finish"), System.currentTimeMillis() - current);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator.transformer;
 
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -15,6 +16,8 @@ import tech.skidonion.obfuscator.value.Value;
 
 import java.util.*;
 import java.util.stream.Stream;
+
+import static org.objectweb.asm.ClassReader.SKIP_FRAMES;
 
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public abstract class Transformer implements Opcodes {
@@ -52,7 +55,7 @@ public abstract class Transformer implements Opcodes {
     public abstract String annotation();
 
     public final ClassWrapper injectClass(ClassNode classNode) {
-        ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
+        ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false, null);
         obfuscator.classes.put(cw.getName(), cw);
         obfuscator.classpath.put(cw.getName(), cw);
         return cw;
@@ -61,7 +64,7 @@ public abstract class Transformer implements Opcodes {
     public final List<ClassWrapper> injectClasses(Collection<ClassNode> classNodes) {
         List<ClassWrapper> val = new ArrayList<>();
         for (ClassNode classNode : classNodes) {
-            ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false);
+            ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false, null);
             obfuscator.classes.put(cw.getName(), cw);
             obfuscator.classpath.put(cw.getName(), cw);
             val.add(cw);
