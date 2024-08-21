@@ -22,6 +22,7 @@ import tech.skidonion.obfuscator.cpp.CompilerUpdater;
 import tech.skidonion.obfuscator.cpp.CppCompiler;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 import tech.skidonion.obfuscator.dictionary.DictionaryFactory;
+import tech.skidonion.obfuscator.filter.Filter;
 import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.TransformerRegister;
@@ -58,6 +59,7 @@ public class PhantomShield {
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
+    public final Map<String, ClassWrapper> softExclusions = new HashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
     public final Map<String, Dictionary> classesDictionaries = new HashMap<>();
@@ -231,18 +233,24 @@ public class PhantomShield {
                 long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
 
                 ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
-                classes.values().forEach(classWrapper -> {
-                    try {
-                        ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
-                        entry.setTime(timestamp);
-                        zos.putNextEntry(entry);
-                        zos.write(classWrapper.toByteArray());
-                        zos.closeEntry();
-                    } catch (IOException ioe) {
-                        ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
-                        ioe.printStackTrace();
+
+                new ArrayList<ClassWrapper>() {
+                    {
+                        addAll(classes.values());
+                        addAll(softExclusions.values());
                     }
-                });
+                }.forEach(classWrapper -> {
+                            try {
+                                ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
+                                entry.setTime(timestamp);
+                                zos.putNextEntry(entry);
+                                zos.write(classWrapper.toByteArray());
+                                zos.closeEntry();
+                            } catch (IOException ioe) {
+                                ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
+                                ioe.printStackTrace();
+                            }
+                        });
 
                 resources.forEach((name, bytes) -> {
                     try {
@@ -330,6 +338,14 @@ public class PhantomShield {
         if (input.exists()) {
             long current = System.currentTimeMillis();
             INFO(BUNDLE.getString("phantom-shield-x.instance.load-input"), input.getAbsolutePath());
+            Filter filter = null;
+            List<String> filters = config.getList("soft_exclusions");
+            if (filters != null) {
+                filter = new Filter();
+                for (String element : filters) {
+                    filter.accept(element);
+                }
+            }
 
             Map<String, ClassWrapper> classes = new HashMap<>();
 
@@ -348,9 +364,12 @@ public class PhantomShield {
                                 byte[] bytes = IOUtils.toByteArray(in);
                                 ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false);
                                 data.put(cw.getName(), bytes);
-
+                                if (filter == null || !filter.match(cw)) {
+                                    classes.put(cw.getName(), cw);
+                                } else {
+                                    softExclusions.put(cw.getName(), cw);
+                                }
                                 classpath.put(cw.getName(), cw);
-                                classes.put(cw.getName(), cw);
 
                                 String entryName = entry.getName();
                                 String wrapperEntryName = cw.getEntryName();
@@ -418,9 +437,7 @@ public class PhantomShield {
                         final ClassNode node = new ClassNode();
                         reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
-                        if (classpath.containsKey(node.name)) {
-                            // TODO: here will implement a member check after a rewrite renamer hierarchy find
-                        } else {
+                        if (!classpath.containsKey(node.name)) {
                             classpath.put(node.name, new ClassWrapper(this, node, true));
                         }
 
@@ -584,6 +601,10 @@ public class PhantomShield {
 
     public long getSeed() {
         return seed;
+    }
+
+    public Map<String, ClassWrapper> getSoftExclusions() {
+        return softExclusions;
     }
 
     public boolean isPrintClassesAsDirectory() {

@@ -9,10 +9,7 @@ import tech.skidonion.obfuscator.asm.accesses.Access;
 import tech.skidonion.obfuscator.asm.accesses.ClassAccess;
 import tech.skidonion.obfuscator.dictionary.Dictionary;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static tech.skidonion.obfuscator.PhantomShield.*;
@@ -42,8 +39,8 @@ public class ClassWrapper {
     private final List<String> strConsts = new ArrayList<>();
 
     private Set<String> membersHierarchy;
-    private final Set<String> methodDescriptors = new HashSet<>();
-    private final Set<String> fieldDescriptors = new HashSet<>();
+    private final Map<String, MethodWrapper> methodDescriptors = new HashMap<>();
+    private final Map<String, FieldWrapper> fieldDescriptors = new HashMap<>();
 
     public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode) {
         this.obfuscator = obfuscator;
@@ -69,12 +66,14 @@ public class ClassWrapper {
         }
 
         classNode.methods.forEach(methodNode -> {
-            methodDescriptors.add(methodNode.name + methodNode.desc);
-            methods.add(new MethodWrapper(methodNode, this));
+            MethodWrapper methodWrapper = new MethodWrapper(methodNode, this);
+            methods.add(methodWrapper);
+            methodDescriptors.put(methodNode.name + methodNode.desc, methodWrapper);
         });
         classNode.fields.forEach(fieldNode -> {
-            fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
-            fields.add(new FieldWrapper(fieldNode, this));
+            FieldWrapper fieldWrapper = new FieldWrapper(fieldNode, this);
+            fields.add(fieldWrapper);
+            fieldDescriptors.put(fieldNode.name + "." + fieldNode.desc, fieldWrapper);
         });
     }
 
@@ -98,36 +97,40 @@ public class ClassWrapper {
             originalInterfaces.addAll(classNode.interfaces.stream().map(String::new).collect(Collectors.toList()));
         }
         classNode.methods.forEach(methodNode -> {
-            methodDescriptors.add(methodNode.name + methodNode.desc);
-            methods.add(new MethodWrapper(methodNode, this));
+            MethodWrapper methodWrapper = new MethodWrapper(methodNode, this);
+            methods.add(methodWrapper);
+            methodDescriptors.put(methodNode.name + methodNode.desc, methodWrapper);
         });
         classNode.fields.forEach(fieldNode -> {
-            fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
-            fields.add(new FieldWrapper(fieldNode, this));
+            FieldWrapper fieldWrapper = new FieldWrapper(fieldNode, this);
+            fields.add(fieldWrapper);
+            fieldDescriptors.put(fieldNode.name + "." + fieldNode.desc, fieldWrapper);
         });
     }
 
     public void addMethod(MethodNode methodNode) {
-        methodDescriptors.add(methodNode.name + methodNode.desc);
+        MethodWrapper methodWrapper = new MethodWrapper(methodNode, this);
+        methodDescriptors.put(methodNode.name + methodNode.desc, methodWrapper);
         classNode.methods.add(methodNode);
-        methods.add(new MethodWrapper(methodNode, this));
+        methods.add(methodWrapper);
     }
 
     public void addMethod(MethodWrapper methodWrapper) {
-        methodDescriptors.add(methodWrapper.getName() + methodWrapper.getDescription());
+        methodDescriptors.put(methodWrapper.getName() + methodWrapper.getDescription(), methodWrapper);
         classNode.methods.add(methodWrapper.getMethodNode());
         methods.add(methodWrapper);
     }
 
     public void addField(FieldNode fieldNode) {
-        fieldDescriptors.add(fieldNode.name + "." + fieldNode.desc);
+        FieldWrapper fieldWrapper = new FieldWrapper(fieldNode, this);
         classNode.fields.add(fieldNode);
-        fields.add(new FieldWrapper(fieldNode, this));
+        fieldDescriptors.put(fieldNode.name + "." + fieldNode.desc, fieldWrapper);
+        fields.add(fieldWrapper);
     }
 
     public void addField(FieldWrapper fieldWrapper) {
-        fieldDescriptors.add(fieldWrapper.getName() + "." + fieldWrapper.getDescription());
         classNode.fields.add(fieldWrapper.getFieldNode());
+        fieldDescriptors.put(fieldWrapper.getName() + "." + fieldWrapper.getDescription(), fieldWrapper);
         fields.add(fieldWrapper);
     }
 
@@ -136,10 +139,10 @@ public class ClassWrapper {
         this.methodDescriptors.clear();
         this.membersHierarchy = null;
         fields.forEach(field -> {
-            this.fieldDescriptors.add(field.getName() + "." + field.getDescription());
+            this.fieldDescriptors.put(field.getName() + "." + field.getDescription(), field);
         });
         methods.forEach(method -> {
-            this.methodDescriptors.add(method.getName() + method.getDescription());
+            this.methodDescriptors.put(method.getName() + method.getDescription(), method);
         });
     }
 
@@ -151,13 +154,13 @@ public class ClassWrapper {
     }
 
     public MethodNode getMethod(String name, String desc) {
-        return getClassNode().methods.stream().filter(methodNode -> name.equals(methodNode.name)
-                && desc.equals(methodNode.desc)).findAny().orElse(null);
+        MethodWrapper wrapper = methodDescriptors.get(name + desc);
+        return wrapper == null ? null : wrapper.getMethodNode();
     }
 
     public FieldNode getField(String name, String desc) {
-        return getClassNode().fields.stream().filter(methodNode -> name.equals(methodNode.name)
-                && desc.equals(methodNode.desc)).findAny().orElse(null);
+        FieldWrapper wrapper = fieldDescriptors.get(name + "." + desc);
+        return wrapper == null ? null : wrapper.getFieldNode();
     }
 
 
@@ -183,11 +186,11 @@ public class ClassWrapper {
     }
 
     public boolean isMethodPresent(String name, String desc) {
-        return classNode.methods.stream().anyMatch(methodNode -> methodNode.name.equals(name) && methodNode.desc.equals(desc));
+        return methodDescriptors.containsKey(name + desc);
     }
 
     public boolean isFieldPresent(String name, String desc) {
-        return classNode.fields.stream().anyMatch(fieldNode -> fieldNode.name.equals(name) && fieldNode.desc.equals(desc));
+        return fieldDescriptors.containsKey(name + "." + desc);
     }
 
     /**
@@ -420,19 +423,19 @@ public class ClassWrapper {
             for (String sub : tree.getSubClasses()) {
                 ClassWrapper cw = obfuscator.getClassWrapper(sub);
 
-                members.addAll(cw.fieldDescriptors);
-                members.addAll(cw.methodDescriptors);
+                members.addAll(cw.fieldDescriptors.keySet());
+                members.addAll(cw.methodDescriptors.keySet());
             }
 
             for (String parent : tree.getParentClasses()) {
                 ClassWrapper cw = obfuscator.getClassWrapper(parent);
 
-                members.addAll(cw.fieldDescriptors);
-                members.addAll(cw.methodDescriptors);
+                members.addAll(cw.fieldDescriptors.keySet());
+                members.addAll(cw.methodDescriptors.keySet());
             }
 
-            members.addAll(this.fieldDescriptors);
-            members.addAll(this.methodDescriptors);
+            members.addAll(this.fieldDescriptors.keySet());
+            members.addAll(this.methodDescriptors.keySet());
 
             members.addAll(JOBJECT_METHOD_SET);
             return membersHierarchy = members;
@@ -441,11 +444,11 @@ public class ClassWrapper {
         }
     }
 
-    public Set<String> getMethodDescriptors() {
+    public Map<String, MethodWrapper> getMethodDescriptors() {
         return methodDescriptors;
     }
 
-    public Set<String> getFieldDescriptors() {
+    public Map<String, FieldWrapper> getFieldDescriptors() {
         return fieldDescriptors;
     }
 

@@ -56,7 +56,7 @@ public class TestRun {
 //                .setPrefixNameSetting("狼牙") //
 //                .setDictionarySetting("Iil1") //
                 .setMinimumGeneratedNameLengthSetting(1) //
-                .setPrintMappingsSetting(false) //
+                .setPrintMappingsSetting(true) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
@@ -117,6 +117,7 @@ public class TestRun {
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
+                .addSoftExclusions("-net.ccbluex.liquidbounce.**")
                 ;
     }
 }

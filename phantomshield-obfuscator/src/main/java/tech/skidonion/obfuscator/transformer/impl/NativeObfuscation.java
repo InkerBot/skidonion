@@ -358,6 +358,7 @@ public class NativeObfuscation extends Transformer {
                         .forEach(i -> dummyInlineClassWrapper.getMethods().get(i).setMethodNode(computedClassNode.methods.get(i)));
                 IntStream.range(0, computedClassNode.fields.size())
                         .forEach(i -> dummyInlineClassWrapper.getFields().get(i).setFieldNode(computedClassNode.fields.get(i)));
+                dummyInlineClassWrapper.setClassNode(computedClassNode);
             }
             Map<MethodWrapper, String> inlineMethodsBi = new HashMap<>();
             for (Map.Entry<String, Pair<String, MethodWrapper>> stringPairEntry : inlineMethods.entrySet()) {

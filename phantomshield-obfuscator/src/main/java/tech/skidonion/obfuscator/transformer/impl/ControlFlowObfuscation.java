@@ -19,6 +19,8 @@ import java.util.*;
 
 public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
+    private Random rnd;
+
     private Context ctx;
 
     class Context {
@@ -104,6 +106,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     @Override
     public void preprocess() throws Exception {
+        rnd = new Random(obfuscator.getSeed());
     }
 
     @Override
@@ -119,7 +122,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             }
         }
         ArrayList<CodeBlock> clone = new ArrayList<>(resolved.getResolvedBlocks());
-        Collections.shuffle(clone);
+        Collections.shuffle(clone, rnd);
         resolved.setResolvedBlocks(new LinkedList<>(clone));
     }
 
@@ -138,7 +141,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             shuffled.add(codes.getFirst());
             codes.remove();
             ArrayList<CodeBlock> clone = new ArrayList<>(codes);
-            Collections.shuffle(clone);
+            Collections.shuffle(clone, rnd);
             shuffled.addAll(clone);
             tryCatchBlock.setCodes(shuffled);
         }
@@ -150,7 +153,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     }
 
     private void addOpaquePredicate(ResolvedBlocks resolved, List<CodeBlock> generatedBlocks) {
-        Collections.shuffle(resolved.getClonedList());
+        Collections.shuffle(resolved.getClonedList(), rnd);
         for (CodeBlock code : resolved.getResolvedBlocks()) {
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate((TryCatchBlock) code, generatedBlocks);
@@ -161,7 +164,7 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
     }
 
     private void addOpaquePredicate(TryCatchBlock tryCatchBlock, List<CodeBlock> generatedBlocks) {
-        Collections.shuffle(tryCatchBlock.getClonedList());
+        Collections.shuffle(tryCatchBlock.getClonedList(), rnd);
         for (CodeBlock code : tryCatchBlock.getCodes()) {
             if (code instanceof TryCatchBlock) {
                 addOpaquePredicate((TryCatchBlock) code, generatedBlocks);

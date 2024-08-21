@@ -1,6 +1,7 @@
-input: D:\workspaces\java\phantom-shield-x\test\input\obf-test-1.0-SNAPSHOT.jar
-output: D:\workspaces\java\phantom-shield-x\test\output\obf-test-1.0-SNAPSHOT.jar
+input: C:\Users\ImFl0wow\workspace\phantom-shield-x\test\input\obf-test-1.0-SNAPSHOT.jar
+output: C:\Users\ImFl0wow\workspace\phantom-shield-x\test\output\obf-test-1.0-SNAPSHOT.jar
 dictionary: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+minimum_generated_name_length: 1
 creation_date: 2024.2.5 12:00:00
 input_mappings_file: mappings.txt
 targets:
@@ -8,14 +9,15 @@ targets:
 - x86_64-linux-gnu
 - aarch64-macos
 libraries:
-- D:\Program Files\Eclipse Adoptium\jdk-8.0.392.8-hotspot\jre\lib\rt.jar
-- D:\Program Files\Eclipse Adoptium\jdk-8.0.392.8-hotspot\jre\lib\jce.jar
+- C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\rt.jar
+- C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\jce.jar
 filters:
 - -org.example.**
 native_obfuscation:
   loader_package: skidonion/?????
   print_instructions: false
   hidden_stack_trace: true
+  null_safety: false
   verification:
     verification_enable: false
     use_internal_user_interface: true
@@ -23,6 +25,7 @@ native_obfuscation:
     verification_software_id: '-1'
     verification_user_id: '-1'
     verification_token: ''
+    verification_keep_alive: true
   filters:
   - +org.example.**
   - -org.example.** void main(java.lang.String[])
@@ -36,6 +39,10 @@ renamer:
   repackage_name: skidonion/???
   adapt_resources:
   - META-INF/MANIFEST.MF
+  mixin:
+    mixin_support: false
+    mixins_json: mixins.json
+    mixins_ref_json: mixins.ref.json
 member_shuffler: {
   }
 debug_information_remover:

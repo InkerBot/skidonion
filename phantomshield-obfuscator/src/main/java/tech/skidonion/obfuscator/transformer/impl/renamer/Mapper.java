@@ -201,7 +201,7 @@ public class Mapper {
         Dictionary dictionary = cw.getMethodDictionary();
         result.setMaximumIndex(Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex()));
 
-        if (cw.getMethodDescriptors().contains(uniqueMethodName)) {
+        if (cw.getMethodDescriptors().containsKey(uniqueMethodName)) {
 
             result.add(key, RenamerResult.RenamerType.METHOD);
             if (cw.getAccess().isAnnotation()) {
@@ -226,7 +226,7 @@ public class Mapper {
         Dictionary dictionary = cw.getFieldDictionary();
         result.setMaximumIndex(Math.max(dictionary.getUniqueIndex(), result.getMaximumIndex()));
 
-        if (cw.getFieldDescriptors().contains(uniqueFieldName)) {
+        if (cw.getFieldDescriptors().containsKey(uniqueFieldName)) {
             result.add(key, RenamerResult.RenamerType.FIELD);
         } else {
             result.add(key, RenamerResult.RenamerType.DUMMY);
@@ -238,37 +238,48 @@ public class Mapper {
     }
 
     private boolean cannotRenameMethod(ClassTree tree, MethodWrapper wrapper, Set<String> visited) {
-        String ref = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + wrapper.getOriginalDescription();
+        String desc = wrapper.getOriginalName() + wrapper.getOriginalDescription();
+        String ref = tree.getClassWrapper().getOriginalName() + '.' + desc;
         // Don't check these
         if (visited.contains(ref)) return false;
-
         visited.add(ref);
+
+        if (tree.getClassWrapper().getMethodDescriptors().containsKey(desc)) {
+            wrapper = tree.getClassWrapper().getMethodDescriptors().get(desc);
+        }
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
         if (methodMappings.containsKey(ref) || renamer != null && (!renamer.match(wrapper) ||  // is excluded
                 renamer.mixin_support.isEnable() && MixinSupport.isMixinMethod(wrapper)) // mixin support
-        ) return true;
+        ) {
+            return true;
+        }
 
         // Methods which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
             // We can't rename members which inherit methods from external libraries
-            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().getMethods().stream().anyMatch(mw -> mw.getOriginalName().equals(wrapper.getOriginalName()) && mw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
+            if (tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().isMethodPresent(wrapper.getOriginalName(), wrapper.getOriginalDescription())) {
                 return true;
-
-            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameMethod(obfuscator.getTree(parent), wrapper, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameMethod(obfuscator.getTree(sub), wrapper, visited));
+            }
+            MethodWrapper trans = wrapper;
+            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameMethod(obfuscator.getTree(parent), trans, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameMethod(obfuscator.getTree(sub), trans, visited));
         } else {
             return tree.getClassWrapper().getAccess().isEnum() && ("valueOf".equals(wrapper.getOriginalName()) || "values".equals(wrapper.getOriginalName()));
         }
     }
 
     private boolean cannotRenameField(ClassTree tree, FieldWrapper wrapper, Set<String> visited) {
-        String ref = tree.getClassWrapper().getOriginalName() + '.' + wrapper.getOriginalName() + '.' + wrapper.getOriginalDescription();
+        String desc = wrapper.getOriginalName() + '.' + wrapper.getOriginalDescription();
+        String ref = tree.getClassWrapper().getOriginalName() + '.' + desc;
 
         // Don't check these
         if (visited.contains(ref)) return false;
-
         visited.add(ref);
+
+        if (tree.getClassWrapper().getFieldDescriptors().containsKey(desc)) {
+            wrapper = tree.getClassWrapper().getFieldDescriptors().get(desc);
+        }
 
         // If excluded, we don't want to rename.
         // If we already mapped the tree, we don't want to waste time doing it again.
@@ -281,12 +292,12 @@ public class Mapper {
         // Fields which are static don't need to be checked for inheritance
         if (!wrapper.getAccess().isStatic()) {
             // We can't rename members which inherit methods from external libraries
-            if (tree.getClassWrapper() != wrapper.getOwner() && tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().getFields().stream().anyMatch(fw -> fw.getOriginalName().equals(wrapper.getOriginalName()) && fw.getOriginalDescription().equals(wrapper.getOriginalDescription())))
+            if (tree.getClassWrapper().isLibraryNode() && tree.getClassWrapper().isFieldPresent(wrapper.getOriginalName(), wrapper.getOriginalDescription())) {
                 return true;
-
-            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameField(obfuscator.getTree(parent), wrapper, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameField(obfuscator.getTree(sub), wrapper, visited));
+            }
+            FieldWrapper trans = wrapper;
+            return tree.getParentClasses().stream().anyMatch(parent -> cannotRenameField(obfuscator.getTree(parent), trans, visited)) || tree.getSubClasses().stream().anyMatch(sub -> cannotRenameField(obfuscator.getTree(sub), trans, visited));
         }
-
         return false;
     }
 

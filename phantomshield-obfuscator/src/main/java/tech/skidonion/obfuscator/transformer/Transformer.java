@@ -192,6 +192,10 @@ public abstract class Transformer implements Opcodes {
         return this.obfuscator.classes.values();
     }
 
+    protected final Collection<ClassWrapper> getSoftExcludedClasses() {
+        return this.obfuscator.softExclusions.values();
+    }
+
     protected final Map<String, ClassWrapper> getClassPath() {
         return this.obfuscator.classpath;
     }

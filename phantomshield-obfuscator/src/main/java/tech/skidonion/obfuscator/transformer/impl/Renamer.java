@@ -57,7 +57,7 @@ public class Renamer extends Transformer {
 
     @Override
     public void preprocess() throws Exception {
-        mapper = new Mapper(obfuscator, getClassWrappers(), Collections.emptyList(), this);
+        mapper = new Mapper(obfuscator, getClassWrappers(), getSoftExcludedClasses(), this);
         mapper.setPrefixName(prefix_name.getValue());
         mapper.setRepackage(mixin_support.isEnable() ? false : repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());

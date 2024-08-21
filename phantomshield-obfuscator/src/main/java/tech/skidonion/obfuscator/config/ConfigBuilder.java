@@ -23,6 +23,7 @@ public class ConfigBuilder {
     private final List<String> targetsSettings = new ArrayList<>();
     private final List<String> librariesSettings = new ArrayList<>();
     private final List<String> filtersSettings = new ArrayList<>();
+    private final List<String> softExclusionsSettings = new ArrayList<>();
 
     // sub filters
     private final Map<String, List<String>> subFiltersSettings = new HashMap<>();
@@ -141,6 +142,10 @@ public class ConfigBuilder {
 
         if (!filtersSettings.isEmpty()) {
             config.add("filters", filtersSettings);
+        }
+
+        if (!softExclusionsSettings.isEmpty()) {
+            config.add("soft_exclusions", softExclusionsSettings);
         }
 
 
@@ -600,6 +605,16 @@ public class ConfigBuilder {
 
     public ConfigBuilder setMixinSupportSetting(boolean mixinSupportSetting) {
         this.mixinSupportSetting = mixinSupportSetting;
+        return this;
+    }
+
+    public ConfigBuilder addSoftExclusion(String filter) {
+        this.softExclusionsSettings.add(filter);
+        return this;
+    }
+
+    public ConfigBuilder addSoftExclusions(String... filters) {
+        this.softExclusionsSettings.addAll(Arrays.asList(filters));
         return this;
     }
 }
