@@ -1,4 +1,5 @@
 import tech.skidonion.obfuscator.PhantomShield;
+import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
@@ -7,7 +8,7 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class TestRun {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         if (PhantomShield.BUNDLE == null) {
             PhantomShield.BUNDLE = ResourceBundle.getBundle("i18n.lang", new UTF8Control());
         }

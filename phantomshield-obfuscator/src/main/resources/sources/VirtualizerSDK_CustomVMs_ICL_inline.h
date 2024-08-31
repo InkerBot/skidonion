@@ -5,7 +5,7 @@
  * Author/s: Oreans Technologies 
  * (c) 2024 Oreans Technologies
  *
- * --- File generated automatically from Oreans VM Generator (28/2/2024) ---
+ * --- File generated automatically from Oreans VM Generator (21/7/2024) ---
  ******************************************************************************/
 
 /***********************************************
@@ -4146,6 +4146,54 @@
   __asm __emit 0x20 \
   __asm __emit 0x68 \
   __asm __emit 0x02 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x43\
+  __asm __emit 0x56\
+  __asm __emit 0x20 \
+  __asm __emit 0x20 
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_START
+#define VIRTUALIZER_MUTATE_ONLY_START \
+  __asm __emit 0x05 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x14 \
+  __asm __emit 0x43\
+  __asm __emit 0x56\
+  __asm __emit 0x20 \
+  __asm __emit 0x20 \
+  __asm __emit 0x10 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x43\
+  __asm __emit 0x56\
+  __asm __emit 0x20 \
+  __asm __emit 0x20 
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_END
+#define VIRTUALIZER_MUTATE_ONLY_END \
+  __asm __emit 0x05 \
+  __asm __emit 0x00 \
+  __asm __emit 0x00 \
+  __asm __emit 0x14 \
+  __asm __emit 0x43\
+  __asm __emit 0x56\
+  __asm __emit 0x20 \
+  __asm __emit 0x20 \
+  __asm __emit 0x11 \
+  __asm __emit 0x00 \
   __asm __emit 0x00 \
   __asm __emit 0x00 \
   __asm __emit 0x00 \

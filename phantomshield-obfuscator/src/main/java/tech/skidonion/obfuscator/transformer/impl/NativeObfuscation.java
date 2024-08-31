@@ -201,13 +201,11 @@ public class NativeObfuscation extends Transformer {
                         cw.getMethods().stream().filter(this::match)
                                 .map(MethodWrapper::getMethodNode);
                 List<MethodNode> methods = antiLowIq.collect(Collectors.toList());
-                if (methods.size() <= 1) {
-                    if (displayName != null)
+                if (methods.size() <= 1 && displayName != null) {
                         WARN(TRANSLATION("phantom-shield-x.native.no-methods"), displayName);
-                } else {
-                    methods.stream().filter(MethodProcessor::shouldProcess)
-                            .forEach(PreprocessorRunner::preprocess);
                 }
+                methods.stream().filter(MethodProcessor::shouldProcess).forEach(PreprocessorRunner::preprocess);
+
 
                 CustomClassWriter computedWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                 cw.getClassNode().accept(computedWriter);
@@ -805,7 +803,7 @@ public class NativeObfuscation extends Transformer {
         wrapper.superName = "java/lang/Object";
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
-        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false,null);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false, null);
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -816,7 +814,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.version = V1_8;
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
-        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false,null);
+        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false, null);
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)

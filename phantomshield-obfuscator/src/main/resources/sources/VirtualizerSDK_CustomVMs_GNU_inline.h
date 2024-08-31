@@ -5,7 +5,7 @@
  * Author/s: Oreans Technologies 
  * (c) 2024 Oreans Technologies
  *
- * --- File generated automatically from Oreans VM Generator (28/2/2024) ---
+ * --- File generated automatically from Oreans VM Generator (21/7/2024) ---
  ******************************************************************************/
 
 /***********************************************
@@ -4146,6 +4146,54 @@ __asm__ (".byte 0x05\n"\
      ".byte 0x20\n"\
      ".byte 0x68\n"\
      ".byte 0x02\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x43\n"\
+     ".byte 0x56\n"\
+     ".byte 0x20\n"\
+     ".byte 0x20\n");
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_START
+#define VIRTUALIZER_MUTATE_ONLY_START \
+__asm__ (".byte 0x05\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x14\n"\
+     ".byte 0x43\n"\
+     ".byte 0x56\n"\
+     ".byte 0x20\n"\
+     ".byte 0x20\n"\
+     ".byte 0x10\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x43\n"\
+     ".byte 0x56\n"\
+     ".byte 0x20\n"\
+     ".byte 0x20\n");
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_END
+#define VIRTUALIZER_MUTATE_ONLY_END \
+__asm__ (".byte 0x05\n"\
+     ".byte 0x00\n"\
+     ".byte 0x00\n"\
+     ".byte 0x14\n"\
+     ".byte 0x43\n"\
+     ".byte 0x56\n"\
+     ".byte 0x20\n"\
+     ".byte 0x20\n"\
+     ".byte 0x11\n"\
+     ".byte 0x00\n"\
      ".byte 0x00\n"\
      ".byte 0x00\n"\
      ".byte 0x00\n"\

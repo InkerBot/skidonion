@@ -5,7 +5,7 @@
  * Author/s: Oreans Technologies 
  * (c) 2024 Oreans Technologies
  *
- * --- File generated automatically from Oreans VM Generator (28/2/2024) ---
+ * --- File generated automatically from Oreans VM Generator (21/7/2024) ---
  ******************************************************************************/
 
 /***********************************************
@@ -929,6 +929,16 @@
 
 #ifndef VIRTUALIZER_WOLF_BLACK_END
 #define VIRTUALIZER_WOLF_BLACK_END                         __asm__ (" .byte\t0x05, 0x00, 0x00, 0x14,0x43, 0x56, 0x20, 0x20, 0x68, 0x02, 0x00, 0x00, \
+                                                                     0x00, 0x00, 0x00, 0x00, 0x43, 0x56, 0x20, 0x20");
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_START
+#define VIRTUALIZER_MUTATE_ONLY_START                      __asm__ (" .byte\t0x05, 0x00, 0x00, 0x14,0x43, 0x56, 0x20, 0x20, 0x10, 0x00, 0x00, 0x00, \
+                                                                     0x00, 0x00, 0x00, 0x00, 0x43, 0x56, 0x20, 0x20");
+#endif
+
+#ifndef VIRTUALIZER_MUTATE_ONLY_END
+#define VIRTUALIZER_MUTATE_ONLY_END                        __asm__ (" .byte\t0x05, 0x00, 0x00, 0x14,0x43, 0x56, 0x20, 0x20, 0x11, 0x00, 0x00, 0x00, \
                                                                      0x00, 0x00, 0x00, 0x00, 0x43, 0x56, 0x20, 0x20");
 #endif
 

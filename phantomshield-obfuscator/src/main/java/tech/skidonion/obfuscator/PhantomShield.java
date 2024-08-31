@@ -57,7 +57,7 @@ import static org.objectweb.asm.ClassReader.*;
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.1.7.1";
+    public static final String VERSION = "v0.1.7.2";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();

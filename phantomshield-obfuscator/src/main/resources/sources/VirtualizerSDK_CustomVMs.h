@@ -5,7 +5,7 @@
  * Author/s: Oreans Technologies 
  * (c) 2024 Oreans Technologies
  *
- * --- File generated automatically from Oreans VM Generator (28/2/2024) ---
+ * --- File generated automatically from Oreans VM Generator (21/7/2024) ---
  ******************************************************************************/
 
 // ***********************************************
@@ -372,6 +372,10 @@ DLL_IMPORT void STDCALL_CONVENTION Mutate_Start(void);
 
 DLL_IMPORT void STDCALL_CONVENTION Mutate_End(void);
 
+DLL_IMPORT void STDCALL_CONVENTION Mutate_Start(void);
+
+DLL_IMPORT void STDCALL_CONVENTION Mutate_End(void);
+
 DLL_IMPORT void STDCALL_CONVENTION CustomVM00000217_Start(void);
 
 DLL_IMPORT void STDCALL_CONVENTION CustomVM00000217_End(void);
@@ -689,6 +693,9 @@ DLL_IMPORT void STDCALL_CONVENTION CustomVM00000219_End(void);
 
 #define VIRTUALIZER_WOLF_BLACK_START CustomVM00000216_Start();
 #define VIRTUALIZER_WOLF_BLACK_END CustomVM00000216_End();
+
+#define VIRTUALIZER_MUTATE_ONLY_START Mutate_Start();
+#define VIRTUALIZER_MUTATE_ONLY_END Mutate_End();
 
 #define VIRTUALIZER_FALCON_TINY_START CustomVM00000219_Start();
 #define VIRTUALIZER_FALCON_TINY_END CustomVM00000219_End();
