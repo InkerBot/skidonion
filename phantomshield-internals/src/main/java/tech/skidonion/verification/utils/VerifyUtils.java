@@ -169,7 +169,7 @@ public class VerifyUtils {
                     array[1] = RANDOM.nextInt();
                     array[2] = RANDOM.nextInt();
                     array[3] = rand;
-                    array[4] = hwid[0];
+                    array[4] = result.getString("h","==");
                     MachineIDUtils.check(array);
                     if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1 && Internals.shouldCheckHwid()) {
                         return Optional.of((byte) -2);
