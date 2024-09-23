@@ -6,6 +6,15 @@ import tech.skidonion.verification.crypto.ChaCha20;
 import static org.junit.jupiter.api.Assertions.*;
 
 class VerifyUtilsTest {
+
+    @Test
+    void testPoly() {
+        byte[] raw = {(byte) 0xff, 1, 2, 3, (byte) 0xff, 0, 0, 0, (byte) 0xff, 0, 0, 0, (byte) 0xff, 0, 0, 0};
+        for (int i = 0; i < 4; i++) {
+            System.out.println((raw[i * 4] & 0xff) | ((raw[i * 4 + 1] & 0xff) << 8) | ((raw[i * 4 + 2]) << 16) | (raw[i * 4 + 3] << 24));
+        }
+    }
+
     @Test
     void getIP() {
         System.out.println(HttpUtils.post("https://who.nie.netease.com/", null));
