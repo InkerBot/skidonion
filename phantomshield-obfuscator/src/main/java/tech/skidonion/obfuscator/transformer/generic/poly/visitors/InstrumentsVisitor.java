@@ -6,15 +6,13 @@ import tech.skidonion.obfuscator.transformer.generic.poly.model.Context;
 import tech.skidonion.obfuscator.transformer.generic.poly.transforms.*;
 
 public class InstrumentsVisitor implements Visitor<InsnList>, Opcodes {
-    private final int encodedVariable;
-    private final int decodedVariable;
     private final int indexVariable;
     private final LabelNode loopLabel;
     private final LabelNode outerLabel;
 
-    public InstrumentsVisitor(int encodedVariable, int decodedVariable, int maxLocals) {
-        this.encodedVariable = encodedVariable;
-        this.decodedVariable = decodedVariable;
+    public InstrumentsVisitor(int maxLocals) {
+        // aload encoded array (int[])
+        // aload decoded array (byte[])
         this.indexVariable = maxLocals++;
         this.loopLabel = new LabelNode();
         this.outerLabel = new LabelNode();
@@ -23,6 +21,7 @@ public class InstrumentsVisitor implements Visitor<InsnList>, Opcodes {
 
     @Override
     public InsnList initialise(Context ctx) {
+        // stack : e,d
         InsnList instruments = new InsnList();
 
         instruments.add(new LabelNode());
@@ -31,25 +30,33 @@ public class InstrumentsVisitor implements Visitor<InsnList>, Opcodes {
         // int i = 0;
 
         instruments.add(loopLabel);
+        instruments.add(new InsnNode(DUP2));
+        // e,d,e,d
+        instruments.add(new InsnNode(SWAP));
+        // stack: d,e
+        instruments.add(new InsnNode(DUP));
+        // stack: d,e,e
         instruments.add(new VarInsnNode(ILOAD, indexVariable));
-        instruments.add(new VarInsnNode(ALOAD, encodedVariable));
+        instruments.add(new InsnNode(SWAP));
+//        instruments.add(new VarInsnNode(ALOAD, encodedVariable));
         instruments.add(new InsnNode(ARRAYLENGTH));
-        instruments.add(new JumpInsnNode(IF_ICMPGE, outerLabel));
+        instruments.add(new JumpInsnNode(IF_ICMPGE, outerLabel)); // -> d,e
         // i >= encoded.length
         instruments.add(new LabelNode());
-        instruments.add(new VarInsnNode(ALOAD, encodedVariable));
+//        instruments.add(new VarInsnNode(ALOAD, encodedVariable));
         instruments.add(new VarInsnNode(ILOAD, indexVariable));
         instruments.add(new InsnNode(IALOAD));
         // encoded[i] reference
+        // stack:d,temp
         return instruments;
     }
 
     @Override
     public void finalise(InsnList in) {
-        in.add(new VarInsnNode(ALOAD, decodedVariable));
-        in.add(new InsnNode(SWAP));
-        in.add(new VarInsnNode(ALOAD, indexVariable));
-        in.add(new InsnNode(SWAP));
+//        in.add(new VarInsnNode(ALOAD, decodedVariable));
+//        in.add(new InsnNode(SWAP)); // d,temp
+        in.add(new VarInsnNode(ILOAD, indexVariable)); // d,temp,i
+        in.add(new InsnNode(SWAP));  // d,i,temp
         in.add(new IntInsnNode(SIPUSH, 255));
         in.add(new InsnNode(IAND));
         in.add(new InsnNode(I2B));
@@ -61,6 +68,8 @@ public class InstrumentsVisitor implements Visitor<InsnList>, Opcodes {
 
         in.add(new JumpInsnNode(GOTO, loopLabel));
         in.add(outerLabel);
+        in.add(new InsnNode(POP));
+        in.add(new InsnNode(POP));
     }
 
     @Override

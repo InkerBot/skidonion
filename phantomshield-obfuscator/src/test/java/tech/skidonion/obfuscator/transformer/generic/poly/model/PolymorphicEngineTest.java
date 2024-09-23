@@ -33,7 +33,7 @@ class PolymorphicEngineTest implements Opcodes {
         engine.setUserRandom(new Random(114514));
 
         Context ctx = engine.generateChain();
-        InstrumentsVisitor visitor = new InstrumentsVisitor(1, 0, 2);  // or any other target
+        InstrumentsVisitor visitor = new InstrumentsVisitor(3);  // or any other target
         ClassNode node = new ClassNode();
         node.name = "PolyTest";
         node.access = ACC_PUBLIC;
@@ -43,11 +43,15 @@ class PolymorphicEngineTest implements Opcodes {
         MethodNode method = new MethodNode(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
         method.instructions.add(buildData());
         method.instructions.add(visitor.visit(ctx));
+        method.instructions.add(new FieldInsnNode(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"));
+        method.instructions.add(new VarInsnNode(ALOAD, 1));
+        method.instructions.add(new MethodInsnNode(INVOKESTATIC,"java/util/Arrays","toString","([B)Ljava/lang/String;", false));
+        method.instructions.add(new MethodInsnNode(INVOKEVIRTUAL,"java/io/PrintStream","println","(Ljava/lang/String;)V", false));
         method.instructions.add(new InsnNode(RETURN));
 
         node.methods.add(method);
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         node.accept(writer);
 
         Files.write(Paths.get("PolyTest.class"), writer.toByteArray());
@@ -58,7 +62,7 @@ class PolymorphicEngineTest implements Opcodes {
         in.add(new LabelNode());
         in.add(new IntInsnNode(BIPUSH, 12));
         in.add(new IntInsnNode(NEWARRAY, T_BYTE));
-        in.add(new VarInsnNode(ASTORE, 0));
+        in.add(new VarInsnNode(ASTORE, 1));
         in.add(new LabelNode());
         in.add(new IntInsnNode(BIPUSH, 12));
         in.add(new IntInsnNode(NEWARRAY, T_INT));
@@ -110,7 +114,9 @@ class PolymorphicEngineTest implements Opcodes {
         in.add(new IntInsnNode(BIPUSH, 11));
         in.add(new LdcInsnNode(820747238));
         in.add(new InsnNode(IASTORE));
-        in.add(new VarInsnNode(ASTORE, 1));
+        in.add(new VarInsnNode(ASTORE, 2));
+        in.add(new VarInsnNode(ALOAD, 2)); // encode
+        in.add(new VarInsnNode(ALOAD, 1)); // decode
         return in;
     }
 
