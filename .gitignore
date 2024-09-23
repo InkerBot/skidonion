@@ -132,3 +132,4 @@ hs_err_pid*
 /phantomshield-cpputils/zig-cache
 /phantomshield-cpputils/zig-out
 /phantomshield-cpputils/.vscode
+/phantomshield-obfuscator/PolyTest.class
