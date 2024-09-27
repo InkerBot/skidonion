@@ -72,7 +72,7 @@ public class NativeObfuscation extends Transformer {
     private final BooleanValue null_safety = new BooleanValue("null_safety", false);
     private final BooleanValue verification_enable = new BooleanValue("verification_enable", false);
     private final BooleanValue use_internal_user_interface = new BooleanValue("use_internal_user_interface", true);
-    private final StringValue verification_server = new StringValue("verification_server", "https://skidonion.tech/");
+    private final StringValue verification_server = new StringValue("verification_server", "https://uncrackable.me/");
     private final StringValue verification_user_id = new StringValue("verification_user_id", "-1");
     private final StringValue verification_software_id = new StringValue("verification_software_id", "-1");
     private final StringValue verification_token = new StringValue("verification_token", "");

@@ -10,8 +10,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpUtilsTest {
-//    private static final String URL = "https://skidonion.tech/api/admin/";
-    private static final String URL = "http://localhost:8694/api/admin/";
+    private static final String URL = "https://uncrackable.me/api/admin/";
+//    private static final String URL = "http://localhost:8694/api/admin/";
     @Test
     void softwareInformation() {
         Map<String, String> params = new HashMap<>();
@@ -100,8 +100,8 @@ class HttpUtilsTest {
 
     public static Map<String, String> header() {
         Map<String, String> header = new HashMap<>();
-        header.put("phantom-shield-x-uid", "7"); // 用户ID
-        header.put("phantom-shield-x-api-token", "fc5c8bf3750cf741378a0c672532583c"); // 用户TOKEN
+        header.put("phantom-shield-x-uid", "1"); // 用户ID
+        header.put("phantom-shield-x-api-token", "769e4f678db8436b0018fc6fe60a5a7a"); // 用户TOKEN
         return header;
     }
 }

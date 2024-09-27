@@ -44,7 +44,7 @@ public class ConfigBuilder {
     private boolean verificationEnableSetting = false;
     private boolean useInternalUserInterfaceSetting = true;
     private boolean verificationKeepAliveSetting = true;
-    private String verificationServerSetting = "https://skidonion.tech/";
+    private String verificationServerSetting = "https://uncrackable.me/";
     private String verificationUserIdSetting = "-1";
     private String verificationSoftwareIdSetting = "-1";
     private String verificationTokenSetting = "";
