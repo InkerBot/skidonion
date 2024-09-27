@@ -102,8 +102,8 @@ public class Tracer {
             BigInteger inonce = new BigInteger(1, encoded_nonce);
             byte[] _nonce = inonce.modPow(EXP, MOD).toByteArray();
             byte[] nonce = new byte[useOldCrypto ? 8 : 12];
-            int computed_nonce_length = _nonce.length - 8;
-            System.arraycopy(_nonce, Math.max(computed_nonce_length, 0), nonce, computed_nonce_length < 0 ? -computed_nonce_length : 0, Math.min(8, 8 + computed_nonce_length));
+            int computed_nonce_length = _nonce.length - (useOldCrypto ? 8 : 12);
+            System.arraycopy(_nonce, Math.max(computed_nonce_length, 0), nonce, computed_nonce_length < 0 ? -computed_nonce_length : 0, Math.min(useOldCrypto ? 8 : 12, useOldCrypto ? 8 : 12 + computed_nonce_length));
             int length = stream.readInt();
             byte[] encoded_data = new byte[length];
             stream.read(encoded_data);
