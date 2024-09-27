@@ -22,12 +22,13 @@ class VerifyUtilsTest {
 
     @Test
     void testLogin() {
-        System.out.println(VerifyUtils.login("imfl0wow", "41aae1446c6c0190a97de6a73d35fc3b", true) >> 8 & 0xFF);
+        System.out.println((byte) (VerifyUtils.login("imfl0wow", "41aae1446c6c0190a97de6a73d35fc3b", true) >> 8 & 0xFF));
 
         System.out.println(VerifyUtils.getUserId());
         System.out.println(VerifyUtils.getUsername());
         System.out.println(VerifyUtils.getExpiredDate("授权验证用户组"));
         System.out.println(VerifyUtils.getExpiredDates());
+        System.out.println(VerifyUtils.getNickname());
 
         System.out.println(VerifyUtils.hasRole("授权验证用户组"));
 
@@ -51,13 +52,11 @@ class VerifyUtilsTest {
             case 123456:
                 decryptBuffer(key);
                 src = _encrypt_();
-                dst = new byte[src.length];
-                crypto.decrypt(dst, src, src.length);
+                dst = crypto.xor(src);
                 _defineClass_(dst, dst.length);
 
                 src = _encrypt_();
-                dst = new byte[src.length];
-                crypto.decrypt(dst, src, src.length);
+                dst = crypto.xor(src);
                 _defineClass_(dst, dst.length);
                 break;
         }

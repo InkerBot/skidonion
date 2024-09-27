@@ -1,5 +1,6 @@
 package tech.skidonion.verification.crypto;
 
+import net.i2p.crypto.eddsa.EdDSAPublicKey;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

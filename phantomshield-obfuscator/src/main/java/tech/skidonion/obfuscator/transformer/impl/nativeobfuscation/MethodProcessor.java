@@ -15,6 +15,8 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static tech.skidonion.obfuscator.PhantomShield.DEBUG;
+
 public class MethodProcessor {
 
     public static final Map<Integer, String> INSTRUCTIONS = new HashMap<>();
@@ -94,8 +96,8 @@ public class MethodProcessor {
 
     public static boolean shouldProcess(MethodNode method) {
         return !ASMUtils.getFlag(method.access, Opcodes.ACC_ABSTRACT) &&
-               !ASMUtils.getFlag(method.access, Opcodes.ACC_NATIVE) &&
-               !method.name.equals("<init>");
+                !ASMUtils.getFlag(method.access, Opcodes.ACC_NATIVE) &&
+                !method.name.equals("<init>");
     }
 
 //    public static String getClassGetter(MethodContext context, String desc) {
@@ -136,7 +138,9 @@ public class MethodProcessor {
             throw new RuntimeException(String.format("Could not find special method processor for %s", method.name));
         }
 
-//        output.append("// ").append(StringUtils.escapeCommentString(method.name)).append(StringUtils.escapeCommentString(method.desc)).append("\n");
+        if (DEBUG) {
+            output.append("// ").append(StringUtils.escapeCommentString(method.name)).append(StringUtils.escapeCommentString(method.desc)).append("\n");
+        }
 
         String methodName = specialMethodProcessor.preProcess(context);
         if (context.cppNativeMethodName == null) {
@@ -225,7 +229,9 @@ public class MethodProcessor {
             classesForTryCatches.forEach((clazz) -> {
                 int classId = context.getCachedClasses().getId(clazz);
 
-//                context.output.append(String.format("    // try-catch-class %s\n", StringUtils.escapeCommentString(clazz)));
+                if (DEBUG) {
+                    context.output.append(String.format("    // try-catch-class %s\n", StringUtils.escapeCommentString(clazz)));
+                }
                 context.output.append(getClassCacher(context, classId, clazz, "if (env->ExceptionCheck()) { return (" + CPP_TYPES[context.ret.getSort()] + ") 0; }"));
             });
         }
@@ -273,11 +279,15 @@ public class MethodProcessor {
 
         AbstractInsnNode node = method.instructions.getFirst();
         while (node != null) {
-//            context.output.append("    // ").append(StringUtils.escapeCommentString(handlers[node.getType()]
-//                    .insnToString(context, node))).append("; Stack: ").append(context.stackPointer).append("\n");
+            if (DEBUG) {
+                context.output.append("    // ").append(StringUtils.escapeCommentString(handlers[node.getType()]
+                        .insnToString(context, node))).append("; Stack: ").append(context.stackPointer).append("\n");
+            }
             handlers[node.getType()].accept(context, node);
             context.stackPointer = handlers[node.getType()].getNewStackPointer(node, context.stackPointer);
-//            context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
+            if (DEBUG) {
+                context.output.append("    // New stack: ").append(context.stackPointer).append("\n");
+            }
 
             node = node.getNext();
         }

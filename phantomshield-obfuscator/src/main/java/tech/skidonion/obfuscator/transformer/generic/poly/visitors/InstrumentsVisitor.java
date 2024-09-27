@@ -70,6 +70,8 @@ public class InstrumentsVisitor implements Visitor<InsnList>, Opcodes {
         in.add(outerLabel);
         in.add(new InsnNode(POP));
         in.add(new InsnNode(POP));
+        in.add(new InsnNode(POP));
+        in.add(new InsnNode(POP));
     }
 
     @Override

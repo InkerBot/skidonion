@@ -187,7 +187,8 @@ public class HttpUtils {
             in.close();
             input.close();
         } catch (IOException e) {
-            e.printStackTrace(System.err);
+            throw new RuntimeException(e);
+//            e.printStackTrace(System.err);
         } finally {
             if (in != null) {
                 try {

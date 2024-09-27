@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
+import tech.skidonion.obfuscator.transformer.generic.poly.visitors.CVisitor;
 import tech.skidonion.obfuscator.transformer.generic.poly.visitors.InstrumentsVisitor;
 import tech.skidonion.obfuscator.transformer.generic.poly.visitors.JavaVisitor;
+import tech.skidonion.obfuscator.transformer.generic.poly.visitors.PublicKeyDecryptorVisitor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,14 +18,37 @@ import java.util.Random;
 
 class PolymorphicEngineTest implements Opcodes {
 
+
     @Test
-    void testGenerateSourceCode() {
+    void testGenerateJavaSourceCode() {
         PolymorphicEngine engine = new PolymorphicEngine();
         engine.setUserRandom(new Random(114514));
 
         String stringToObfuscate = "Hello World!";
         Context ctx = engine.transform(stringToObfuscate.getBytes(StandardCharsets.UTF_8));
         JavaVisitor visitor = new JavaVisitor();  // or any other target
+        System.out.println(visitor.visit(ctx));
+    }
+
+    @Test
+    void testGenerateCSourceCode() {
+        PolymorphicEngine engine = new PolymorphicEngine();
+        engine.setUserRandom(new Random(114514));
+
+        String stringToObfuscate = "Hello World!";
+        Context ctx = engine.transform(stringToObfuscate.getBytes(StandardCharsets.UTF_8));
+        CVisitor visitor = new CVisitor();  // or any other target
+        System.out.println(visitor.visit(ctx));
+    }
+
+    @Test
+    void testGeneratePublicKeySourceCode() {
+        PolymorphicEngine engine = new PolymorphicEngine();
+        engine.setUserRandom(new Random(114514));
+
+        String stringToObfuscate = "Hello World!";
+        Context ctx = engine.transform(stringToObfuscate.getBytes(StandardCharsets.UTF_8));
+        CVisitor visitor = new PublicKeyDecryptorVisitor();  // or any other target
         System.out.println(visitor.visit(ctx));
     }
 
@@ -45,8 +70,8 @@ class PolymorphicEngineTest implements Opcodes {
         method.instructions.add(visitor.visit(ctx));
         method.instructions.add(new FieldInsnNode(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"));
         method.instructions.add(new VarInsnNode(ALOAD, 1));
-        method.instructions.add(new MethodInsnNode(INVOKESTATIC,"java/util/Arrays","toString","([B)Ljava/lang/String;", false));
-        method.instructions.add(new MethodInsnNode(INVOKEVIRTUAL,"java/io/PrintStream","println","(Ljava/lang/String;)V", false));
+        method.instructions.add(new MethodInsnNode(INVOKESTATIC, "java/util/Arrays", "toString", "([B)Ljava/lang/String;", false));
+        method.instructions.add(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false));
         method.instructions.add(new InsnNode(RETURN));
 
         node.methods.add(method);

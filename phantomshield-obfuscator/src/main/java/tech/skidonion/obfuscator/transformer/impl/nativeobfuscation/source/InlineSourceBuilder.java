@@ -8,6 +8,7 @@ import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.impl.NativeObfuscation;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.MethodProcessor;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.NodeCache;
+import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 
 import java.io.IOException;
@@ -60,6 +61,12 @@ public class InlineSourceBuilder {
         hpp.append("#include <unordered_map>\n");
         hpp.append("#ifndef NATIVE_JVM_INLINE_HPP_GUARD\n");
         hpp.append("#define NATIVE_JVM_INLINE_HPP_GUARD\n");
+
+        if (obfuscation.isVerificationEnable()) {
+            cpp.append("\n\n");
+
+            cpp.append(FileUtils.readResource("sources/ed25519.cpp"));
+        }
 
     }
 
@@ -158,29 +165,8 @@ public class InlineSourceBuilder {
                 hpp.append("extern bool* licenced;\n");
             }
             cpp.append("jbyte** __buffer;\n");
-            cpp.append("jbyteArray __psx_a;\n");
-            cpp.append("jobject __psx_b;\n");
-            cpp.append("jobject __psx_c;\n");
-            cpp.append("jbyteArray __psx_d;\n");
-            cpp.append("jobject __psx_e;\n");
-            cpp.append("jlong __psx_f;\n");
-            cpp.append("jbyteArray __psx_g;\n");
 
             hpp.append("extern jbyte** __buffer;\n");
-//            hpp.append("extern jbyteArray nonce;\n");
-            hpp.append("extern jbyteArray __psx_a;\n");
-//            hpp.append("extern jobject crypto;\n");
-            hpp.append("extern jobject __psx_b;\n");
-//            hpp.append("extern jobject verify_token;\n");
-            hpp.append("extern jobject __psx_c;\n");
-//            hpp.append("extern jbyteArray key;\n");
-            hpp.append("extern jbyteArray __psx_d;\n");
-//            hpp.append("extern jobject username;\n");
-            hpp.append("extern jobject __psx_e;\n");
-//            hpp.append("extern jlong user_id;\n");
-            hpp.append("extern jlong __psx_f;\n");
-//            hpp.append("extern jbyteArray magic_key;\n");
-            hpp.append("extern jbyteArray __psx_g;\n");
 
         }
 

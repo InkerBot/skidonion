@@ -21,11 +21,11 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-        renamer(builder);
+//        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
-//        native_obfuscation(builder);
+        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);
@@ -83,10 +83,10 @@ public class TestRun {
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(false)//
-                .setVerificationServerSetting("http://localhost:8694/")//
-                .setVerificationTokenSetting("fc5c8bf3750cf741378a0c672532583c")//
-                .setVerificationUserIdSetting("7")//
+                .setVerificationEnableSetting(true)//
+//                .setVerificationServerSetting("http://localhost:8694/")//
+                .setVerificationTokenSetting("769e4f678db8436b0018fc6fe60a5a7a")//
+                .setVerificationUserIdSetting("1")//
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
                 .addSubFilters("native_obfuscation",
@@ -113,12 +113,12 @@ public class TestRun {
         return new ConfigBuilder() //
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test/input/liquidbounce.jar")) //
-                .setOutputJar(new File("test/output/liquidbounce.jar")) //
+                .setInputJar(new File("test/input/bench.jar")) //
+                .setOutputJar(new File("test/output/bench.jar")) //
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
-                .addSoftExclusions("-net.ccbluex.liquidbounce.**")
+//                .addSoftExclusions("-net.ccbluex.liquidbounce.**")
                 ;
     }
 }

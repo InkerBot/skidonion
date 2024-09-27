@@ -1,128 +1,138 @@
 package tech.skidonion.verification.crypto;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class ChaCha20 {
-    /*
-     * Key size in byte
-     */
-    public static final int KEY_SIZE = 32;
+    private static final byte[] magic_constant = "expand 32-byte k".getBytes(StandardCharsets.US_ASCII);
 
-    /*
-     * Nonce size in byte (reference implementation)
-     */
-    public static final int NONCE_SIZE_REF = 8;
+    // size 16
+    private final int[] keystream32 = new int[16];
+    private final byte[] keystream8 = new byte[64];
+    private final AtomicInteger position;
+    private long counter;
+    private final byte[] nonce;
+    // size 16
+    private final int[] state = new int[16];
 
-    /*
-     * Nonce size in byte (IETF draft)
-     */
-    public static final int NONCE_SIZE_IETF = 12;
+    public ChaCha20(byte[] key /*32 bytes*/, byte[] nonce /*12 bytes*/, long counter) {
+        this.state[0] = pack4(magic_constant, 0 * 4);
+        this.state[1] = pack4(magic_constant, 1 * 4);
+        this.state[2] = pack4(magic_constant, 2 * 4);
+        this.state[3] = pack4(magic_constant, 3 * 4);
+        this.state[4] = pack4(key, 0 * 4);
+        this.state[5] = pack4(key, 1 * 4);
+        this.state[6] = pack4(key, 2 * 4);
+        this.state[7] = pack4(key, 3 * 4);
+        this.state[8] = pack4(key, 4 * 4);
+        this.state[9] = pack4(key, 5 * 4);
+        this.state[10] = pack4(key, 6 * 4);
+        this.state[11] = pack4(key, 7 * 4);
 
-    private int[] matrix = new int[16];
+        // 64 bit counter initialized to zero by default.
 
+        this.state[12] = (int) (counter & 0x0000_0000_FFFF_FFFFL);
+        this.state[13] = pack4(nonce, 0 * 4) + (int) (counter >>> 32);
+        this.state[14] = pack4(nonce, 1 * 4);
+        this.state[15] = pack4(nonce, 2 * 4);
 
-    protected static int littleEndianToInt(byte[] bs, int i) {
-        return (bs[i] & 0xff) | ((bs[i + 1] & 0xff) << 8) | ((bs[i + 2] & 0xff) << 16) | ((bs[i + 3] & 0xff) << 24);
+        this.counter = counter;
+        this.nonce = nonce;
+        this.position = new AtomicInteger(64);
     }
 
-    protected static void intToLittleEndian(int n, byte[] bs, int off) {
-        bs[  off] = (byte)(n       );
-        bs[++off] = (byte)(n >>>  8);
-        bs[++off] = (byte)(n >>> 16);
-        bs[++off] = (byte)(n >>> 24);
+    private static int rotl32(int x, int n) {
+        return (x << n) | (x >>> (32 - n));
     }
 
-    protected static int ROTATE(int v, int c) {
-        return (v << c) | (v >>> (32 - c));
+    private static int pack4(byte[] a, int offset) {
+        int res = 0;
+        res |= (a[offset + 0] & 0xff) << 0 * 8;
+        res |= (a[offset + 1] & 0xff) << 1 * 8;
+        res |= (a[offset + 2] & 0xff) << 2 * 8;
+        res |= (a[offset + 3] & 0xff) << 3 * 8;
+        return res;
     }
 
-    protected static void quarterRound(int[] x, int a, int b, int c, int d) {
+    private static void unpack4(int src, byte[] dst, int offset) {
+        dst[offset + 0] = (byte) ((src >>> 0 * 8) & 0xff);
+        dst[offset + 1] = (byte) ((src >>> 1 * 8) & 0xff);
+        dst[offset + 2] = (byte) ((src >>> 2 * 8) & 0xff);
+        dst[offset + 3] = (byte) ((src >>> 3 * 8) & 0xff);
+    }
+
+    private static void QUARTERROUND(int[] x, int a, int b, int c, int d) {
         x[a] += x[b];
-        x[d] = ROTATE(x[d] ^ x[a], 16);
+        x[d] = rotl32(x[d] ^ x[a], 16);
         x[c] += x[d];
-        x[b] = ROTATE(x[b] ^ x[c], 12);
+        x[b] = rotl32(x[b] ^ x[c], 12);
         x[a] += x[b];
-        x[d] = ROTATE(x[d] ^ x[a], 8);
+        x[d] = rotl32(x[d] ^ x[a], 8);
         x[c] += x[d];
-        x[b] = ROTATE(x[b] ^ x[c], 7);
+        x[b] = rotl32(x[b] ^ x[c], 7);
     }
 
+    private void nextBlock() {
+        // This is where the crazy voodoo magic happens.
+        // Mix the bytes a lot and hope that nobody finds out how to undo it.
 
-    public ChaCha20(byte[] key, byte[] nonce, int counter){
-
-        if (key.length != KEY_SIZE) {
-            throw new RuntimeException();
+        System.arraycopy(this.state, 0, this.keystream32, 0, 16);
+        for (int i = 0; i < 10; i++) {
+            QUARTERROUND(this.keystream32, 0, 4, 8, 12);
+            QUARTERROUND(this.keystream32, 1, 5, 9, 13);
+            QUARTERROUND(this.keystream32, 2, 6, 10, 14);
+            QUARTERROUND(this.keystream32, 3, 7, 11, 15);
+            QUARTERROUND(this.keystream32, 0, 5, 10, 15);
+            QUARTERROUND(this.keystream32, 1, 6, 11, 12);
+            QUARTERROUND(this.keystream32, 2, 7, 8, 13);
+            QUARTERROUND(this.keystream32, 3, 4, 9, 14);
         }
 
-        this.matrix[ 0] = 0x61707865;
-        this.matrix[ 1] = 0x3320646e;
-        this.matrix[ 2] = 0x79622d32;
-        this.matrix[ 3] = 0x6b206574;
-        this.matrix[ 4] = littleEndianToInt(key, 0);
-        this.matrix[ 5] = littleEndianToInt(key, 4);
-        this.matrix[ 6] = littleEndianToInt(key, 8);
-        this.matrix[ 7] = littleEndianToInt(key, 12);
-        this.matrix[ 8] = littleEndianToInt(key, 16);
-        this.matrix[ 9] = littleEndianToInt(key, 20);
-        this.matrix[10] = littleEndianToInt(key, 24);
-        this.matrix[11] = littleEndianToInt(key, 28);
-
-        if (nonce.length == NONCE_SIZE_REF) {        // reference implementation
-            this.matrix[12] = 0;
-            this.matrix[13] = 0;
-            this.matrix[14] = littleEndianToInt(nonce, 0);
-            this.matrix[15] = littleEndianToInt(nonce, 4);
-
-        } else if (nonce.length == NONCE_SIZE_IETF) {
-            this.matrix[12] = counter;
-            this.matrix[13] = littleEndianToInt(nonce, 0);
-            this.matrix[14] = littleEndianToInt(nonce, 4);
-            this.matrix[15] = littleEndianToInt(nonce, 8);
-        } else {
-            throw new RuntimeException();
+        for (int i = 0; i < 16; i++) this.keystream32[i] += this.state[i];
+        for (int i = 0; i < 16; i++) unpack4(this.keystream32[i], this.keystream8, i * 4);
+//        int lower = state[12];
+//        int higher = state[13];
+        ++counter;
+        ++state[12];
+        if (0 == state[12]) {
+            ++state[13];
         }
     }
 
-    public synchronized void encrypt(byte[] dst, byte[] src, int len) {
-        int[] x = new int[16];
-        byte[] output = new byte[64];
-        int i, dpos = 0, spos = 0;
-
-        while (len > 0) {
-            for (i = 16; i-- > 0; ) x[i] = this.matrix[i];
-            for (i = 20; i > 0; i -= 2) {
-                quarterRound(x, 0, 4,  8, 12);
-                quarterRound(x, 1, 5,  9, 13);
-                quarterRound(x, 2, 6, 10, 14);
-                quarterRound(x, 3, 7, 11, 15);
-                quarterRound(x, 0, 5, 10, 15);
-                quarterRound(x, 1, 6, 11, 12);
-                quarterRound(x, 2, 7,  8, 13);
-                quarterRound(x, 3, 4,  9, 14);
-            }
-            for (i = 16; i-- > 0; ) x[i] += this.matrix[i];
-            for (i = 16; i-- > 0; ) intToLittleEndian(x[i], output, 4 * i);
-
-            // TODO: (1) check block count 32-bit vs 64-bit; (2) java int is signed!
-            this.matrix[12] += 1;
-            if (this.matrix[12] == 0) {
-                this.matrix[13] += 1;
-            }
-            if (len <= 64) {
-                for (i = len; i-- > 0; ) {
-                    dst[i + dpos] = (byte) (src[i + spos] ^ output[i]);
+    public byte[] xor(byte[] src) {
+        synchronized (this.position) {
+            byte[] dst = new byte[src.length];
+            for (int i = 0; i < src.length; i++) {
+                if (this.position.get() >= 64) {
+                    this.nextBlock();
+                    this.position.set(0);
                 }
-                return;
+                dst[i] = (byte) (src[i] ^ this.keystream8[this.position.get()]);
+                this.position.incrementAndGet();
             }
-            for (i = 64; i-- > 0; ) {
-                dst[i + dpos] = (byte) (src[i + spos] ^ output[i]);
-            }
-            len -= 64;
-            spos += 64;
-            dpos += 64;
+            return dst;
         }
     }
 
-    public void decrypt(byte[] dst, byte[] src, int len) {
-        encrypt(dst, src, len);
+    public void skip(long length) {
+        synchronized (this.position) {
+            for (int i = 0; i < length; i++) {
+                if (this.position.get() >= 64) {
+                    this.nextBlock();
+                    this.position.set(0);
+                }
+                this.position.incrementAndGet();
+            }
+        }
     }
 
+    public long getCounter() {
+        return counter;
+    }
+
+    public void setCounter(long counter) {
+        this.counter = counter;
+        this.state[12] = (int) (counter & 0x0000_0000_FFFF_FFFFL);
+        this.state[13] = pack4(nonce, 0 * 4) + (int) (counter >>> 32);
+    }
 }

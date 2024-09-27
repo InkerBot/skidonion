@@ -19,6 +19,9 @@ import tech.skidonion.obfuscator.crypto.ChaCha20;
 import tech.skidonion.obfuscator.inline.Inline;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
+import tech.skidonion.obfuscator.transformer.generic.poly.model.Context;
+import tech.skidonion.obfuscator.transformer.generic.poly.model.PolymorphicEngine;
+import tech.skidonion.obfuscator.transformer.generic.poly.visitors.InstrumentsVisitor;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.*;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.bytecode.PreprocessorRunner;
 import tech.skidonion.obfuscator.transformer.impl.nativeobfuscation.caches.CachedFieldInfo;
@@ -44,6 +47,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,6 +107,8 @@ public class NativeObfuscation extends Transformer {
     private final byte[] sessionKey = new byte[16];
     private final byte[] nonce = new byte[12];
     private final Map<String, byte[]> magicKey = new HashMap<>();
+
+    private Context polyChainContext;
 
     private void init() {
         stringPool = new StringPool();
@@ -171,7 +177,9 @@ public class NativeObfuscation extends Transformer {
                     }
                     Object ignoreTryCatch = map.get("manualTryCatch");
                     if (ignoreTryCatch instanceof Boolean) {
-                        clinitIgnoreTryCatch = (boolean) ignoreTryCatch;
+                        if (!DEBUG) {
+                            clinitIgnoreTryCatch = (boolean) ignoreTryCatch;
+                        }
                     }
                     Object lock = map.get("verificationLock");
                     if (lock instanceof String) {
@@ -202,7 +210,7 @@ public class NativeObfuscation extends Transformer {
                                 .map(MethodWrapper::getMethodNode);
                 List<MethodNode> methods = antiLowIq.collect(Collectors.toList());
                 if (methods.size() <= 1 && displayName != null) {
-                        WARN(TRANSLATION("phantom-shield-x.native.no-methods"), displayName);
+                    WARN(TRANSLATION("phantom-shield-x.native.no-methods"), displayName);
                 }
                 methods.stream().filter(MethodProcessor::shouldProcess).forEach(PreprocessorRunner::preprocess);
 
@@ -255,7 +263,9 @@ public class NativeObfuscation extends Transformer {
                         }
                         Object ignoreTryCatch = map.get("manualTryCatch");
                         if (ignoreTryCatch instanceof Boolean) {
-                            context.manualTryCatch = (boolean) ignoreTryCatch;
+                            if (!DEBUG) {
+                                context.manualTryCatch = (boolean) ignoreTryCatch;
+                            }
                         }
                         Object lock = map.get("verificationLock");
                         if (lock instanceof String) {
@@ -270,7 +280,9 @@ public class NativeObfuscation extends Transformer {
                             shouldVirtualize = true;
                             context.virtualization = clinitVirtualization;
                         }
-                        context.manualTryCatch = clinitIgnoreTryCatch;
+                        if (!DEBUG) {
+                            context.manualTryCatch = clinitIgnoreTryCatch;
+                        }
                         BufferContext buffer;
                         if ((buffer = verificationBuffer.get(clinitLock)) != null) {
                             context.verificationLock = buffer;
@@ -378,7 +390,9 @@ public class NativeObfuscation extends Transformer {
                     }
                     Object ignoreTryCatch = map.get("manualTryCatch");
                     if (ignoreTryCatch instanceof Boolean) {
-                        context.manualTryCatch = (boolean) ignoreTryCatch;
+                        if (!DEBUG) {
+                            context.manualTryCatch = (boolean) ignoreTryCatch;
+                        }
                     }
                     Object lock = map.get("verificationLock");
                     if (lock instanceof String) {
@@ -427,8 +441,7 @@ public class NativeObfuscation extends Transformer {
                     CustomClassWriter classWriter = new CustomClassWriter(Opcodes.ASM9 | ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, obfuscator);
                     classWrapper.getClassNode().accept(classWriter);
                     byte[] rawData = classWriter.toByteArray();
-                    byte[] dst = new byte[rawData.length];
-                    crypto.encrypt(dst, rawData, rawData.length);
+                    byte[] dst = crypto.xor(rawData);
                     List<Byte> data = new ArrayList<>(dst.length);
                     for (byte b : dst) {
                         data.add(b);
@@ -541,6 +554,16 @@ public class NativeObfuscation extends Transformer {
             }
         }
 
+        if (this.isVerificationEnable()) {
+            FileUtils.copyResource("sources/ed25519.h", cppDir);
+            FileUtils.copyResource("sources/fe.h", cppDir);
+            FileUtils.copyResource("sources/fixedint.h", cppDir);
+            FileUtils.copyResource("sources/ge.h", cppDir);
+            FileUtils.copyResource("sources/precomp_data.h", cppDir);
+            FileUtils.copyResource("sources/sc.h", cppDir);
+            FileUtils.copyResource("sources/sha512.h", cppDir);
+        }
+
         compiler.compile(StringUtils.createStringMap("loader_path", nativeDir));
 
         if (!print_instructions.isEnable()) {
@@ -561,6 +584,7 @@ public class NativeObfuscation extends Transformer {
         byte[] verifyPublicKey;
         String verifyVersion;
         boolean verifyShouldCheckHwid;
+        long verifyPolyKey;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
             if (softwareInformation == null || softwareInformation.getAsJsonPrimitive("code").getAsLong() != 0L) {
@@ -577,6 +601,7 @@ public class NativeObfuscation extends Transformer {
                 JsonObject object = magic_key.getAsJsonObject();
                 magicKey.put(object.getAsJsonPrimitive("rank_name").getAsString(), Base64.getDecoder().decode(object.getAsJsonPrimitive("magic_key").getAsString()));
             }
+            verifyPolyKey = entity.getAsJsonPrimitive("poly_key").getAsLong();
 
             // inject verification class
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
@@ -597,6 +622,7 @@ public class NativeObfuscation extends Transformer {
             injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
             verifySoftwareId = -1L;
+            verifyPolyKey = -1L;
             verifyPublicKey = new byte[0];
             verifyVersion = "";
             verifyShouldCheckHwid = true;
@@ -845,6 +871,7 @@ public class NativeObfuscation extends Transformer {
                             case "tech/skidonion/obfuscator/inline/Wrapper.getExpiredDates()Ljava/util/Map;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.hasRole(Ljava/lang/String;)Z":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUsername()Ljava/util/Optional;":
+                            case "tech/skidonion/obfuscator/inline/Wrapper.getNickname()Ljava/util/Optional;":
                             case "tech/skidonion/obfuscator/inline/Wrapper.getUserId()Ljava/util/Optional;": {
                                 if (!opt.isPresent() || (Integer.parseInt(opt.get()) ^ 173359771) != 2082061244)
                                     break;
@@ -872,6 +899,9 @@ public class NativeObfuscation extends Transformer {
 
         // then process for inline
 
+        // poly
+        PolymorphicEngine engine = new PolymorphicEngine(new Random(verifyPolyKey));
+        polyChainContext = engine.generateChain();
 
         classWrappers.forEach(classWrapper -> {
             final boolean classMatch = match(classWrapper);
@@ -1035,7 +1065,17 @@ public class NativeObfuscation extends Transformer {
                                 }
                                 case "tech/skidonion/verification/utils/Internals.publicKey()[B": {
                                     iterator.remove();
-                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(verifyPublicKey)) {
+                                    int[] transform = polyChainContext.getForward().transform(VerifyUtils.decodePublicKey(verifyPublicKey));
+                                    byte[] bytes = new byte[transform.length * 4];
+                                    for (int j = 0; j < transform.length; j++) {
+                                        int i = transform[j];
+                                        bytes[j * 4] = (byte) (i & 0xff);
+                                        bytes[j * 4 + 1] = (byte) (i >> 8 & 0xff);
+                                        bytes[j * 4 + 2] = (byte) (i >> 16 & 0xff);
+                                        bytes[j * 4 + 3] = (byte) (i >> 24 & 0xff);
+                                    }
+
+                                    for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(bytes)) {
                                         iterator.add(abstractInsnNode);
                                     }
                                     break;
@@ -1075,6 +1115,15 @@ public class NativeObfuscation extends Transformer {
                                     iterator.add(new LdcInsnNode(verifyVersion));
                                     break;
                                 }
+                                case "tech/skidonion/verification/utils/Internals.polyXor([I[B)V": {
+                                    iterator.remove();
+                                    InstrumentsVisitor visitor = new InstrumentsVisitor(ASMUtils.computeMaxLocals(methodWrapper.getMethodNode()));
+                                    InsnList instructions = visitor.visit(polyChainContext);
+                                    for (AbstractInsnNode insn : instructions) {
+                                        iterator.add(insn);
+                                    }
+                                    break;
+                                }
                                 case "tech/skidonion/verification/utils/Internals.decryptClasses(I[B)V": {
                                     iterator.remove();
                                     int locals = ASMUtils.computeMaxLocals(methodWrapper.getMethodNode());
@@ -1093,8 +1142,8 @@ public class NativeObfuscation extends Transformer {
                                         iterator.add(abstractInsnNode);
                                     }
 
-                                    iterator.add(new IntInsnNode(SIPUSH, 4096));
-                                    iterator.add(new MethodInsnNode(INVOKESPECIAL, "tech/skidonion/verification/crypto/ChaCha20", "<init>", "([B[BI)V", false));
+                                    iterator.add(new LdcInsnNode(4096L));
+                                    iterator.add(new MethodInsnNode(INVOKESPECIAL, "tech/skidonion/verification/crypto/ChaCha20", "<init>", "([B[BJ)V", false));
                                     iterator.add(new VarInsnNode(ASTORE, cryptoIndex));
                                     iterator.add(new VarInsnNode(ILOAD, hashIndex));
                                     LabelNode defaultLabel = new LabelNode();
@@ -1119,16 +1168,10 @@ public class NativeObfuscation extends Transformer {
                                         for (PriorityObject<ClassWrapper> cw : encryptedClasses.get(roleName).getSecond()) {
                                             iterator.add(new MethodInsnNode(INVOKESTATIC, INLINE_DECLARE, "_encrypt_" + cw.getObject().getName(), "()[B", false));
                                             iterator.add(new VarInsnNode(ASTORE, srcIndex));
-                                            iterator.add(new VarInsnNode(ALOAD, srcIndex));
-                                            iterator.add(new InsnNode(ARRAYLENGTH));
-                                            iterator.add(new IntInsnNode(NEWARRAY, T_BYTE));
-                                            iterator.add(new VarInsnNode(ASTORE, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, cryptoIndex));
-                                            iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, srcIndex));
-                                            iterator.add(new VarInsnNode(ALOAD, srcIndex));
-                                            iterator.add(new InsnNode(ARRAYLENGTH));
-                                            iterator.add(new MethodInsnNode(INVOKEVIRTUAL, "tech/skidonion/verification/crypto/ChaCha20", "decrypt", "([B[BI)V", false));
+                                            iterator.add(new MethodInsnNode(INVOKEVIRTUAL, "tech/skidonion/verification/crypto/ChaCha20", "xor", "([B)[B", false));
+                                            iterator.add(new VarInsnNode(ASTORE, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new VarInsnNode(ALOAD, dstIndex));
                                             iterator.add(new InsnNode(ARRAYLENGTH));
@@ -1258,5 +1301,9 @@ public class NativeObfuscation extends Transformer {
 
     public Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> getEncryptedClasses() {
         return encryptedClasses;
+    }
+
+    public Context getPolyChainContext() {
+        return polyChainContext;
     }
 }

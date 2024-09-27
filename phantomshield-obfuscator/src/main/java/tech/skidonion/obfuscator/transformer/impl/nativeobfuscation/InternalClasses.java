@@ -42,12 +42,6 @@ public class InternalClasses {
         }
         {
             ClassNode node = new ClassNode();
-            ClassReader reader = new ClassReader(EdDSAEngineDump.dump());
-            reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            classes.add(transformer.injectClass(node));
-        }
-        {
-            ClassNode node = new ClassNode();
             ClassReader reader = new ClassReader(ChaCha20Dump.dump());
             reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             classes.add(transformer.injectClass(node));

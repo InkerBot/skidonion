@@ -83,6 +83,19 @@ public class DebugInformationRemover extends Transformer {
                                     kotlin_reference.incrementAndGet();
                                 }
                             }
+
+//    kotlin.jvm.internal.Intrinsics throwUninitializedPropertyAccessException(java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkExpressionValueIsNotNull(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkFieldIsNotNull(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkFieldIsNotNull(java.lang.Object, java.lang.String, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkNotNull(java.lang.Object) and
+//    kotlin.jvm.internal.Intrinsics checkNotNull(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkNotNullExpressionValue(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkNotNullParameter(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkParameterIsNotNull(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkReturnedValueIsNotNull(java.lang.Object, java.lang.String) and
+//    kotlin.jvm.internal.Intrinsics checkReturnedValueIsNotNull(java.lang.Object,java.lang.String,java.lang.String)
+//    ;
                         }
                     }
                     modifier.apply(method);

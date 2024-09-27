@@ -18,9 +18,11 @@ public class Tracer {
     private final static BigInteger EXP = new BigInteger(1, PRIVATE_KEY);
     private final static BigInteger MOD = new BigInteger(1, MODULES);
     private final File input;
+    private final boolean useOldCrypto;
 
-    public Tracer(File input) {
+    public Tracer(File input, boolean useOldCrypto) {
         this.input = input;
+        this.useOldCrypto = useOldCrypto;
     }
 
     /**
@@ -99,15 +101,21 @@ public class Tracer {
             stream.read(encoded_nonce);
             BigInteger inonce = new BigInteger(1, encoded_nonce);
             byte[] _nonce = inonce.modPow(EXP, MOD).toByteArray();
-            byte[] nonce = new byte[8];
+            byte[] nonce = new byte[useOldCrypto ? 8 : 12];
             int computed_nonce_length = _nonce.length - 8;
             System.arraycopy(_nonce, Math.max(computed_nonce_length, 0), nonce, computed_nonce_length < 0 ? -computed_nonce_length : 0, Math.min(8, 8 + computed_nonce_length));
             int length = stream.readInt();
             byte[] encoded_data = new byte[length];
             stream.read(encoded_data);
-            byte[] data = new byte[encoded_data.length];
-            ChaCha20 crypto = new ChaCha20(key, nonce, 0);
-            crypto.decrypt(data, encoded_data, data.length);
+            byte[] data;
+            if (useOldCrypto) {
+                data = new byte[encoded_data.length];
+                ChaCha20 crypto = new ChaCha20(key, nonce, 0);
+                crypto.decrypt(data, encoded_data, data.length);
+            } else {
+                tech.skidonion.obfuscator.trace.v2.ChaCha20 crypto = new tech.skidonion.obfuscator.trace.v2.ChaCha20(key, nonce, 0);
+                data = crypto.xor(encoded_data);
+            }
             return new String(data);
         } catch (ChaCha20.WrongNonceSizeException | IOException | ChaCha20.WrongKeySizeException e) {
             throw new RuntimeException(e);

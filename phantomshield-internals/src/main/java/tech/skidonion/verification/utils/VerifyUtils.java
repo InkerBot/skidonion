@@ -9,14 +9,13 @@ import tech.skidonion.verification.json.JsonArray;
 import tech.skidonion.verification.json.JsonObject;
 import tech.skidonion.verification.json.JsonValue;
 
-import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 
@@ -27,6 +26,22 @@ public class VerifyUtils {
     private static Map<Integer, byte[]> CLOUD_CONSTANT_MAP;
     @NativeObfuscation.Inline
     private static Map<String, LocalDateTime> EXPIRED_DATE;
+    @NativeObfuscation.Inline
+    private static byte[] NONCE;
+    @NativeObfuscation.Inline
+    private static ChaCha20 CRYPTO;
+    @NativeObfuscation.Inline
+    private static String VERIFY_TOKEN;
+    @NativeObfuscation.Inline
+    private static byte[] KEY;
+    @NativeObfuscation.Inline
+    private static String USERNAME;
+    @NativeObfuscation.Inline
+    private static long USER_ID;
+    @NativeObfuscation.Inline
+    private static byte[] MAGIC_KEY;
+    @NativeObfuscation.Inline
+    private static String NICKNAME;
 
     @NativeObfuscation.Inline
     @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.TIGER_WHITE, manualTryCatch = true)
@@ -40,22 +55,27 @@ public class VerifyUtils {
         int r = RANDOM.nextInt();
         byte result = -1;
         Map<String, String> headers = new HashMap<>();
-        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
+        if (VERIFY_TOKEN != null) headers.put("verify-token", VERIFY_TOKEN);
         Map<String, String> params = new HashMap<>();
         try {
             params.put("username", URLEncoder.encode(username));
             params.put("password", URLEncoder.encode(password));
             params.put("software_id", String.valueOf(Internals.softwareId()));
 
-            BigInteger privateKey = new BigInteger(1536, RANDOM);
-            BigInteger m = new BigInteger(2048, RANDOM);
-            BigInteger q = new BigInteger(1024, RANDOM);
-            BigInteger p = q.modPow(privateKey, m);
-            params.put("p", URLEncoder.encode(Base64.encode(p.toByteArray())));
-            params.put("q", URLEncoder.encode(Base64.encode(q.toByteArray())));
-            params.put("m", URLEncoder.encode(Base64.encode(m.toByteArray())));
+
+            ByteBuffer keypairBuffer = ByteBuffer.allocateDirect(32 + 64);
+            byte[] publicKey = new byte[32];
+            RANDOM.nextBytes(publicKey);
+            keypairBuffer.put(publicKey);
+            Internals.ed25519generate(keypairBuffer);
+            byte[] privateKey = new byte[64];
+            keypairBuffer.position(0);
+            keypairBuffer.get(publicKey);
+            keypairBuffer.get(privateKey);
+            params.put("s", URLEncoder.encode(Base64.encode(publicKey)));
+
             params.put("e", URLEncoder.encode(String.valueOf(useHashedPassword)));
-            String res = HttpUtils.post(Internals.verificationServer() + "api/verify/login", params, headers);
+            String res = HttpUtils.post(Internals.verificationServer() + "api/v2/verify/login", params, headers);
             Inline.trycatch();
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();
@@ -64,23 +84,49 @@ public class VerifyUtils {
                     JsonObject entity = json.get("entity").asObject();
                     JsonObject data = entity.get("data").asObject();
                     String signature = entity.getString("signature", "");
-                    Internals.setUserId(data.getLong("uid", -1));
-                    Internals.setUsername(username);
-                    Internals.setVerifyToken(data.getString("jwt", ""));
+                    USER_ID = (data.getLong("uid", -1));
+                    USERNAME = (username);
+                    VERIFY_TOKEN = (data.getString("jwt", ""));
+                    NICKNAME = (data.getString("nickname", ""));
 
-                    EdDSAEngine verify = new EdDSAEngine();
-                    verify.initVerify(new EdDSAPublicKey(Internals.publicKey()));
-                    if (!verify.verify(data.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
+
+                    byte[] message = data.toString().getBytes(StandardCharsets.UTF_8);
+                    int messageLen = message.length;
+                    ByteBuffer verifyBuffer = ByteBuffer.allocateDirect(32 * 4 + 64 + 4 + messageLen);
+                    verifyBuffer.put(Internals.publicKey());
+                    verifyBuffer.put(Base64.decode(signature));
+                    verifyBuffer.put((byte) (messageLen & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 8 & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 16 & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 24 & 0xff));
+                    verifyBuffer.put(message);
+
+                    if (!Internals.ed25519verify(verifyBuffer)) {
                         result = -2;
                         return r & 0xFFFF00FF | (result & 0xFF) << 8;
                     }
-                    Internals.setNonce(Base64.decode(data.getString("n", "==")));
-                    BigInteger s = new BigInteger(1, Base64.decode(data.getString("p", "=="))).modPow(privateKey, m);
-                    byte[] src = s.toByteArray();
+
+                    byte[] raw = Base64.decode(data.getString("n", "=="));
+                    byte[] decoded = new byte[12];
+                    if (raw.length == 48) {
+                        int[] encoded = new int[12];
+                        for (int i = 0; i < 12; i++)
+                            encoded[i] = (raw[i * 4] & 0xff) | (raw[i * 4 + 1] & 0xff) << 8 | (raw[i * 4 + 2] & 0xff) << 16 | (raw[i * 4 + 3] & 0xff) << 24;
+                        Internals.polyXor(encoded, decoded);
+                    }
+
+                    NONCE = (decoded);
+
+                    ByteBuffer exchangeBuffer = ByteBuffer.allocateDirect(32 * 4 + 64);
+                    exchangeBuffer.put(Internals.publicKey());
+                    exchangeBuffer.put(privateKey);
+                    Internals.ed25519exchange(exchangeBuffer);
+
                     byte[] key = new byte[32];
-                    System.arraycopy(src, src.length - 32, key, 0, 32);
-                    Internals.setKey(key);
-                    Internals.setCrypto(new ChaCha20(Internals.getKey(), Internals.getNonce(), 0));
+                    exchangeBuffer.position(32 + 12);
+                    exchangeBuffer.get(key);
+                    KEY = (key);
+                    CRYPTO = (new ChaCha20(KEY, NONCE, 0));
 
                     JsonArray roles = data.get("roles").asArray();
                     for (int i = 0; i < roles.size(); i++) {
@@ -121,7 +167,7 @@ public class VerifyUtils {
     @NativeObfuscation.Inline
     private static Optional<Byte> requestInformation() {
         Map<String, String> headers = new HashMap<>();
-        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
+        if (VERIFY_TOKEN != null) headers.put("verify-token", VERIFY_TOKEN);
         Map<String, String> params = new HashMap<>();
         JsonObject p = Json.object();
         p.add("t", System.currentTimeMillis());
@@ -134,12 +180,11 @@ public class VerifyUtils {
         p.add("h", hwid[0]);
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] dst = new byte[src.length];
-        ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
+        byte[] dst = CRYPTO.xor(src);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
-            String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            String res = HttpUtils.post(Internals.verificationServer() + "api/v2/verify/heartbeat", params, headers);
             Inline.trycatch();
             long lastTimestamp = System.currentTimeMillis();
             if (res != null) {
@@ -151,8 +196,7 @@ public class VerifyUtils {
                     String signature = entity.getString("signature", "");
 
                     src = Base64.decode(data);
-                    dst = new byte[src.length];
-                    ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
+                    dst = CRYPTO.xor(src);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
 
                     long delay = System.currentTimeMillis() - lastTimestamp;
@@ -169,18 +213,27 @@ public class VerifyUtils {
                     array[1] = RANDOM.nextInt();
                     array[2] = RANDOM.nextInt();
                     array[3] = rand;
-                    array[4] = result.getString("h","==");
+                    array[4] = result.getString("h", "==");
                     MachineIDUtils.check(array);
-                    if ((((long) array[0] >> 32 ^ rand) & 0b1) != 1 && Internals.shouldCheckHwid()) {
+                    if (((((Number) array[0]).longValue() >> 32 ^ rand) & 0b1) != 1 && Internals.shouldCheckHwid()) {
                         return Optional.of((byte) -2);
                     }
 
-                    EdDSAEngine verify = new EdDSAEngine();
-                    verify.initVerify(new EdDSAPublicKey(Internals.publicKey()));
-                    if (!verify.verify(result.toString().getBytes(StandardCharsets.UTF_8), Base64.decode(signature))) {
+                    byte[] message = result.toString().getBytes(StandardCharsets.UTF_8);
+                    int messageLen = message.length;
+                    ByteBuffer verifyBuffer = ByteBuffer.allocateDirect(32 * 4 + 64 + 4 + messageLen);
+                    verifyBuffer.put(Internals.publicKey());
+                    verifyBuffer.put(Base64.decode(signature));
+                    verifyBuffer.put((byte) (messageLen & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 8 & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 16 & 0xff));
+                    verifyBuffer.put((byte) (messageLen >> 24 & 0xff));
+                    verifyBuffer.put(message);
+
+                    if (!Internals.ed25519verify(verifyBuffer)) {
                         return Optional.of((byte) -3);
                     }
-                    Internals.setMagicKey(Base64.decode(result.getString("m", "==")));
+                    MAGIC_KEY = (Base64.decode(result.getString("m", "==")));
                     for (JsonValue c : result.get("c").asArray()) {
                         JsonObject mem = (JsonObject) c;
                         CLOUD_CONSTANT_MAP.put(Integer.parseInt(mem.getString("h", "-1")), Base64.decode(mem.getString("e", "==")));
@@ -188,9 +241,10 @@ public class VerifyUtils {
                     Internals.initBuffer();
                     for (JsonValue k : result.get("k").asArray()) {
                         JsonObject mem = (JsonObject) k;
+                        int hash = Integer.parseInt(mem.getString("h", "-1"));
                         byte[] des = new byte[32];
                         int magicKey = 0x0;
-                        byte[] magic = Internals.getMagicKey();
+                        byte[] magic = MAGIC_KEY;
                         int base = 0x0;
                         for (int i = 0; i < 16; i++) {
                             base = base | magic[i] & 0xFF;
@@ -201,10 +255,9 @@ public class VerifyUtils {
                                 base <<= 8;
                             }
                         }
-                        ChaCha20 crypto = new ChaCha20(Internals.getKey(), Internals.getNonce(), magicKey);
+                        ChaCha20 crypto = new ChaCha20(KEY, NONCE, (long) magicKey * hash * 37);
                         byte[] src_key = Base64.decode(mem.getString("e", "=="));
-                        byte[] magic2 = new byte[src_key.length];
-                        crypto.decrypt(magic2, src_key, src_key.length);
+                        byte[] magic2 = crypto.xor(src_key);
                         byte[] session = Internals.sessionKey();
 
                         for (int i = des.length - 1; i >= 0; i--) {
@@ -220,7 +273,7 @@ public class VerifyUtils {
                         des[0] = des[des.length - 1];
                         des[des.length - 1] = temp;
 
-                        Internals.decryptClasses(Integer.parseInt(mem.getString("h", "-1")), des);
+                        Internals.decryptClasses(hash, des);
                     }
                 }
                 return Optional.of(code);
@@ -235,19 +288,18 @@ public class VerifyUtils {
     private static void heartbeat() {
         try {
             Map<String, String> headers = new HashMap<>();
-            if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
+            if (VERIFY_TOKEN != null) headers.put("verify-token", VERIFY_TOKEN);
             Map<String, String> params = new HashMap<>();
             JsonObject p = Json.object();
             p.add("t", System.currentTimeMillis());
             p.add("_", Json.NULL);
 
             byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
-            byte[] dst = new byte[src.length];
-            ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
+            byte[] dst = CRYPTO.xor(src);
 
             params.put("data", URLEncoder.encode(Base64.encode(dst)));
 
-            String res = HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            String res = HttpUtils.post(Internals.verificationServer() + "api/v2/verify/heartbeat", params, headers);
             Inline.trycatch();
             if (res != null) {
                 JsonObject json = Json.parse(res).asObject();
@@ -256,8 +308,7 @@ public class VerifyUtils {
                     JsonObject entity = json.get("entity").asObject();
                     String data = entity.getString("data", "==");
                     src = Base64.decode(data);
-                    dst = new byte[src.length];
-                    ((ChaCha20) Internals.getCrypto()).decrypt(dst, src, src.length);
+                    dst = CRYPTO.xor(src);
                     JsonObject result = Json.parse(new String(dst, StandardCharsets.UTF_8)).asObject();
                     if (result.get("b") != null) {
                         System.exit(0);
@@ -275,7 +326,7 @@ public class VerifyUtils {
     @NativeObfuscation.Inline
     public static void setAsSuspected(String reason) {
         Map<String, String> headers = new HashMap<>();
-        if (Internals.getVerifyToken() != null) headers.put("verify-token", Internals.getVerifyToken());
+        if (VERIFY_TOKEN != null) headers.put("verify-token", VERIFY_TOKEN);
 
         Map<String, String> params = new HashMap<>();
         JsonObject p = Json.object();
@@ -284,12 +335,11 @@ public class VerifyUtils {
         p.add("r", reason == null ? "主动风控" : reason);
 
         byte[] src = p.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] dst = new byte[src.length];
-        ((ChaCha20) Internals.getCrypto()).encrypt(dst, src, src.length);
+        byte[] dst = CRYPTO.xor(src);
 
         params.put("data", URLEncoder.encode(Base64.encode(dst)));
         try {
-            HttpUtils.post(Internals.verificationServer() + "api/verify/heartbeat", params, headers);
+            HttpUtils.post(Internals.verificationServer() + "api/v2/verify/heartbeat", params, headers);
             Inline.trycatch();
         } catch (Exception ignore) {
         }
@@ -307,7 +357,7 @@ public class VerifyUtils {
             return Optional.empty();
         }
         int magicKey = 0x0;
-        byte[] magic = Internals.getMagicKey();
+        byte[] magic = MAGIC_KEY;
         int base = 0x0;
         for (int i = 0; i < 16; i++) {
             base = base | magic[i] & 0xFF;
@@ -318,15 +368,19 @@ public class VerifyUtils {
                 base <<= 8;
             }
         }
-        ChaCha20 crypto = new ChaCha20(Internals.getKey(), Internals.getNonce(), magicKey);
-        byte[] dst = new byte[encoded.length];
-        crypto.decrypt(dst, encoded, encoded.length);
+
+        ChaCha20 crypto = new ChaCha20(KEY, NONCE, (long) magicKey * hash * 13);
+//        byte[] dst = crypto.xor(encoded);
         int i = 0;
         int point = 0;
-        while (point < dst.length) {
-            short length = (short) ((dst[point++] & 0xFF) + ((dst[point++] & 0xFF) << 8));
+        while (point < encoded.length) {
+            short length = (short) ((crypto.xor(new byte[]{encoded[point++]})[0] & 0xFF) + ((crypto.xor(new byte[]{encoded[point++]})[0] & 0xFF) << 8));
             if (index == i++) {
-                return Optional.of(new String(dst, point, length, StandardCharsets.UTF_8));
+                byte[] dst = new byte[length];
+                System.arraycopy(encoded, point, dst, 0, length);
+                return Optional.of(new String(crypto.xor(dst), 0, length, StandardCharsets.UTF_8));
+            } else {
+                crypto.skip(length);
             }
             point += length;
         }
@@ -335,7 +389,7 @@ public class VerifyUtils {
 
     @NativeObfuscation.Inline
     public static String getVerifyToken() {
-        return Internals.getVerifyToken();
+        return VERIFY_TOKEN;
     }
 
     @NativeObfuscation.Inline
@@ -355,16 +409,24 @@ public class VerifyUtils {
 
     @NativeObfuscation.Inline
     public static Optional<Long> getUserId() {
-        if (Internals.getUserId() > 0) {
-            return Optional.of(Internals.getUserId());
+        if (USER_ID > 0) {
+            return Optional.of(USER_ID);
         }
         return Optional.empty();
     }
 
     @NativeObfuscation.Inline
     public static Optional<String> getUsername() {
-        if (Internals.getUsername() != null) {
-            return Optional.of(Internals.getUsername());
+        if (USERNAME != null) {
+            return Optional.of(USERNAME);
+        }
+        return Optional.empty();
+    }
+
+    @NativeObfuscation.Inline
+    public static Optional<String> getNickname() {
+        if (NICKNAME != null) {
+            return Optional.of(USERNAME);
         }
         return Optional.empty();
     }

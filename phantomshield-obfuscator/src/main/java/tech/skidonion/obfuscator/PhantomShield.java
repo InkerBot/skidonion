@@ -56,8 +56,9 @@ import static org.objectweb.asm.ClassReader.*;
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
+    public static final boolean DEBUG = false;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.1.7.2";
+    public static final String VERSION = "v0.2.0.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -89,7 +90,7 @@ public class PhantomShield {
         this.config = config;
     }
 
-    @NativeObfuscation(virtualize = NativeObfuscation.VirtualMachine.MUTATE_ONLY)
+    @NativeObfuscation()
     @SuppressWarnings("unchecked")
     public void process() {
         INFO("Java Home: {}", System.getProperty("java.home"));
@@ -444,7 +445,7 @@ public class PhantomShield {
                         reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
                         if (!classpath.containsKey(node.name)) {
-                            classpath.put(node.name, new ClassWrapper(this, node, true,  null));
+                            classpath.put(node.name, new ClassWrapper(this, node, true, null));
                         }
 
                     });
