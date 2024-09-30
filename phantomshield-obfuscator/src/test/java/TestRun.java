@@ -1,10 +1,10 @@
 import tech.skidonion.obfuscator.PhantomShield;
-import tech.skidonion.obfuscator.config.Config;
 import tech.skidonion.obfuscator.config.ConfigBuilder;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ResourceBundle;
 
 public class TestRun {
@@ -21,11 +21,11 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-//        renamer(builder);
+        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
 //        control_flow(builder);
-        native_obfuscation(builder);
+//        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
         System.exit(0);
@@ -52,21 +52,21 @@ public class TestRun {
 
     private static void renamer(ConfigBuilder builder) {
         builder.setRenamerEnable(true) //
-                .setRepackageSetting(false) //
+                .setRepackageSetting(true) //
                 .setRepackageNameSetting("skidonion") //
-//                .setPrefixNameSetting("狼牙") //
-//                .setDictionarySetting("Iil1") //
+                .setClassPrefixNameSetting("Class_") //
+                .setMethodPrefixNameSetting("method_") //
+                .setFieldPrefixNameSetting("field_") //
+                .setDictionarySetting("abcdefghijklmnopqrstuvwxyz") //
                 .setMinimumGeneratedNameLengthSetting(1) //
                 .setPrintMappingsSetting(true) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
-                .setMixinSupportSetting(true) //
+                .setMixinSupportSetting(false) //
                 .setMixinsJsonSetting("liquidbounce.forge.mixins.json") //
                 .setMixinsRefJsonSetting("liquidbounce.mixins.refmap.json") //
-                .addSubFilters("renamer","+net.ccbluex.liquidbounce.**", //
-                        "+net.ccbluex.liquidbounce.** * *(*)", //
-                        "+net.ccbluex.liquidbounce.** * *") //
+                .addSubFilters("renamer", "-com/gmail/olexorus/themis/api/**") //
         ;
     }
 
@@ -113,9 +113,10 @@ public class TestRun {
         return new ConfigBuilder() //
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test/input/bench.jar")) //
-                .setOutputJar(new File("test/output/bench.jar")) //
+                .setInputJar(new File("test/input/obf.jar")) //
+                .setOutputJar(new File("test/output/obf.jar")) //
 //                 .setLegacyCompileModeSetting(true)
+                .addLibrary(Paths.get("test", "libs").toString())
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
 //                .addSoftExclusions("-net.ccbluex.liquidbounce.**")

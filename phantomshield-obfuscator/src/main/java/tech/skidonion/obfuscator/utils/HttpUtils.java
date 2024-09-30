@@ -10,7 +10,7 @@ public class HttpUtils {
     /**
      * get请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      * @return 返回数据
      */
@@ -21,8 +21,8 @@ public class HttpUtils {
     /**
      * get请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
+     * @param url     请求目标
+     * @param params  请求参数
      * @param headers 请求头
      * @return 返回数据
      */
@@ -33,8 +33,8 @@ public class HttpUtils {
     /**
      * 异步get请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
+     * @param url          请求目标
+     * @param params       请求参数
      * @param onHttpResult 请求回调
      * @return 返回数据
      */
@@ -45,9 +45,9 @@ public class HttpUtils {
     /**
      * 异步get请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
-     * @param headers 请求头
+     * @param url          请求目标
+     * @param params       请求参数
+     * @param headers      请求头
      * @param onHttpResult 请求回调
      * @return 返回数据
      */
@@ -58,7 +58,7 @@ public class HttpUtils {
     /**
      * post请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      * @return 返回数据
      */
@@ -69,7 +69,7 @@ public class HttpUtils {
     /**
      * post请求
      *
-     * @param url 请求目标
+     * @param url     请求目标
      * @param params  请求参数
      * @param headers 请求头
      * @return 返回数据
@@ -81,7 +81,7 @@ public class HttpUtils {
     /**
      * 异步post请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      * @return 返回数据
      */
@@ -92,7 +92,7 @@ public class HttpUtils {
     /**
      * 异步post请求
      *
-     * @param url 请求目标
+     * @param url     请求目标
      * @param params  请求参数
      * @param headers 请求头
      */
@@ -103,7 +103,7 @@ public class HttpUtils {
     /**
      * put请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      * @return 返回数据
      */
@@ -114,7 +114,7 @@ public class HttpUtils {
     /**
      * put请求
      *
-     * @param url 请求目标
+     * @param url     请求目标
      * @param params  请求参数
      * @param headers 请求头
      * @return 返回数据
@@ -126,7 +126,7 @@ public class HttpUtils {
     /**
      * 异步put请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      */
     public static void putAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
@@ -136,7 +136,7 @@ public class HttpUtils {
     /**
      * 异步put请求
      *
-     * @param url 请求目标
+     * @param url     请求目标
      * @param params  请求参数
      * @param headers 请求头
      */
@@ -147,7 +147,7 @@ public class HttpUtils {
     /**
      * delete请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      * @return 返回数据
      */
@@ -158,7 +158,7 @@ public class HttpUtils {
     /**
      * delete请求
      *
-     * @param url 请求目标
+     * @param url     请求目标
      * @param params  请求参数
      * @param headers 请求头
      * @return 返回数据
@@ -170,7 +170,7 @@ public class HttpUtils {
     /**
      * 异步delete请求
      *
-     * @param url 请求目标
+     * @param url    请求目标
      * @param params 请求参数
      */
     public static void deleteAsyn(String url, Map<String, String> params, OnHttpResult onHttpResult) {
@@ -180,8 +180,8 @@ public class HttpUtils {
     /**
      * 异步delete请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
+     * @param url     请求目标
+     * @param params  请求参数
      * @param headers 请求头
      */
     public static void deleteAsyn(String url, Map<String, String> params, Map<String, String> headers, OnHttpResult onHttpResult) {
@@ -191,10 +191,10 @@ public class HttpUtils {
     /**
      * 表单请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
+     * @param url     请求目标
+     * @param params  请求参数
      * @param headers 请求头
-     * @param method 请求方式
+     * @param method  请求方式
      * @return 返回数据
      */
     public static String request(String url, String params, Map<String, String> headers, String method) {
@@ -204,10 +204,10 @@ public class HttpUtils {
     /**
      * http请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
-     * @param headers 请求头
-     * @param method 请求方式
+     * @param url       请求目标
+     * @param params    请求参数
+     * @param headers   请求头
+     * @param method    请求方式
      * @param mediaType 参数类型,application/json,application/x-www-form-urlencoded
      * @return 返回数据
      */
@@ -254,9 +254,9 @@ public class HttpUtils {
             InputStream input = conn.getInputStream();
             in = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
             String line;
-            while ((line = in.readLine()) != null){  
-            	sb.append(line).append(System.lineSeparator());
-            }  
+            while ((line = in.readLine()) != null) {
+                sb.append(line).append(System.lineSeparator());
+            }
             result = sb.toString();
             // 断开连接
             conn.disconnect();
@@ -286,10 +286,10 @@ public class HttpUtils {
     /**
      * 异步表单请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
-     * @param headers 请求头
-     * @param method 请求方式
+     * @param url          请求目标
+     * @param params       请求参数
+     * @param headers      请求头
+     * @param method       请求方式
      * @param onHttpResult 请求回调
      */
     public static void requestAsyn(String url, String params, Map<String, String> headers, String method, OnHttpResult onHttpResult) {
@@ -299,11 +299,11 @@ public class HttpUtils {
     /**
      * 异步http请求
      *
-     * @param url 请求目标
-     * @param params 请求参数
-     * @param headers 请求头
-     * @param method 请求方式
-     * @param mediaType 参数类型,application/json,application/x-www-form-urlencoded
+     * @param url          请求目标
+     * @param params       请求参数
+     * @param headers      请求头
+     * @param method       请求方式
+     * @param mediaType    参数类型,application/json,application/x-www-form-urlencoded
      * @param onHttpResult 请求回调
      */
     public static void requestAsyn(String url, String params, Map<String, String> headers, String method, String mediaType, OnHttpResult onHttpResult) {

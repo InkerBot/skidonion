@@ -44,7 +44,7 @@ public class ConfigBuilder {
     private boolean verificationEnableSetting = false;
     private boolean useInternalUserInterfaceSetting = true;
     private boolean verificationKeepAliveSetting = true;
-    private String verificationServerSetting = "https://uncrackable.me/";
+    private String verificationServerSetting = "https://skidonion.tech/";
     private String verificationUserIdSetting = "-1";
     private String verificationSoftwareIdSetting = "-1";
     private String verificationTokenSetting = "";
@@ -55,7 +55,11 @@ public class ConfigBuilder {
     private String repackageNameSetting = "skidonion/??????";
     private boolean printMappingsSetting = false;
     private String printMappingsFileSetting = "mappings.txt";
-    private String prefixNameSetting = "";
+
+    private String classPrefixNameSetting = "";
+    private String methodPrefixNameSetting = "";
+    private String fieldPrefixNameSetting = "";
+
     private final List<String> adaptResourcesSetting = new ArrayList<>();
     private boolean mixinSupportSetting = false;
     private String mixinsJsonSetting = "mixins.json";
@@ -216,7 +220,9 @@ public class ConfigBuilder {
 
             renamer.put("print_mappings", printMappingsSetting);
             renamer.put("print_mappings_file", printMappingsFileSetting);
-            renamer.put("prefix_name", prefixNameSetting);
+            renamer.put("class_prefix_name", classPrefixNameSetting);
+            renamer.put("method_prefix_name", methodPrefixNameSetting);
+            renamer.put("field_prefix_name", fieldPrefixNameSetting);
             renamer.put("repackage", repackageSetting);
             renamer.put("repackage_name", repackageNameSetting);
             renamer.put("adapt_resources", adaptResourcesSetting);
@@ -492,8 +498,8 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setPrefixNameSetting(String prefixNameSetting) {
-        this.prefixNameSetting = prefixNameSetting;
+    public ConfigBuilder setClassPrefixNameSetting(String classPrefixNameSetting) {
+        this.classPrefixNameSetting = classPrefixNameSetting;
         return this;
     }
 
@@ -615,6 +621,16 @@ public class ConfigBuilder {
 
     public ConfigBuilder addSoftExclusions(String... filters) {
         this.softExclusionsSettings.addAll(Arrays.asList(filters));
+        return this;
+    }
+
+    public ConfigBuilder setMethodPrefixNameSetting(String methodPrefixNameSetting) {
+        this.methodPrefixNameSetting = methodPrefixNameSetting;
+        return this;
+    }
+
+    public ConfigBuilder setFieldPrefixNameSetting(String fieldPrefixNameSetting) {
+        this.fieldPrefixNameSetting = fieldPrefixNameSetting;
         return this;
     }
 }

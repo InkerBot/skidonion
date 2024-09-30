@@ -22,8 +22,8 @@ class PolymorphicEngineTest implements Opcodes {
     @Test
     void testGenerateJavaSourceCode() {
         PolymorphicEngine engine = new PolymorphicEngine();
-        engine.setUserRandom(new Random(114514));
-
+//        engine.setUserRandom(new Random(114514));
+        engine.setUserRandom(new Random(-1837712953633948693L));
         String stringToObfuscate = "Hello World!";
         Context ctx = engine.transform(stringToObfuscate.getBytes(StandardCharsets.UTF_8));
         JavaVisitor visitor = new JavaVisitor();  // or any other target

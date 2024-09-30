@@ -27,7 +27,9 @@ public class Renamer extends Transformer {
     private final StringValue print_mappings_file = new StringValue("print_mappings_file", "mappings.txt");
     //    TODO: encrypted number line number for stack trace
 //    private final BooleanValue encrypted_number_line = new BooleanValue("encrypted_number_line", false);
-    public final StringValue prefix_name = new StringValue("prefix_name", "");
+    public final StringValue class_prefix_name = new StringValue("class_prefix_name", "");
+    public final StringValue method_prefix_name = new StringValue("method_prefix_name", "");
+    public final StringValue field_prefix_name = new StringValue("field_prefix_name", "");
     private final BooleanValue repackage = new BooleanValue("repackage", false);
     public final ClassPackageValue repackage_name = new ClassPackageValue("repackage_name", "skidonion/??????");
     private final StringArrayValue adapt_resources = new StringArrayValue("adapt_resources");
@@ -43,7 +45,7 @@ public class Renamer extends Transformer {
 
     public Renamer(String name) {
         super(name);
-        addSettings(print_mappings, print_mappings_file/*, encrypted_number_line*/, prefix_name, repackage, repackage_name, adapt_resources, mixin);
+        addSettings(print_mappings, print_mappings_file/*, encrypted_number_line*/, class_prefix_name, method_prefix_name, field_prefix_name, repackage, repackage_name, adapt_resources, mixin);
     }
 
 
@@ -58,7 +60,10 @@ public class Renamer extends Transformer {
     @Override
     public void preprocess() throws Exception {
         mapper = new Mapper(obfuscator, getClassWrappers(), getSoftExcludedClasses(), this);
-        mapper.setPrefixName(prefix_name.getValue());
+        mapper.setClassPrefixName(class_prefix_name.getValue());
+        mapper.setMethodPrefixName(method_prefix_name.getValue());
+        mapper.setFieldPrefixName(field_prefix_name.getValue());
+
         mapper.setRepackage(mixin_support.isEnable() ? false : repackage.isEnable());
         mapper.setRepakageName(repackage_name.getValue());
 

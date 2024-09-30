@@ -38,7 +38,10 @@ public class Mapper {
     private final Collection<ClassWrapper> additionalClasses;
     private final Renamer renamer;
 
-    private String prefix_name = "";
+    private String class_prefix_name = "";
+    private String method_prefix_name = "";
+    private String field_prefix_name = "";
+
     private boolean repackage = false;
     private String repakage_name = "";
 
@@ -66,7 +69,7 @@ public class Mapper {
                 if (!cannotRenameMethod(obfuscator.getTree(classWrapper.getOriginalName()), methodWrapper, visited)) {
                     RenamerResult result = genMethodMappings(methodWrapper, methodWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getMethodDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(prefix_name + classWrapper.getMethodDictionary().next());
+                    result.setObfuscatedName(method_prefix_name + classWrapper.getMethodDictionary().next());
                     processRenamerResult(result);
                 }
                 if (renamer != null) renamer.removeAnnotation(methodWrapper);
@@ -78,7 +81,7 @@ public class Mapper {
                 if (!cannotRenameField(obfuscator.getTree(classWrapper.getOriginalName()), fieldWrapper, visited)) {
                     RenamerResult result = genFieldMappings(fieldWrapper, fieldWrapper.getOwner().getOriginalName(), new RenamerResult(), generated);
                     classWrapper.getFieldDictionary().setUniqueIndex(result.getMaximumIndex());
-                    result.setObfuscatedName(prefix_name + classWrapper.getFieldDictionary().next());
+                    result.setObfuscatedName(field_prefix_name + classWrapper.getFieldDictionary().next());
                     processRenamerResult(result);
                 }
                 if (renamer != null) renamer.removeAnnotation(fieldWrapper);
@@ -109,7 +112,7 @@ public class Mapper {
                             Dictionary packageDictionary = obfuscator.packageDictionaries.computeIfAbsent(dictionaryPackage.substring(0, dictionaryPackage.lastIndexOf("/") + 1), subpackage_name -> obfuscator.getDictionary().copy());
                             String mappedPackageName = packageMappings.get(subpackage);
                             if (mappedPackageName == null) {
-                                lastPackageName.append(prefix_name).append(packageDictionary.next()).append("/");
+                                lastPackageName.append(class_prefix_name).append(packageDictionary.next()).append("/");
                                 packageMappings.putIfAbsent(subpackage, lastPackageName.toString());
                             } else {
                                 lastPackageName = new StringBuilder(mappedPackageName);
@@ -118,7 +121,7 @@ public class Mapper {
                         return lastPackageName.toString();
                     });
                 }
-                newName += prefix_name;
+                newName += class_prefix_name;
                 newName += classDictionary.next();
                 classMappings.putIfAbsent(classWrapper.getOriginalName(), newName);
             }
@@ -569,9 +572,18 @@ public class Mapper {
         return mappings;
     }
 
-    public void setPrefixName(String prefix_name) {
-        this.prefix_name = prefix_name;
+    public void setClassPrefixName(String prefix_name) {
+        this.class_prefix_name = prefix_name;
     }
+
+    public void setMethodPrefixName(String prefix_name) {
+        this.method_prefix_name = prefix_name;
+    }
+
+    public void setFieldPrefixName(String prefix_name) {
+        this.field_prefix_name = prefix_name;
+    }
+
 
     public void setRepackage(boolean repackage) {
         this.repackage = repackage;

@@ -21,6 +21,7 @@ public class Internals {
 
     public static String verificationServer() {
         return "http://localhost:8694/";
+//        return "https://skidonion.tech/";
     }
 
     public static byte[] publicKey() {
@@ -59,22 +60,22 @@ public class Internals {
     public static void polyXor(int[] encoded, byte[] decoded) {
         for (int i = 0, temp; i < encoded.length; i++) {
             temp = encoded[i];
-            temp = (temp << 0x3) | (temp >>> 0x1d);
-            temp ^= 0xc49482b4;
-            temp = (temp << 0x1e) | (temp >>> 0x2);
-            temp ^= 0xef14b686;
-            temp = (temp >>> 0x9) | (temp << 0x17);
+            temp -= 0x713016e3;
+            temp = (temp << 0x7) | (temp >>> 0x19);
             temp = ~temp;
-            temp ^= 0x9e0f04da;
-            temp = (temp >>> 0xa) | (temp << 0x16);
-            temp -= 0x269b1780;
-            temp = (temp << 0x9) | (temp >>> 0x17);
-            temp += 0x6d597a13;
-            temp = (temp << 0x1f) | (temp >>> 0x1);
+            temp -= 0x954e2344;
             temp = (temp >>> 0x1b) | (temp << 0x5);
+            temp = (temp >>> 0x12) | (temp << 0xe);
+            temp -= 0x285123e0;
+            temp += 0x683d2be5;
+            temp += 0x30c22eac;
+            temp ^= 0xe95bb198;
+            temp ^= 0xd3637620;
             temp = ~temp;
-            temp = ~temp;
-            temp = (temp << 0xb) | (temp >>> 0x15);
+            temp -= 0x4c25a002;
+            temp = (temp >>> 0x1a) | (temp << 0x6);
+            temp += 0xbde229f2;
+            temp ^= 0x90ce88e2;
             decoded[i] = (byte) (temp & 0xff);
         }
     }

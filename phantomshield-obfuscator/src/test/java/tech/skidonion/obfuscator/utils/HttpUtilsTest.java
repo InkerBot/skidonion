@@ -3,14 +3,17 @@ package tech.skidonion.obfuscator.utils;
 import org.junit.jupiter.api.Test;
 import tech.skidonion.obfuscator.inline.Wrapper;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpUtilsTest {
-    private static final String URL = "https://uncrackable.me/api/admin/";
+    private static final String URL = "https://skidonion.tech/api/admin/";
 //    private static final String URL = "http://localhost:8694/api/admin/";
     @Test
     void softwareInformation() {
@@ -103,5 +106,16 @@ class HttpUtilsTest {
         header.put("phantom-shield-x-uid", "1"); // 用户ID
         header.put("phantom-shield-x-api-token", "769e4f678db8436b0018fc6fe60a5a7a"); // 用户TOKEN
         return header;
+    }
+
+    @Test
+    void resolve()
+    {
+        try {
+            InetAddress addr = InetAddress.getByName("skidonion.tech");
+            System.out.println(Arrays.toString(addr.getAddress()));
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
