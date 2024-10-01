@@ -539,7 +539,8 @@ public class Mapper {
     private boolean methodCanBeRenamed(MethodWrapper wrapper) {
         return !wrapper.getAccess().isNative() && // do not change native method
                 !"main".equals(wrapper.getOriginalName()) && // exclude main
-                !wrapper.getOriginalName().startsWith("<") // exclude <init> and <clinit>
+                !wrapper.getOriginalName().startsWith("<") && // exclude <init> and <clinit>
+                !ClassWrapper.JOBJECT_METHOD_SET.contains(wrapper.getOriginalName() + wrapper.getOriginalDescription())
                 ;
     }
 

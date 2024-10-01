@@ -407,7 +407,7 @@ public class ClassWrapper {
         return !buildMemberHierarchy(getName()).contains(ref);
     }
 
-    private static final Set<String> JOBJECT_METHOD_SET = new HashSet<String>() {
+    public static final Set<String> JOBJECT_METHOD_SET = new HashSet<String>() {
         {
             add("hashCode()I");
             add("equals(Ljava/lang/Object;)Z");

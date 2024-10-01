@@ -58,7 +58,7 @@ import static org.objectweb.asm.ClassReader.*;
 public class PhantomShield {
     public static final boolean DEBUG = false;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.0.0";
+    public static final String VERSION = "v0.2.0.1";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
