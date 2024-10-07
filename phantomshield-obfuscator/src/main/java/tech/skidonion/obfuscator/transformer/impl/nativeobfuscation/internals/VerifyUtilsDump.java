@@ -1303,8 +1303,6 @@ public class VerifyUtilsDump implements Opcodes {
             methodVisitor.visitInsn(LCONST_1);
             methodVisitor.visitInsn(LCMP);
             methodVisitor.visitJumpInsn(IFEQ, label5);
-            methodVisitor.visitMethodInsn(INVOKESTATIC, "tech/skidonion/verification/utils/Internals", "shouldCheckHwid", "()Z", false);
-            methodVisitor.visitJumpInsn(IFEQ, label5);
             Label label53 = new Label();
             methodVisitor.visitLabel(label53);
             methodVisitor.visitLineNumber(219, label53);

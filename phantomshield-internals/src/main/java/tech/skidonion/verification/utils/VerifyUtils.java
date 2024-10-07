@@ -215,7 +215,7 @@ public class VerifyUtils {
                     array[3] = rand;
                     array[4] = result.getString("h", "==");
                     MachineIDUtils.check(array);
-                    if (((((Number) array[0]).longValue() >> 32 ^ rand) & 0b1) != 1 && Internals.shouldCheckHwid()) {
+                    if (((((Number) array[0]).longValue() >> 32 ^ rand) & 0b1) != 1) {
                         return Optional.of((byte) -2);
                     }
 
