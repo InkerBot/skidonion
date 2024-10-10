@@ -46,10 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.*;
 
 import static org.objectweb.asm.ClassReader.*;
 
@@ -58,7 +55,7 @@ import static org.objectweb.asm.ClassReader.*;
 public class PhantomShield {
     public static final boolean DEBUG = false;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.0.3";
+    public static final String VERSION = "v0.2.0.4";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -265,6 +262,10 @@ public class PhantomShield {
                         ZipEntry entry = new ZipEntry(name);
                         if (name.endsWith(".jar") && name.startsWith("BOOT-INF/lib")) {
                             entry.setMethod(ZipEntry.STORED);
+                            entry.setSize(bytes.length);
+                            CRC32 crc = new CRC32();
+                            crc.update(bytes);
+                            entry.setCrc(crc.getValue());
                         }
                         zos.putNextEntry(entry);
                         zos.write(bytes);
