@@ -1,8 +1,8 @@
 package tech.skidonion.obfuscator.utils.commons;
 
 public class Pair<X, Y> {
-    private final X x;
-    private final Y y;
+    private X x;
+    private Y y;
 
     public Pair(X x, Y y) {
         this.x = x;
@@ -19,6 +19,14 @@ public class Pair<X, Y> {
 
     public Y getSecond() {
         return y;
+    }
+
+    public void setFirst(X x) {
+        this.x = x;
+    }
+
+    public void setSecond(Y y) {
+        this.y = y;
     }
 
     @Override
