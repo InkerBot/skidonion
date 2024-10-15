@@ -2,11 +2,8 @@ package tech.skidonion.obfuscator.mba;
 
 import org.la4j.Matrix;
 import org.la4j.Vector;
-import tech.skidonion.obfuscator.utils.commons.Pair;
-import tech.skidonion.obfuscator.utils.commons.Subs;
 import tech.skidonion.obfuscator.mba.expr.Expr;
 import tech.skidonion.obfuscator.mba.expr.ExprOp;
-import tech.skidonion.obfuscator.mba.expr.operations.*;
 import tech.skidonion.obfuscator.mba.expr.operations.*;
 import tech.skidonion.obfuscator.mba.expr.operations.model.DoubleExprOp;
 import tech.skidonion.obfuscator.mba.expr.uniformexpr.LUExpr;
@@ -16,6 +13,8 @@ import tech.skidonion.obfuscator.mba.helper.Valuation;
 import tech.skidonion.obfuscator.mba.obfuscate.ObfuscationConfig;
 import tech.skidonion.obfuscator.mba.obfuscate.rewrite.impl.FiniteFail;
 import tech.skidonion.obfuscator.mba.obfuscate.rewrite.impl.FiniteOriginal;
+import tech.skidonion.obfuscator.utils.commons.Pair;
+import tech.skidonion.obfuscator.utils.commons.Subs;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -74,8 +73,9 @@ public class LinearMBA {
         obfuscateImpl(e, v, vars, bits, cfg);
     }
 
-    private static LUExpr rewriteRandom(LUExpr e, ArrayList<String> vars, int bits, ObfuscationConfig cfg) {
+    private static LUExpr rewriteRandom(LUExpr e, ArrayList<String> _vars, int bits, ObfuscationConfig cfg) {
 
+        ArrayList<String> vars = new ArrayList<>(_vars);
         for (String v : e.vars()) {
             if (!vars.contains(v)) {
                 vars.add(v);
@@ -143,7 +143,9 @@ public class LinearMBA {
             Pair<LUExpr, Subs> pair = luExprSubsPair.get();
             LUExpr lu = pair.getFirst();
             Subs subs = pair.getSecond();
-            er.setOp(rewriteRandom(lu, vars, bits, cfg).toExpr().getOp());
+            ExprOp rand = rewriteRandom(lu, vars, bits, cfg).toExpr().getOp();
+            rand.dropAll();
+            er.setOp(rand);
 
             for (Pair<String, Expr> _pair : subs.getSubs()) {
                 String var = _pair.getFirst();
@@ -164,8 +166,9 @@ public class LinearMBA {
                 DoubleExprOp m = (DoubleExprOp) e;
                 obfuscateImpl(m.getLeft(), visited, vars, bits, cfg);
                 obfuscateImpl(m.getRight(), visited, vars, bits, cfg);
+                break;
             default:
-                throw new RuntimeException(String.format("Expression should be linear MBA, but expr_to_luexpr failed (%s)", e));
+                throw new RuntimeException(String.format("Expression should be linear MBA, but expr_to_luexpr failed (%s)", e.type()));
         }
     }
 
@@ -265,10 +268,10 @@ public class LinearMBA {
             return Optional.of(UExpr.var(((Var) e.getOp()).getVar()));
         }
 
-//        // We don't try, when the expression is shared.
-//        if (e.getParent() != null) {
-//            return new_sub.get();
-//        }
+        // We don't try, when the expression is shared.
+        if (e.getOp().referencedSize() > 1) {
+            return new_sub.get();
+        }
 
         switch (e.getOp().type()) {
             case And: {

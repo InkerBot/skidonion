@@ -52,11 +52,11 @@ public class Diophantine {
                     long m = -(long) (a.get(k, _c) / a.get(_r, _c));
                     for (int i = 0; i < a.columns(); i++) {
                         long tmp = (long) a.get(_r, i) * m;
-                        a.set(k, i, (double) ((long) a.get(k, i) + tmp));
+                        a.set(k, i, (int) ((long) a.get(k, i) + tmp));
                     }
                     for (int i = 0; i < u.columns(); i++) {
                         long tmp = (long) u.get(_r, i) * m;
-                        u.set(k, i, (double) ((long) u.get(k, i) + tmp));
+                        u.set(k, i, (int) ((long) u.get(k, i) + tmp));
                     }
                 }
             });
@@ -83,21 +83,21 @@ public class Diophantine {
             // The Hermite normal form requires the entries
             // above the pivot to be positive.
             if ((long) a.get(r, c) != 0) {
-                IntStream.range(0, r).forEach(k -> {
+                for (int k = 0; k < r; k++) {
                     long entry = (long) a.get(k, _c);
 
                     long m = MathHelper.divEuclid(entry, (long) a.get(_r, _c));
                     if (m != 0) {
                         for (int i = 0; i < a.columns(); i++) {
                             long tmp = (long) a.get(_r, i) * m;
-                            a.set(k, i, (double) ((long) a.get(k, i) + tmp));
+                            a.set(k, i, (int) ((long) a.get(k, i) + tmp));
                         }
                         for (int i = 0; i < u.columns(); i++) {
                             long tmp = (long) u.get(_r, i) * m;
-                            u.set(k, i, (double) ((long) u.get(k, i) + tmp));
+                            u.set(k, i, (int) ((long) u.get(k, i) + tmp));
                         }
                     }
-                });
+                }
             }
             // Continue with the bottom right part of the matrix that remains.
             c += 1;
@@ -207,7 +207,7 @@ public class Diophantine {
             iter = Stream.concat(
                     IntStream.range(0, basis.rows()).mapToObj(basis::getRow)
                             .flatMapToDouble(e -> IntStream.range(0, e.length())
-                                    .mapToDouble(e::get).limit(a.columns()).map(i -> (double) ((long) i) % n)).boxed(),
+                                    .mapToDouble(e::get).limit(a.columns()).map(i -> (double) ((long) i % n))).boxed(),
                     IntStream.range(0, a.columns()).mapToDouble(i -> (double) i)
                             .flatMap(i -> IntStream.range(0, a.columns())
                                     .mapToDouble(j -> (double) j).map(j -> ((long) i == (long) j) ? (double) n : 0.0D)).boxed()

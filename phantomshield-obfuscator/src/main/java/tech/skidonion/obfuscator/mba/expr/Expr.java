@@ -16,10 +16,12 @@ import java.util.Optional;
 
 public class Expr {
     private ExprOp op;
-//    private ExprOp parent;
 
     public Expr(ExprOp op) {
+        if (op == null)
+            throw new NullPointerException("operation is null");
         this.op = op;
+        op.addLinked(this);
     }
 
     public ExprOp getOp() {
@@ -27,16 +29,13 @@ public class Expr {
     }
 
     public void setOp(ExprOp op) {
+        if (op == null)
+            throw new NullPointerException("operation is null");
+        this.op.dropLinked(this);
+        op.addLinked(this);
         this.op = op;
     }
 
-//    public ExprOp getParent() {
-//        return parent;
-//    }
-//
-//    public void setParent(ExprOp parent) {
-//        this.parent = parent;
-//    }
 
     /**
      * Evaluate an expression.
@@ -47,16 +46,16 @@ public class Expr {
     }
 
     private static BigInteger evalImpl(Expr e, Valuation v, int bits, ArrayList<Pair<ExprOp, BigInteger>> cache) {
-//        if (e.parent != null) {
-//            // This is a common subexpression.
-//            // We don't want to evaluate it twice.
-//            // So we look it up in the cache.
-//            for (Pair<ExprOp, BigInteger> pair : cache) {
-//                if (pair.getKey() == e.parent) {
-//                    return new BigInteger(pair.getValue().toByteArray());
-//                }
-//            }
-//        }
+        if (e.getOp().referencedSize() > 1) {
+            // This is a common subexpression.
+            // We don't want to evaluate it twice.
+            // So we look it up in the cache.
+            for (Pair<ExprOp, BigInteger> pair : cache) {
+                if (pair.getFirst() == e.op) {
+                    return new BigInteger(pair.getSecond().toByteArray());
+                }
+            }
+        }
         BigInteger _v;
         switch (e.op.type()) {
             case Const:
@@ -137,11 +136,11 @@ public class Expr {
         }
 
         _v = BigIntHelper.keepBits(_v, bits);
-//        if (e.parent != null) {
-//            // This is a common subexpression.
-//            // We want to cache it.
-//            cache.add(new Pair<>(e.getOp(), new BigInteger(_v.toByteArray())));
-//        }
+        if (e.getOp().referencedSize() > 1) {
+            // This is a common subexpression.
+            // We want to cache it.
+            cache.add(new Pair<>(e.getOp(), new BigInteger(_v.toByteArray())));
+        }
         return _v;
     }
 
@@ -170,7 +169,7 @@ public class Expr {
                 break;
             case Var: {
                 if (((Var) e.op).getVar().equals(var)) {
-                    e.op = s.clone().getOp();
+                    e.setOp(s.getOp());
                 }
                 break;
             }
@@ -196,6 +195,7 @@ public class Expr {
                 if (recurse) {
                     substituteImpl(((SingleExprOp) e.op).getExpr(), var, s, visited);
                 }
+                break;
             }
         }
     }
@@ -376,10 +376,5 @@ public class Expr {
     @Override
     public String toString() {
         return op.toString();
-    }
-
-    @Override
-    public Expr clone() {
-        return new Expr(op.clone());
     }
 }

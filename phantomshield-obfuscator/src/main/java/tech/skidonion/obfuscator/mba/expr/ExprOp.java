@@ -9,11 +9,30 @@ import tech.skidonion.obfuscator.mba.expr.operations.model.DoubleExprOp;
 import tech.skidonion.obfuscator.mba.expr.operations.model.SingleExprOp;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.*;
 
 public abstract class ExprOp {
+
+    private final HashSet<Expr> linked = new HashSet<>();
+
+    /**
+     * only use these while referenced by other expr
+     */
+    public void addLinked(final Expr expr) {
+        linked.add(expr);
+    }
+
+    public void dropLinked(final Expr expr) {
+        linked.remove(expr);
+    }
+
+    public void dropAll() {
+        linked.clear();
+    }
+
+    public int referencedSize() {
+        return linked.size();
+    }
 
     public abstract ExprOpType type();
 
@@ -157,39 +176,38 @@ public abstract class ExprOp {
     }
 
     private static String printSimpleRc(Expr e, ArrayList<Triple<ExprOp, Character, String>> vars) {
+        // If there is only one reference then just print it.
+        if (e.getOp().referencedSize() == 1) {
+            return e.getOp().printSimpleImpl(vars);
+        }
 
-//         If there is only one reference then just print it.
-//        if (e.getParent() == null) {
-        return e.getOp().printSimpleImpl(vars);
-//        }
-//
-//        // We don't want to assign a variable to a variable
-//        // so there is this shortcut here.
-//        if (e.getOp() instanceof Var) {
-//            return ((Var) e.getOp()).getVar();
-//        }
-//
-//        Optional<Triple<ExprOp, Character, String>> var = vars.stream().filter(t -> t.getFirst() == e.getOp()).findFirst();
-//
-//        // If the expression already has a variable then just print the variable.
-//        if (var.isPresent()) {
-//            Triple<ExprOp, Character, String> v = var.get();
-//            return v.getSecond().toString();
-//        } else {
-//            char v;
-//            if (!vars.isEmpty()) {
-//                v = (char) (vars.get(vars.size() - 1).getSecond() + 1);
-//            } else {
-//                v = 'a';
-//            }
-//            vars.add(new Triple<>(e.getOp(), v, ""));
-//
-//            int idx = vars.size() - 1;
-//            // Get the initializer for the variable.
-//            vars.get(idx).setThird(e.getOp().printSimpleImpl(vars));
-//            // Return just the variable name.
-//            return String.valueOf(v);
-//        }
+        // We don't want to assign a variable to a variable
+        // so there is this shortcut here.
+        if (e.getOp() instanceof Var) {
+            return ((Var) e.getOp()).getVar();
+        }
+
+        Optional<Triple<ExprOp, Character, String>> var = vars.stream().filter(t -> t.getFirst() == e.getOp()).findFirst();
+
+        // If the expression already has a variable then just print the variable.
+        if (var.isPresent()) {
+            Triple<ExprOp, Character, String> v = var.get();
+            return v.getSecond().toString();
+        } else {
+            char v;
+            if (!vars.isEmpty()) {
+                v = (char) (vars.get(vars.size() - 1).getSecond() + 1);
+            } else {
+                v = 'a';
+            }
+            vars.add(new Triple<>(e.getOp(), v, ""));
+
+            int idx = vars.size() - 1;
+            // Get the initializer for the variable.
+            vars.get(idx).setThird(e.getOp().printSimpleImpl(vars));
+            // Return just the variable name.
+            return String.valueOf(v);
+        }
     }
 
     /**
@@ -200,14 +218,14 @@ public abstract class ExprOp {
             int pred = this.precedence();
 
             String left;
-            if (pred > l.getOp().precedence() /*&& l.getParent() != null*/) {
+            if (pred > l.getOp().precedence() && l.getOp().referencedSize() == 1) {
                 left = String.format("(%s)", ExprOp.printSimpleRc(l, _vars));
             } else {
                 left = ExprOp.printSimpleRc(l, _vars);
             }
 
             String right;
-            if (pred > r.getOp().precedence() /*&& r.getParent() != null*/) {
+            if (pred > r.getOp().precedence() && r.getOp().referencedSize() == 1) {
                 right = String.format("(%s)", ExprOp.printSimpleRc(r, _vars));
             } else {
                 right = ExprOp.printSimpleRc(r, _vars);
@@ -217,7 +235,7 @@ public abstract class ExprOp {
         };
 
         ThreeParamsReturnFunc<String, Expr, ArrayList<Triple<ExprOp, Character, String>>, String> un_op = (String op, Expr i, ArrayList<Triple<ExprOp, Character, String>> _vars) -> {
-            if (this.precedence() > i.getOp().precedence() /*&& i.getParent() == null*/) {
+            if (this.precedence() > i.getOp().precedence() && i.getOp().referencedSize() == 1) {
                 return String.format("%s(%s)", op, ExprOp.printSimpleRc(i, _vars));
             } else {
                 return String.format("%s%s", op, ExprOp.printSimpleRc(i, _vars));
@@ -333,41 +351,5 @@ public abstract class ExprOp {
         Shl,
         Shr,
         Sar;
-    }
-
-    @Override
-    public ExprOp clone() {
-        switch (this.type()) {
-            case Const:
-                return new Const(new BigInteger(((Const) this).getVal().toByteArray()));
-            case Var:
-                return new Var(((Var) this).getVar());
-            case Add:
-                return new Add(((Add) this).getLeft().clone(), ((Add) this).getRight().clone());
-            case Sub:
-                return new Sub(((Sub) this).getLeft().clone(), ((Sub) this).getRight().clone());
-            case Mul:
-                return new Mul(((Mul) this).getLeft().clone(), ((Mul) this).getRight().clone());
-            case Div:
-                return new Div(((Div) this).getLeft().clone(), ((Div) this).getRight().clone());
-            case Neg:
-                return new Neg(((Neg) this).getExpr().clone());
-            case And:
-                return new And(((And) this).getLeft().clone(), ((And) this).getRight().clone());
-            case Or:
-                return new Or(((Or) this).getLeft().clone(), ((Or) this).getRight().clone());
-            case Xor:
-                return new Xor(((Xor) this).getLeft().clone(), ((Xor) this).getRight().clone());
-            case Not:
-                return new Not(((Not) this).getExpr().clone());
-            case Shl:
-                return new Shl(((Shl) this).getLeft().clone(), ((Shl) this).getRight().clone());
-            case Shr:
-                return new Shr(((Shr) this).getLeft().clone(), ((Shr) this).getRight().clone());
-            case Sar:
-                return new Sar(((Sar) this).getLeft().clone(), ((Sar) this).getRight().clone());
-            default:
-                throw new RuntimeException("unknown operation type: " + this.type());
-        }
     }
 }
