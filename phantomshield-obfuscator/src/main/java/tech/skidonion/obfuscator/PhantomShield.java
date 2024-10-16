@@ -367,13 +367,13 @@ public class PhantomShield {
                         if (entry.getName().endsWith(".class"))
                             try {
                                 byte[] bytes = IOUtils.toByteArray(in);
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.LIBRARY);
 
                                 if (filter == null || !filter.match(cw)) {
-                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_FRAMES, null);
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.INPUT);
                                     classes.put(cw.getName(), cw);
                                 } else {
-                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, 0, 0);
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.SOFT_EXCLUSION);
                                     softExclusions.put(cw.getName(), cw);
                                 }
 
@@ -447,7 +447,7 @@ public class PhantomShield {
                         reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
                         if (!classpath.containsKey(node.name)) {
-                            classpath.put(node.name, new ClassWrapper(this, node, true, null));
+                            classpath.put(node.name, new ClassWrapper(this, node, ClassWrapper.ProcessType.LIBRARY));
                         }
 
                     });

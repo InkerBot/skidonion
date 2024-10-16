@@ -55,7 +55,7 @@ public abstract class Transformer implements Opcodes {
     public abstract String annotation();
 
     public final ClassWrapper injectClass(ClassNode classNode) {
-        ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false, null);
+        ClassWrapper cw = new ClassWrapper(obfuscator, classNode, ClassWrapper.ProcessType.INPUT);
         obfuscator.classes.put(cw.getName(), cw);
         obfuscator.classpath.put(cw.getName(), cw);
         return cw;
@@ -64,7 +64,7 @@ public abstract class Transformer implements Opcodes {
     public final List<ClassWrapper> injectClasses(Collection<ClassNode> classNodes) {
         List<ClassWrapper> val = new ArrayList<>();
         for (ClassNode classNode : classNodes) {
-            ClassWrapper cw = new ClassWrapper(obfuscator, classNode, false, null);
+            ClassWrapper cw = new ClassWrapper(obfuscator, classNode, ClassWrapper.ProcessType.INPUT);
             obfuscator.classes.put(cw.getName(), cw);
             obfuscator.classpath.put(cw.getName(), cw);
             val.add(cw);

@@ -822,11 +822,11 @@ public class NativeObfuscation extends Transformer {
         // make wrapper class for inline where can't force inline to native code
         final ClassNode wrapper = new ClassNode();
         wrapper.version = V1_8;
-        wrapper.access = ACC_PUBLIC;
+        wrapper.access = ACC_PUBLIC | ACC_SUPER;
         wrapper.superName = "java/lang/Object";
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
-        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false, null);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, ClassWrapper.ProcessType.INPUT);
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -837,7 +837,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.version = V1_8;
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
-        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false, null);
+        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, ClassWrapper.ProcessType.INPUT);
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)

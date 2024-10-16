@@ -7,6 +7,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+
 public class VerifyUtils {
     public static JsonObject requestSoftwareInformation(String url, String uid, String token, String softwareId) {
         try {
@@ -15,7 +17,7 @@ public class VerifyUtils {
             params.put("software_id", softwareId);
             return JsonParser.parseString(HttpUtils.post(url + "api/admin/software-information", params, headers)).getAsJsonObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            ERROR("", e);
             return null;
         }
     }
