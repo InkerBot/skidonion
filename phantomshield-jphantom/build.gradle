@@ -15,11 +15,11 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.ow2.asm:asm:9.7'
-    implementation 'org.ow2.asm:asm-tree:9.7'
-    implementation 'org.ow2.asm:asm-util:9.7'
-    implementation 'org.ow2.asm:asm-commons:9.7'
-    implementation 'org.ow2.asm:asm-analysis:9.7'
+    implementation 'org.ow2.asm:asm:9.7.1'
+    implementation 'org.ow2.asm:asm-tree:9.7.1'
+    implementation 'org.ow2.asm:asm-util:9.7.1'
+    implementation 'org.ow2.asm:asm-commons:9.7.1'
+    implementation 'org.ow2.asm:asm-analysis:9.7.1'
     implementation 'com.google.guava:guava:33.1.0-jre'
     implementation 'com.esotericsoftware:reflectasm:1.11.9'
     implementation 'org.jgrapht:jgrapht-core:1.0.1'

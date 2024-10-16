@@ -113,8 +113,8 @@ public class TestRun {
         return new ConfigBuilder() //
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test/input/obf.jar")) //
-                .setOutputJar(new File("test/output/obf.jar")) //
+                .setInputJar(new File("test/input/bench.jar")) //
+                .setOutputJar(new File("test/output/bench.jar")) //
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(Paths.get("test", "libs").toString())
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
