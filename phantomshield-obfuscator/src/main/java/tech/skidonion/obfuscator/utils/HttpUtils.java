@@ -6,6 +6,8 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+
 public class HttpUtils {
     /**
      * get请求
@@ -263,20 +265,20 @@ public class HttpUtils {
             in.close();
             input.close();
         } catch (IOException e) {
-            e.printStackTrace(System.err);
+            ERROR("",e);
         } finally {
             if (in != null) {
                 try {
                     in.close();
                 } catch (IOException e) {
-                    e.printStackTrace(System.err);
+                    ERROR("",e);
                 }
             }
             if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {
-                    e.printStackTrace(System.err);
+                    ERROR("",e);
                 }
             }
         }

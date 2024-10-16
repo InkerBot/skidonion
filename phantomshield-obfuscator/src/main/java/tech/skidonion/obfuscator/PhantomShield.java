@@ -48,14 +48,12 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.jar.JarFile;
 import java.util.zip.*;
 
-import static org.objectweb.asm.ClassReader.*;
-
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
     public static final boolean DEBUG = false;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.0.4";
+    public static final String VERSION = "v0.2.1.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -248,7 +246,7 @@ public class PhantomShield {
                         zos.closeEntry();
                     } catch (IOException ioe) {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
-                        ioe.printStackTrace();
+                        ERROR("", ioe);
                     }
                 });
 
@@ -272,16 +270,16 @@ public class PhantomShield {
                         zos.closeEntry();
                     } catch (IOException ioe) {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.resource-error"), name);
-                        ioe.printStackTrace();
+                        ERROR("", ioe);
                     }
                 });
                 zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://skidonion.tech/"));
                 zos.close();
             } catch (IOException ioe) {
-                ioe.printStackTrace();
+                ERROR("", ioe);
                 throw new RuntimeException();
             } catch (ParseException pe) {
-                pe.printStackTrace();
+                ERROR("", pe);
                 throw new RuntimeException(pe);
             }
     }
@@ -308,19 +306,19 @@ public class PhantomShield {
 
                         if (!entry.isDirectory() && entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), ClassWrapper.ProcessType.LIBRARY);
                                 classpath.put(cw.getName(), cw);
                             } catch (Throwable t) {
                                 ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error"), entry.getName().replace(".class", ""));
-                                t.printStackTrace();
+                                ERROR("", t);
                             }
                     }
                 } catch (ZipException e) {
                     ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error2"), file.getAbsolutePath());
-                    e.printStackTrace();
+                    ERROR("", e);
                 } catch (IOException e) {
                     ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error3"), file.getAbsolutePath());
-                    e.printStackTrace();
+                    ERROR("", e);
                 }
 
             }
@@ -467,11 +465,11 @@ public class PhantomShield {
                 }
             } catch (ZipException e) {
                 ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-2"), input.getAbsolutePath());
-                e.printStackTrace();
+                ERROR("", e);
                 throw new RuntimeException(e);
             } catch (IOException e) {
                 ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-3"), input.getAbsolutePath());
-                e.printStackTrace();
+                ERROR("", e);
                 throw new RuntimeException(e);
             }
 
