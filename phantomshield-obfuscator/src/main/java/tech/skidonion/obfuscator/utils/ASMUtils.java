@@ -668,54 +668,6 @@ public class ASMUtils implements Opcodes {
         return insnList;
     }
 
-    public static InsnList generateMba(MethodNode node, boolean isTrue) {
-        final InsnList insnList = new InsnList();
-
-        int[] mbaExpr = MBAUtils.genMbaExpr();
-
-        int opa = RandomUtils.getRandomInt(-500, 500);
-        int opb = opa * 5 + (isTrue ? 1 : 0);
-
-        int x = node.maxLocals++;
-        int y = node.maxLocals++;
-
-        insnList.add(new IntInsnNode(SIPUSH, 32767)); // 2^15 - 1
-        insnList.add(new VarInsnNode(ISTORE, x));
-        insnList.add(new IntInsnNode(SIPUSH, opa)); // the value of y
-        insnList.add(new VarInsnNode(ISTORE, y));
-        insnList.add(new IntInsnNode(BIPUSH, mbaExpr[0]));
-        insnList.add(new VarInsnNode(ILOAD, x));
-        insnList.add(new VarInsnNode(ILOAD, y));
-        insnList.add(new InsnNode(ICONST_M1));// -1
-        insnList.add(new InsnNode(IXOR));
-        insnList.add(new InsnNode(IAND));
-        insnList.add(new InsnNode(IMUL));
-        insnList.add(new IntInsnNode(BIPUSH, mbaExpr[1]));
-        insnList.add(new VarInsnNode(ILOAD, x));
-        insnList.add(new VarInsnNode(ILOAD, y));
-        insnList.add(new InsnNode(IOR));
-        insnList.add(new InsnNode(IMUL));
-        insnList.add(new InsnNode(IADD));
-        insnList.add(new IntInsnNode(BIPUSH, mbaExpr[2]));
-        insnList.add(new VarInsnNode(ILOAD, x));
-        insnList.add(new VarInsnNode(ILOAD, y));
-        insnList.add(new InsnNode(IXOR));
-        insnList.add(new InsnNode(IMUL));
-        insnList.add(new InsnNode(IADD));
-        insnList.add(new IntInsnNode(BIPUSH, mbaExpr[3]));
-        insnList.add(new VarInsnNode(ILOAD, x));
-        insnList.add(new InsnNode(ICONST_M1));
-        insnList.add(new InsnNode(IXOR));
-        insnList.add(new InsnNode(IMUL));
-        insnList.add(new VarInsnNode(ILOAD, y));
-        insnList.add(new InsnNode(IAND));
-        insnList.add(new InsnNode(ISUB));
-        insnList.add(new InsnNode(I2D));
-        insnList.add(new IntInsnNode(SIPUSH, opb)); // Make it false
-        insnList.add(new InsnNode(I2D));
-        insnList.add(new InsnNode(DCMPL));
-        return insnList;
-    }
 
     public static boolean isJumpOrReturnOpcode(int opcode) {
         switch (opcode) {

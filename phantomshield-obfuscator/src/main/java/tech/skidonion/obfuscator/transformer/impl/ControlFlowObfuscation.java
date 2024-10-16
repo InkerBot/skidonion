@@ -24,16 +24,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
     private Random rnd;
 
-    private Context ctx;
-
-    class Context {
-        final MethodNode method;
-
-        public Context(MethodNode method) {
-            this.method = method;
-        }
-    }
-
 
     public ControlFlowObfuscation(String name) {
         super(name);
@@ -48,7 +38,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             cw.getMethods().stream().filter(wrapper -> wrapper.getInstructions().size() > 0 && this.match(wrapper)).forEach(wrapper -> {
                 removeAnnotation(wrapper);
                 MethodNode method = wrapper.getMethodNode();
-                ctx = new Context(method);
                 // TODO: ignore init??
                 if (method.name.equals("<init>")) {
                     return;
@@ -293,8 +282,6 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
             // =======
             switch (RandomUtils.getRandomInt(2)) {
                 case 0:
-                    insns.add(generate ? ASMUtils.generateMba(ctx.method, false) : ASMUtils.generateMba(ctx.method, true));
-                    break;
                 case 1:
                     insns.add(generate ? ASMUtils.generateFalse() : ASMUtils.generateTrue());
                     break;
