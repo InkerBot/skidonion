@@ -16,7 +16,7 @@ import tech.skidonion.obfuscator.utils.commons.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class MBAWrapper implements Opcodes {
     private int methodLocalsIndex = -1;
@@ -67,7 +67,7 @@ public class MBAWrapper implements Opcodes {
     }
 
     public InsnList generate() {
-        HashMap<ExprOp, Pair<Integer, InsnList>> vars = new HashMap<>();
+        LinkedHashMap<ExprOp, Pair<Integer, InsnList>> vars = new LinkedHashMap<>();
         InsnList __ = new InsnList();
         InsnList generated = new InsnList();
         generated.add(generateImpl(this.expr, vars, false));
@@ -79,7 +79,7 @@ public class MBAWrapper implements Opcodes {
         return __;
     }
 
-    private InsnList generateImpl(Expr e, HashMap<ExprOp, Pair<Integer, InsnList>> vars, boolean generateLocal) {
+    private InsnList generateImpl(Expr e, LinkedHashMap<ExprOp, Pair<Integer, InsnList>> vars, boolean generateLocal) {
         Expr multiRef;
         if (e.getOp().referencedSize() > 1 && !generateLocal) {
             multiRef = e;

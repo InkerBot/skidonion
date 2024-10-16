@@ -17,7 +17,7 @@ class MBAWrapperTest implements Opcodes {
 
     @Test
     void obfuscate() throws IOException {
-        MBAWrapper obfuscated = MBAWrapper.obfuscate(Expr.fromString("3*x*(x-1)+y").get(), ObfuscationConfig.defaultConfig());
+        MBAWrapper obfuscated = MBAWrapper.obfuscate(Expr.fromString("x*y + y^(x >>> 16)").get(), ObfuscationConfig.defaultConfig());
         obfuscated.setMethodLocalsIndex(5);
         int val1 = ThreadLocalRandom.current().nextInt();
         int val2 = ThreadLocalRandom.current().nextInt();
@@ -60,13 +60,15 @@ class MBAWrapperTest implements Opcodes {
 
     @Test
     void testGenerated() {
-        int n = 144710206;
-        int n2 = 436745645;
-        int x = 5;
-        int y = 4;
-        int n5 = (309652066 + Integer.MIN_VALUE * ~(~y ^ (n | n2)) + -160611163 * n2 + -313671510 * x + -397643808 * x + -1117811288 * (y | y) + 135736110 * ~(x ^ x | n2 & n) + -923239582 * ~(~(n2 & x)) + 1200648542 * n + -1986872485 * ~(~n2) + -404644989 * ~((n ^ n2) & n) + 1407297140 * (n & (n2 ^ (x ^ y))) + 1289876266 * ~(~x) + 578560945 * ~(~(~x)) + -55466769 * ~(n ^ ~n) + -781092965 * (n & (n2 & n2) & ~(~n)) + -1029672360 * y + -826009584 * ~(~(n & n2)) + -1407297140 * (n & (x ^ (y ^ n2))) + 542190117 * n + 923239582 * (n2 & n2 & (n2 ^ x) ^ n2)) * (-1509850038 + 429426309 * y + 274983793 * n + -681197619 * ~(~n) + 1849657644 * ~n + -2043681288 * n + -1612431440 * ~(~(n | x)) + -381497460 * y + -1747076241 * (n2 ^ n2 | n ^ x | x) + -47928849 * y + -559215839 * x + 559215840 * x + 4585462 * n + -524442667 * ((n2 ^ y ^ ~n2) & (y & x)) + 935459615 * ~(n2 & n | (x | n)));
-        System.out.println(1148369639 + 1666673854 * (n5 | ~n5 | n2 ^ n2 ^ (n5 | n)) + Integer.MIN_VALUE * ((y | n | ~n) ^ x) + -729227266 * n2 + Integer.MIN_VALUE * (n ^ (~n5 | y)) + 870441614 * n + -1610146543 * n2 + 1623657129 * n + -2147483647 * y + -1968620844 * (n5 & n5 & n5 ^ (n2 & n5 | n5)) + 2059230106 * ~(n | n) + -1503829554 * (x ^ x) + -1955593487 * n2 + 1 * n5 + 200029771 * (~n | (n2 ^ n | (n | y))) + -630080444 * (~(n ^ y) ^ y) + Integer.MIN_VALUE * ~((n5 | y) ^ x & x) + 1082534567 * n);
-        System.out.println(3 * x * (x - 1) + y);
+        int var1 = 587731291;
+        int var2 = -539766994;
+        byte x = 5;
+        byte y = 4;
+        int var6 = (-1191601810 + 257351253 * ~(~x ^ var2 & var2) + -357737150 * (x & y & ~(var1 & var1)) + 1708659763 * (var2 | var1) + 98056955 * var2 + 1096175415 * (~var2 & ~var2 ^ (var2 ^ x) & ~var1) + -1180161112 * ((var2 | var2) ^ ~x ^ var1) + -1791330300 * ~((var2 | x) & ~var1) + 1968615073 * (x | y | y & y) + 1056222571 * var1 + 1968615073 * (y & x & (x | y) ^ ~(y & var1)) + -1062920979 * (x ^ var1) + 1968615073 * ((var1 | x) & var1 & x | ~(var1 | y)) + -1997198040 * ((x | var2) & (y | var2) & var2) + 594466968 * ((~var1 | x ^ var2) ^ (~var1 | var1 ^ x)) + 183402814 * (var1 ^ ~x | ~var2 | var1 ^ x) + 978067848 * (x ^ var1 | var2 | y | ~var2 ^ (y | y)) + -120019325 * ~var1 + -1410367656 * (x | var2) + -1627993687 * (x ^ var1 ^ var2)) * (1105288914 + -485610050 * (y | ~(var2 ^ var2)) + 1965178209 * (y & var2 ^ y ^ var2 | (y ^ var2) & y & var2) + 1289788104 * (var2 | y | var2 | y & var1) + 1947855020 * ~var2 + -2084413811 * (~(x & x) & ~var2 & var1 & x) + 469783510 * ~(~var2) + 1828397696 * (~x ^ ~var2 & y & var2) + 1040000985 * (y | ~(var2 & var2)) + -1040000984 * ~(var2 & x & var1 & var2) + 929412384 * ~var2 + -1040000984 * (var1 & var2 | ~var2 | y ^ x & var1) + 1370138768 * x + -520000492 * ((~var2 | ~var1) ^ ~(~y)) + -520000492 * ((~y | x ^ var1) & (var1 ^ var1 | ~var2)) + 520000492 * ((y | x) & (x ^ var2) ^ (var2 ^ y | var2 | var1)) + 520000492 * (x ^ (var2 | y) ^ ~var1) + 790977669 * x + -1554764661 * ~((var2 | x) & x) + -1887483402 * ~(~(x ^ var2)) + 520000492 * (y ^ x & y ^ y ^ var2));
+        int var5 = 1160788869 + -1534335149 * var6 + -585824439 * var1 + 1309934770 * (x & ~var6) + 181120011 * y + 585824439 * var1 + -1433718562 * ~x + -1842263512 * y + -2105664761 * var6 + -654967385 * ~(~(x ^ var6)) + 1661143502 * y + -1700459865 * (~x | ~var1 | var1) + -2088685947 * (x | ~(~x));
+        int var7 = -112775058 + 788005651 * var1 + 453905097 * ~var1 + -1186697274 * var2 + -2047123988 * (var2 | var1 | x | x & (y ^ y)) + -1153342674 * x + -878380821 * x + -334100554 * var1 + 870826785 * var2 + 1751273103 * ((~x ^ x) & x) + 1617127069 * x + -293336821 * y + 710447312 * ((var2 ^ x) & var2 | (var1 | x) ^ x ^ x) + 1336676676 * ((x ^ x ^ ~x) & (x | var1 | var2)) + -1182700761 * (~(y ^ x) ^ x) + -889363940 * y + 315870489 * (var2 | y ^ y) + 616020606 * (~(x ^ x) | var2 ^ x ^ y) >>> -67202643 + Integer.MIN_VALUE * (~(~var1) | ~var2 ^ (var2 | x)) + -795670707 * y + -1387502436 * ((~var2 | ~var1) & (var2 ^ y & var2)) + -1833723036 * ((var1 | y | x) & (var2 & x ^ var1 & var2)) + Integer.MIN_VALUE * (var1 & x ^ var1 ^ y ^ (var2 ^ x | var2 & x)) + -1519962424 * ((y & x | var1 ^ var2) & ~(x & var2)) + 214257128 * ~(~y) + -1696908002 * (~x & (var2 | x) & (~var2 ^ y)) + -1387502436 * ((var1 ^ var2 ^ x) & var1 & y & (y | var2)) + -852871346 * ((y ^ ~y) & ~(var1 & var2)) + -516245760 * var2 + 558774266 * ~(var2 & var2 | var2 | var2) + 269460788 * var2 + 530276044 * var1 + -1078096870 * ((var2 | y) & ((y | var1) ^ x ^ var1)) + 773046350 * (x & ((x | x) ^ var2)) + -487973199 * (y & (var1 | y | ~var1)) + 417997573 * var2 + 309405566 * ((~var1 | y) ^ (y ^ var2) & y) + 848391702 * ~(var2 | var1 | var1 ^ var1) + 309405566 * (y | x) + 751271120 * (y & (x | var1) & ~var1) + -1082451916 * ~(~(var2 ^ x)) + 1216580801 * (var2 ^ ~x ^ (x | x));
+        System.out.println(-2043327943 + -2043327944 * ~((var5 ^ var5) & ~var5) + 2 * ~(~(var5 | var7)) + 1199710375 * (~var2 & (x ^ var2) & var1 & y & var2) + -990650124 * var5 + 990650123 * var5 + 1993647009 * ((var1 ^ var1) & ~var5 & (var7 ^ y ^ y)) + 1 * ~(~(~var7)));
+        System.out.println(x*y + y^(x >>> 16));
     }
 
 
