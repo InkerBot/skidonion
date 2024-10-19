@@ -38,9 +38,10 @@ public class CompilerUpdater {
         INFO(TRANSLATION("phantom-shield-x.compiler-updater.request-index"));
         JsonObject json = (JsonObject) JsonParser.parseString(HttpUtils.get("https://ziglang.org/download/index.json", null));
 
-        JsonObject latest = json.get("master").getAsJsonObject();
+        JsonObject latest = json.get("0.13.0").getAsJsonObject();
         if (version != null) INFO(TRANSLATION("phantom-shield-x.compiler-updater.current-version") , version);
-        String latestVersion = latest.get("version").getAsString();
+//        String latestVersion = latest.get("version").getAsString();
+        String latestVersion = "0.13.0";
         INFO(TRANSLATION("phantom-shield-x.compiler-updater.latest-version"), latestVersion);
         if (latestVersion.equals(version)) {
             INFO(TRANSLATION("phantom-shield-x.compiler-updater.up-to-date"));
