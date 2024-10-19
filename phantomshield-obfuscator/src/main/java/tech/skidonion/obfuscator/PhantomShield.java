@@ -11,6 +11,7 @@ import org.clyze.jphantom.hier.ClassHierarchy;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.CheckClassAdapterV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
@@ -30,11 +31,10 @@ import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.JPhantomUtils;
+import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -51,7 +51,7 @@ import java.util.zip.*;
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
     public static ResourceBundle BUNDLE;
     public static final String VERSION = "v0.2.1.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
@@ -225,7 +225,10 @@ public class PhantomShield {
 
         if (Inline._advanced_checkCRCImage(0x86543210) == 0x86543210)
             try {
-
+                File dumpDir = new File(output.getAbsoluteFile().getParentFile(), "debug/dump/");
+                if (DEBUG) {
+                    dumpDir.mkdirs();
+                }
                 DateFormat formatter = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
                 String creationDate = config.getString("creation_date");
                 long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
@@ -239,10 +242,32 @@ public class PhantomShield {
                     }
                 }.forEach(classWrapper -> {
                     try {
+                        byte[] clzBytes = classWrapper.toByteArray();
+                        if (config.getBoolean("preverify")) {
+                            try {
+                                StringWriter stringWriter = new StringWriter();
+                                PrintWriter printWriter = new PrintWriter(stringWriter);
+                                CheckClassAdapterV2.verify(new ClassReader(clzBytes), false, printWriter, this);
+                                String errorInfo = stringWriter.toString();
+                                if (!errorInfo.isEmpty()) {
+                                    ERROR(TRANSLATION("phantom-shield-x.instance.verify-failed"), classWrapper.getOriginalName());
+                                    ERROR(errorInfo);
+                                    if (DEBUG) {
+                                        Files.write(new File(dumpDir, StringUtils.escapeCppNameString(classWrapper.getOriginalName()) + ".class").toPath(), clzBytes);
+                                    }
+                                }
+                            } catch (Throwable throwable) {
+                                ERROR(TRANSLATION("phantom-shield-x.instance.verify-failed"), classWrapper.getOriginalName());
+                                ERROR("", throwable);
+                                if (DEBUG) {
+                                    Files.write(new File(dumpDir, StringUtils.escapeCppNameString(classWrapper.getOriginalName()) + ".class").toPath(), clzBytes);
+                                }
+                            }
+                        }
                         ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
                         entry.setTime(timestamp);
                         zos.putNextEntry(entry);
-                        zos.write(classWrapper.toByteArray());
+                        zos.write(clzBytes);
                         zos.closeEntry();
                     } catch (IOException ioe) {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
@@ -567,26 +592,43 @@ public class PhantomShield {
     }
 
     public void buildHierarchy(ClassWrapper wrapper, ClassWrapper sub) {
-        if (hierarchy.get(wrapper.getName()) == null) {
-            ClassTree tree = new ClassTree(wrapper);
+        ClassTree tree;
+        if ((tree = hierarchy.get(wrapper.getName())) == null) {
+            tree = new ClassTree(wrapper);
 
             if (wrapper.getSuperName() != null && !"java/lang/Object".equals(wrapper.getSuperName())) {
                 tree.getParentClasses().add(wrapper.getSuperName());
 
                 buildHierarchy(getClassWrapper(wrapper.getSuperName()), wrapper);
             }
-            if (wrapper.getInterfaces() != null)
-                wrapper.getInterfaces().forEach(s -> {
+            if (wrapper.getInterfaces() != null) {
+                for (String s : wrapper.getInterfaces()) {
                     tree.getParentClasses().add(s);
 
                     buildHierarchy(getClassWrapper(s), wrapper);
-                });
+                }
+            }
 
             hierarchy.put(wrapper.getName(), tree);
         }
 
-        if (sub != null)
-            hierarchy.get(wrapper.getName()).getSubClasses().add(sub.getName());
+        processSubClass(tree, sub);
+    }
+
+    private void processSubClass(ClassTree tree, ClassWrapper sub) {
+        if (sub != null) {
+            if (tree.getAllSubClasses() != null) {
+                tree.getAllSubClasses().add(sub.getName());
+                for (String parentClass : tree.getParentClasses()) {
+                    ClassTree subTree = getTree(parentClass);
+                    if (subTree.getAllSubClasses() != null) {
+                        subTree.getAllSubClasses().add(sub.getName());
+                        processSubClass(subTree, sub);
+                    }
+                }
+            }
+            tree.getSubClasses().add(sub.getName());
+        }
     }
 
     public void buildInheritance() {

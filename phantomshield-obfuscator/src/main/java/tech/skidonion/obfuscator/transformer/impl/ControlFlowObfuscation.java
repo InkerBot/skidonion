@@ -5,6 +5,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
+import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.inline.Wrapper;
 import tech.skidonion.obfuscator.transformer.Transformer;
 import tech.skidonion.obfuscator.transformer.generic.CodeBlock;
@@ -17,8 +18,7 @@ import tech.skidonion.obfuscator.utils.RandomUtils;
 
 import java.util.*;
 
-import static tech.skidonion.obfuscator.PhantomShield.INFO;
-import static tech.skidonion.obfuscator.PhantomShield.TRANSLATION;
+import static tech.skidonion.obfuscator.PhantomShield.*;
 
 public class ControlFlowObfuscation extends Transformer implements Opcodes {
 
@@ -49,6 +49,9 @@ public class ControlFlowObfuscation extends Transformer implements Opcodes {
                 try {
                     resolved = CodeBlockResolver.resolve(method);
                 } catch (Exception e) {
+                    if (PhantomShield.DEBUG) {
+                        ERROR("failed to resolved code block: ", e);
+                    }
                     return;
                 }
 

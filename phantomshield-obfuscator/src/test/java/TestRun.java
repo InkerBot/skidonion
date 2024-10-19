@@ -21,10 +21,10 @@ public class TestRun {
 //         =================
 //        debug_information_remover(builder);
 //        shuffler(builder);
-        renamer(builder);
+//        renamer(builder);
 //        string_encryption(builder);
 //        invoke_wrapper(builder);
-//        control_flow(builder);
+        control_flow(builder);
 //        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
@@ -59,7 +59,7 @@ public class TestRun {
                 .setFieldPrefixNameSetting("field_") //
                 .setDictionarySetting("abcdefghijklmnopqrstuvwxyz") //
                 .setMinimumGeneratedNameLengthSetting(1) //
-                .setPrintMappingsSetting(true) //
+                .setPrintMappingsSetting(false) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
@@ -113,7 +113,7 @@ public class TestRun {
         return new ConfigBuilder() //
                 .setGeneratePhantomClassesSetting(true) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test/input/bench.jar")) //
+                .setInputJar(new File("test/input/obf-test-1.0-SNAPSHOT.jar")) //
                 .setOutputJar(new File("test/output/bench.jar")) //
 //                 .setLegacyCompileModeSetting(true)
                 .addLibrary(Paths.get("test", "libs").toString())
