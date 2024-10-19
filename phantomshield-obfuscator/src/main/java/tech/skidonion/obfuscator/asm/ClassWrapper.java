@@ -12,6 +12,8 @@ import tech.skidonion.obfuscator.dictionary.Dictionary;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.objectweb.asm.ClassReader.*;
+import static org.objectweb.asm.Opcodes.ASM9;
 import static tech.skidonion.obfuscator.PhantomShield.*;
 
 /**
@@ -20,12 +22,25 @@ import static tech.skidonion.obfuscator.PhantomShield.*;
 public class ClassWrapper {
     private static final String DEFAULT_ENTRY_PREFIX = "";
 
+    private final ProcessType type;
+
+    public enum ProcessType {
+        SOFT_EXCLUSION(0), INPUT(SKIP_FRAMES), LIBRARY(SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG);
+        private final int readFlag;
+
+        ProcessType(int readFlag) {
+            this.readFlag = readFlag;
+        }
+
+        public int getReadFlag() {
+            return readFlag;
+        }
+    }
+
     private final PhantomShield obfuscator;
-    private final Integer writeFlag;
     private ClassNode classNode;
     private final String originalName;
     private final String originalSuperName;
-    private final boolean libraryNode;
 
     private String entryPrefix;
     private final Access access;
@@ -41,17 +56,16 @@ public class ClassWrapper {
     private final Map<String, MethodWrapper> methodDescriptors = new HashMap<>();
     private final Map<String, FieldWrapper> fieldDescriptors = new HashMap<>();
 
-    public ClassWrapper(PhantomShield obfuscator, ClassReader cr, boolean libraryNode, int readFlag, Integer writeFlag) {
-        this.writeFlag = writeFlag;
+    public ClassWrapper(PhantomShield obfuscator, ClassReader cr, ProcessType type) {
+        this.type = type;
 
         this.obfuscator = obfuscator;
         ClassNode classNode = new ClassNode();
-        cr.accept(classNode, readFlag);
+        cr.accept(type == ProcessType.INPUT ? new LocalVariablesSorterClassAdapter(ASM9, classNode) : classNode, type.getReadFlag());
 
         this.classNode = classNode;
         this.originalName = classNode.name;
         this.originalSuperName = classNode.superName;
-        this.libraryNode = libraryNode;
 
         this.entryPrefix = DEFAULT_ENTRY_PREFIX;
         this.access = new ClassAccess(this);
@@ -78,13 +92,12 @@ public class ClassWrapper {
         });
     }
 
-    public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, boolean libraryNode, Integer writeFlag) {
-        this.writeFlag = writeFlag;
+    public ClassWrapper(PhantomShield obfuscator, ClassNode classNode, ProcessType type) {
+        this.type = type;
         this.obfuscator = obfuscator;
         this.classNode = classNode;
         this.originalName = classNode.name;
         this.originalSuperName = classNode.superName;
-        this.libraryNode = libraryNode;
 
         this.entryPrefix = DEFAULT_ENTRY_PREFIX;
         this.access = new ClassAccess(this);
@@ -217,7 +230,7 @@ public class ClassWrapper {
      * @return true if this wrapper represents a library class.
      */
     public boolean isLibraryNode() {
-        return libraryNode;
+        return type == ProcessType.LIBRARY || type == ProcessType.SOFT_EXCLUSION;
     }
 
     /**
@@ -341,7 +354,7 @@ public class ClassWrapper {
 
     public byte[] toByteArray() {
         // Construct byte writer
-        ClassWriter writer = new CustomClassWriter(writeFlag != null ? writeFlag : allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES, obfuscator);
+        ClassWriter writer = new CustomClassWriter(type == ProcessType.INPUT ? (allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES) : 0, obfuscator);
 
         try {
             writer.newUTF8("PHANTOMSHIELD" + PhantomShield.VERSION);
@@ -407,7 +420,7 @@ public class ClassWrapper {
         return !buildMemberHierarchy(getName()).contains(ref);
     }
 
-    private static final Set<String> JOBJECT_METHOD_SET = new HashSet<String>() {
+    public static final Set<String> JOBJECT_METHOD_SET = new HashSet<String>() {
         {
             add("hashCode()I");
             add("equals(Ljava/lang/Object;)Z");

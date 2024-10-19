@@ -50,7 +50,7 @@ public class StackHeightZeroFinder implements Opcodes {
     /**
      * Weakly emulates stack execution until no more instructions are left or the breakpoint is reached.
      */
-    public void execute(boolean debug) {
+    public void execute() {
         int stackSize = 0; // Emulated stack
         Set<LabelNode> excHandlers = new HashSet<>();
         methodNode.tryCatchBlocks.forEach(tryCatchBlockNode -> excHandlers.add(tryCatchBlockNode.handler));

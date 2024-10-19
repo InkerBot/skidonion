@@ -38,4 +38,11 @@ public class MatcherTest {
         filter.accept("+** * *(*)");
         System.out.println(filter.match("Class void test(java/util/function/Supplier,dev/sim0n/app/test/impl/evaluation/Evaluation)"));
     }
+
+    @Test
+    void testToString() {
+        Filter filter = new Filter();
+        filter.accept("-** java.lang.String toString()");
+        System.out.println(filter.match("package/Class java.lang.String toString()"));
+    }
 }

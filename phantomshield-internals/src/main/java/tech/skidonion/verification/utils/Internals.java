@@ -84,10 +84,6 @@ public class Internals {
         return true;
     }
 
-    public static boolean shouldCheckHwid() {
-        return true;
-    }
-
     public static boolean ed25519verify(ByteBuffer buffer) {
         try {
             buffer.position(0);

@@ -583,7 +583,6 @@ public class NativeObfuscation extends Transformer {
         long verifySoftwareId;
         byte[] verifyPublicKey;
         String verifyVersion;
-        boolean verifyShouldCheckHwid;
         long verifyPolyKey;
         if (isVerificationEnable() && opt.isPresent() && (Integer.parseInt(opt.get()) ^ 173359771) == 2082061244) {
             JsonObject softwareInformation = VerifyUtils.requestSoftwareInformation(this.verification_server.getValue(), this.verification_user_id.getValue(), this.verification_token.getValue(), this.verification_software_id.getValue());
@@ -596,7 +595,6 @@ public class NativeObfuscation extends Transformer {
             verifySoftwareId = entity.getAsJsonPrimitive("id").getAsLong();
             verifyPublicKey = Base64.getDecoder().decode(entity.getAsJsonPrimitive("public_key").getAsString());
             verifyVersion = entity.getAsJsonPrimitive("version").getAsString();
-            verifyShouldCheckHwid = entity.getAsJsonPrimitive("check_hwid").getAsBoolean();
             for (JsonElement magic_key : entity.getAsJsonArray("magic_key")) {
                 JsonObject object = magic_key.getAsJsonObject();
                 magicKey.put(object.getAsJsonPrimitive("rank_name").getAsString(), Base64.getDecoder().decode(object.getAsJsonPrimitive("magic_key").getAsString()));
@@ -625,7 +623,6 @@ public class NativeObfuscation extends Transformer {
             verifyPolyKey = -1L;
             verifyPublicKey = new byte[0];
             verifyVersion = "";
-            verifyShouldCheckHwid = true;
         }
 
 
@@ -825,11 +822,11 @@ public class NativeObfuscation extends Transformer {
         // make wrapper class for inline where can't force inline to native code
         final ClassNode wrapper = new ClassNode();
         wrapper.version = V1_8;
-        wrapper.access = ACC_PUBLIC;
+        wrapper.access = ACC_PUBLIC | ACC_SUPER;
         wrapper.superName = "java/lang/Object";
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
-        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, false, null);
+        ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, ClassWrapper.ProcessType.INPUT);
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -840,7 +837,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.version = V1_8;
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
-        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, false, null);
+        dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, ClassWrapper.ProcessType.INPUT);
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)
@@ -1078,11 +1075,6 @@ public class NativeObfuscation extends Transformer {
                                     for (AbstractInsnNode abstractInsnNode : ASMUtils.getByteArrayInst(bytes)) {
                                         iterator.add(abstractInsnNode);
                                     }
-                                    break;
-                                }
-                                case "tech/skidonion/verification/utils/Internals.shouldCheckHwid()Z": {
-                                    iterator.remove();
-                                    iterator.add(new InsnNode(verifyShouldCheckHwid ? ICONST_1 : ICONST_0));
                                     break;
                                 }
                                 case "tech/skidonion/verification/utils/Internals.shouldKeepAlive()Z": {

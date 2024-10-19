@@ -133,3 +133,4 @@ hs_err_pid*
 /phantomshield-cpputils/zig-out
 /phantomshield-cpputils/.vscode
 /phantomshield-obfuscator/PolyTest.class
+phantomshield-obfuscator/GeneratedMBA.class

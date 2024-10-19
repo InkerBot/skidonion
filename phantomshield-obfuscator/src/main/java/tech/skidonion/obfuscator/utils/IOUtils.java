@@ -10,6 +10,8 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static tech.skidonion.obfuscator.PhantomShield.ERROR;
+
 /**
  * IO utilities.
  */
@@ -26,7 +28,7 @@ public class IOUtils {
             transfer(in, out);
             return out.toByteArray();
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            ERROR("", ioe);
             throw new RuntimeException(ioe);
         }
     }

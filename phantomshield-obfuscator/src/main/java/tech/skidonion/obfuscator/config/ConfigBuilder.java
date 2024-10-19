@@ -7,6 +7,7 @@ public class ConfigBuilder {
 
     // attributions
     private boolean debugSetting;
+    private boolean preverifySetting = true;
     private File inputJarSetting;
     private File outputJarSetting;
     private boolean generatePhantomClassesSetting = false;
@@ -91,6 +92,7 @@ public class ConfigBuilder {
         config.add("output", Objects.requireNonNull(outputJarSetting, "output is null").getAbsoluteFile().toString());
         config.add("dictionary", dictionarySetting);
         config.add("minimum_generated_name_length", minimumGeneratedNameLengthSetting);
+        config.add("preverify", preverifySetting);
 
         if (debugSetting) {
             config.add("__debug", true);
@@ -631,6 +633,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setFieldPrefixNameSetting(String fieldPrefixNameSetting) {
         this.fieldPrefixNameSetting = fieldPrefixNameSetting;
+        return this;
+    }
+
+    public ConfigBuilder setPreverifySetting(boolean preverifySetting) {
+        this.preverifySetting = preverifySetting;
         return this;
     }
 }

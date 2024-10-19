@@ -11,6 +11,7 @@ import org.clyze.jphantom.hier.ClassHierarchy;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.CheckClassAdapterV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.skidonion.obfuscator.annotations.NativeObfuscation;
@@ -30,11 +31,10 @@ import tech.skidonion.obfuscator.transformer.addon.Watermarking;
 import tech.skidonion.obfuscator.utils.FileUtils;
 import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.JPhantomUtils;
+import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -46,19 +46,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-
-import static org.objectweb.asm.ClassReader.*;
+import java.util.zip.*;
 
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.0.0";
+    public static final String VERSION = "v0.2.1.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
@@ -230,7 +225,10 @@ public class PhantomShield {
 
         if (Inline._advanced_checkCRCImage(0x86543210) == 0x86543210)
             try {
-
+                File dumpDir = new File(output.getAbsoluteFile().getParentFile(), "debug/dump/");
+                if (DEBUG) {
+                    dumpDir.mkdirs();
+                }
                 DateFormat formatter = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
                 String creationDate = config.getString("creation_date");
                 long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
@@ -244,14 +242,36 @@ public class PhantomShield {
                     }
                 }.forEach(classWrapper -> {
                     try {
+                        byte[] clzBytes = classWrapper.toByteArray();
+                        if (config.getBoolean("preverify")) {
+                            try {
+                                StringWriter stringWriter = new StringWriter();
+                                PrintWriter printWriter = new PrintWriter(stringWriter);
+                                CheckClassAdapterV2.verify(new ClassReader(clzBytes), false, printWriter, this);
+                                String errorInfo = stringWriter.toString();
+                                if (!errorInfo.isEmpty()) {
+                                    ERROR(TRANSLATION("phantom-shield-x.instance.verify-failed"), classWrapper.getOriginalName());
+                                    ERROR(errorInfo);
+                                    if (DEBUG) {
+                                        Files.write(new File(dumpDir, StringUtils.escapeCppNameString(classWrapper.getOriginalName()) + ".class").toPath(), clzBytes);
+                                    }
+                                }
+                            } catch (Throwable throwable) {
+                                ERROR(TRANSLATION("phantom-shield-x.instance.verify-failed"), classWrapper.getOriginalName());
+                                ERROR("", throwable);
+                                if (DEBUG) {
+                                    Files.write(new File(dumpDir, StringUtils.escapeCppNameString(classWrapper.getOriginalName()) + ".class").toPath(), clzBytes);
+                                }
+                            }
+                        }
                         ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
                         entry.setTime(timestamp);
                         zos.putNextEntry(entry);
-                        zos.write(classWrapper.toByteArray());
+                        zos.write(clzBytes);
                         zos.closeEntry();
                     } catch (IOException ioe) {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
-                        ioe.printStackTrace();
+                        ERROR("", ioe);
                     }
                 });
 
@@ -263,21 +283,28 @@ public class PhantomShield {
                             }
                         }
                         ZipEntry entry = new ZipEntry(name);
+                        if (name.endsWith(".jar") && name.startsWith("BOOT-INF/lib")) {
+                            entry.setMethod(ZipEntry.STORED);
+                            entry.setSize(bytes.length);
+                            CRC32 crc = new CRC32();
+                            crc.update(bytes);
+                            entry.setCrc(crc.getValue());
+                        }
                         zos.putNextEntry(entry);
                         zos.write(bytes);
                         zos.closeEntry();
                     } catch (IOException ioe) {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.resource-error"), name);
-                        ioe.printStackTrace();
+                        ERROR("", ioe);
                     }
                 });
                 zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://skidonion.tech/"));
                 zos.close();
             } catch (IOException ioe) {
-                ioe.printStackTrace();
+                ERROR("", ioe);
                 throw new RuntimeException();
             } catch (ParseException pe) {
-                pe.printStackTrace();
+                ERROR("", pe);
                 throw new RuntimeException(pe);
             }
     }
@@ -304,19 +331,19 @@ public class PhantomShield {
 
                         if (!entry.isDirectory() && entry.getName().endsWith(".class"))
                             try {
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), true, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(zipFile.getInputStream(entry)), ClassWrapper.ProcessType.LIBRARY);
                                 classpath.put(cw.getName(), cw);
                             } catch (Throwable t) {
                                 ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error"), entry.getName().replace(".class", ""));
-                                t.printStackTrace();
+                                ERROR("", t);
                             }
                     }
                 } catch (ZipException e) {
                     ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error2"), file.getAbsolutePath());
-                    e.printStackTrace();
+                    ERROR("", e);
                 } catch (IOException e) {
                     ERROR(BUNDLE.getString("phantom-shield-x.instance.library-error3"), file.getAbsolutePath());
-                    e.printStackTrace();
+                    ERROR("", e);
                 }
 
             }
@@ -365,13 +392,13 @@ public class PhantomShield {
                         if (entry.getName().endsWith(".class"))
                             try {
                                 byte[] bytes = IOUtils.toByteArray(in);
-                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_CODE | SKIP_FRAMES | SKIP_DEBUG, null);
+                                ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.LIBRARY);
 
                                 if (filter == null || !filter.match(cw)) {
-                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, SKIP_FRAMES, null);
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.INPUT);
                                     classes.put(cw.getName(), cw);
                                 } else {
-                                    cw = new ClassWrapper(this, new ClassReader(bytes), false, 0, 0);
+                                    cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.SOFT_EXCLUSION);
                                     softExclusions.put(cw.getName(), cw);
                                 }
 
@@ -445,7 +472,7 @@ public class PhantomShield {
                         reader.accept(node, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
                         if (!classpath.containsKey(node.name)) {
-                            classpath.put(node.name, new ClassWrapper(this, node, true, null));
+                            classpath.put(node.name, new ClassWrapper(this, node, ClassWrapper.ProcessType.LIBRARY));
                         }
 
                     });
@@ -463,11 +490,11 @@ public class PhantomShield {
                 }
             } catch (ZipException e) {
                 ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-2"), input.getAbsolutePath());
-                e.printStackTrace();
+                ERROR("", e);
                 throw new RuntimeException(e);
             } catch (IOException e) {
                 ERROR(BUNDLE.getString("phantom-shield-x.instance.input-error-3"), input.getAbsolutePath());
-                e.printStackTrace();
+                ERROR("", e);
                 throw new RuntimeException(e);
             }
 
@@ -565,26 +592,43 @@ public class PhantomShield {
     }
 
     public void buildHierarchy(ClassWrapper wrapper, ClassWrapper sub) {
-        if (hierarchy.get(wrapper.getName()) == null) {
-            ClassTree tree = new ClassTree(wrapper);
+        ClassTree tree;
+        if ((tree = hierarchy.get(wrapper.getName())) == null) {
+            tree = new ClassTree(wrapper);
 
             if (wrapper.getSuperName() != null && !"java/lang/Object".equals(wrapper.getSuperName())) {
                 tree.getParentClasses().add(wrapper.getSuperName());
 
                 buildHierarchy(getClassWrapper(wrapper.getSuperName()), wrapper);
             }
-            if (wrapper.getInterfaces() != null)
-                wrapper.getInterfaces().forEach(s -> {
+            if (wrapper.getInterfaces() != null) {
+                for (String s : wrapper.getInterfaces()) {
                     tree.getParentClasses().add(s);
 
                     buildHierarchy(getClassWrapper(s), wrapper);
-                });
+                }
+            }
 
             hierarchy.put(wrapper.getName(), tree);
         }
 
-        if (sub != null)
-            hierarchy.get(wrapper.getName()).getSubClasses().add(sub.getName());
+        processSubClass(tree, sub);
+    }
+
+    private void processSubClass(ClassTree tree, ClassWrapper sub) {
+        if (sub != null) {
+            if (tree.getAllSubClasses() != null) {
+                tree.getAllSubClasses().add(sub.getName());
+                for (String parentClass : tree.getParentClasses()) {
+                    ClassTree subTree = getTree(parentClass);
+                    if (subTree.getAllSubClasses() != null) {
+                        subTree.getAllSubClasses().add(sub.getName());
+                        processSubClass(subTree, sub);
+                    }
+                }
+            }
+            tree.getSubClasses().add(sub.getName());
+        }
     }
 
     public void buildInheritance() {

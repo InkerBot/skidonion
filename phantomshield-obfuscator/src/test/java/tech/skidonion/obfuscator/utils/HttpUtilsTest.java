@@ -14,7 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HttpUtilsTest {
     private static final String URL = "https://skidonion.tech/api/admin/";
-//    private static final String URL = "http://localhost:8694/api/admin/";
+
+    //    private static final String URL = "http://localhost:8694/api/admin/";
     @Test
     void softwareInformation() {
         Map<String, String> params = new HashMap<>();
@@ -100,6 +101,15 @@ class HttpUtilsTest {
         System.out.println(result);
     }
 
+    @Test
+    void UsersByQQ() {
+        Map<String, String> params = new HashMap<>();
+        params.put("qq", "3801318676");
+        params.put("software_id", "1");
+        String result = HttpUtils.post(URL + "users-by-qq", params, header());
+        System.out.println(result);
+    }
+
 
     public static Map<String, String> header() {
         Map<String, String> header = new HashMap<>();
@@ -109,8 +119,7 @@ class HttpUtilsTest {
     }
 
     @Test
-    void resolve()
-    {
+    void resolve() {
         try {
             InetAddress addr = InetAddress.getByName("skidonion.tech");
             System.out.println(Arrays.toString(addr.getAddress()));
