@@ -150,6 +150,10 @@ public class Renamer extends Transformer {
                     break process;
                 }
 
+//                "data": {
+//                    "named:intermediary": {
+//                        "cn/pixellive/mc/game/mixin/BlockItemMixin": {
+
                 getResources().put(mixins_json.getValue(), GSON.toJson(mixinJson).getBytes(StandardCharsets.UTF_8));
             } else {
                 ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-config-not-found"), mixins_json.getValue());
@@ -169,14 +173,33 @@ public class Renamer extends Transformer {
                         if (mapper.getClassMappings().containsKey(key)) {
                             mapped.add(mapper.getClassMappings().get(key), value);
                         } else {
+                            mapped.add(key, value);
                             WARN(TRANSLATION("phantom-shield-x.renamer.mixin-not-found"), key);
                         }
                     }
                     refJson.add("mappings", mapped);
-
                 } else {
                     ERROR(TRANSLATION("phantom-shield-x.renamer.mixin-miss-mappings"));
-                    break process;
+                }
+
+                if (refJson.has("data")) {
+                    JsonObject data = refJson.get("data").getAsJsonObject();
+                    for (Map.Entry<String, JsonElement> dataEntry : data.entrySet()) {
+                        String dataKey = dataEntry.getKey();
+                        JsonObject dataValue = dataEntry.getValue().getAsJsonObject();
+                        JsonObject mapped = new JsonObject();
+                        for (Map.Entry<String, JsonElement> entry : dataValue.entrySet()) {
+                            String key = entry.getKey();
+                            JsonElement value = entry.getValue();
+                            if (mapper.getClassMappings().containsKey(key)) {
+                                mapped.add(mapper.getClassMappings().get(key), value);
+                            } else {
+                                mapped.add(key, value);
+                                WARN(TRANSLATION("phantom-shield-x.renamer.mixin-not-found"), key);
+                            }
+                        }
+                        data.add(dataKey, mapped);
+                    }
                 }
 
                 getResources().put(mixins_ref_json.getValue(), GSON.toJson(refJson).getBytes(StandardCharsets.UTF_8));
