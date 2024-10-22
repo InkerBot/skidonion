@@ -27,6 +27,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 package org.objectweb.asm.tree.analysis;
 
+import java.util.HashSet;
 import java.util.List;
 
 import lombok.val;
@@ -438,8 +439,8 @@ public class SimpleVerifierV2 extends BasicVerifier {
         }
         val type1Name = type1.getClassName().replace('.', '/');
         val type2Name = type2.getClassName().replace('.', '/');
-        obfuscator.buildHierarchy(obfuscator.getClassWrapper(type1Name), null);
-        obfuscator.buildHierarchy(obfuscator.getClassWrapper(type2Name), null);
+        obfuscator.buildHierarchy(obfuscator.getClassWrapper(type1Name), null, new HashSet<>());
+        obfuscator.buildHierarchy(obfuscator.getClassWrapper(type2Name), null, new HashSet<>());
         return obfuscator.isAssignableFrom(type1Name, type2Name);
 //        return getClass(type1).isAssignableFrom(getClass(type2));
     }

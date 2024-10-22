@@ -12,7 +12,7 @@ public class ClassTree {
     private final ClassWrapper classWrapper;
     private final Set<String> parentClasses = new HashSet<>();
     private final Set<String> subClasses = new HashSet<>();
-    private Set<String> allSubClasses;
+    private final Set<String> allSubClasses = new HashSet<>();
 
     /**
      * Creates a ClassTree object.
@@ -49,7 +49,4 @@ public class ClassTree {
         return allSubClasses;
     }
 
-    public void setAllSubClasses(Set<String> allSubClasses) {
-        this.allSubClasses = allSubClasses;
-    }
 }

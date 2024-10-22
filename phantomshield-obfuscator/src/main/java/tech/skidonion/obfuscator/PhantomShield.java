@@ -1,5 +1,6 @@
 package tech.skidonion.obfuscator;
 
+import lombok.Getter;
 import org.clyze.jphantom.ClassMembers;
 import org.clyze.jphantom.JPhantom;
 import org.clyze.jphantom.Phantoms;
@@ -51,23 +52,30 @@ import java.util.zip.*;
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.1.0";
+    public static final String VERSION = "v0.2.2.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();
+    @Getter
     public final Map<String, ClassWrapper> softExclusions = new HashMap<>();
     public final Map<String, ClassWrapper> classpath = new HashMap<>();
     public final Map<String, byte[]> resources = new HashMap<>();
     public final Map<String, Dictionary> classesDictionaries = new HashMap<>();
     public final Map<String, Dictionary> packageDictionaries = new HashMap<>();
     private final Map<String, ClassTree> hierarchy = new HashMap<>();
+    @Getter
     private final TransformerRegister register = new TransformerRegister();
+    @Getter
     private final Config config;
+    @Getter
     private long seed;
+    @Getter
     private boolean printClassesAsDirectory;
+    @Getter
     private Dictionary dictionary;
+    @Getter
     private CppCompiler compiler;
 
     public PhantomShield(File file) throws IOException {
@@ -202,9 +210,11 @@ public class PhantomShield {
         register.process(this);
 
         try {
-            Watermarking watermarking = new Watermarking();
-            watermarking.init(this);
-            watermarking.transform();
+            if (!classes.isEmpty()) {
+                Watermarking watermarking = new Watermarking();
+                watermarking.init(this);
+                watermarking.transform();
+            }
         } catch (Exception e) {
             ERROR(BUNDLE.getString("phantom-shield-x.instance.fatal-error"), e);
             return;
@@ -233,7 +243,9 @@ public class PhantomShield {
                 String creationDate = config.getString("creation_date");
                 long timestamp = creationDate != null ? formatter.parse(creationDate).getTime() : -1;
 
-                ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output.toPath()));
+                ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(output.toPath())));
+
+                HashSet<String> directorySet = new HashSet<>();
 
                 new ArrayList<ClassWrapper>() {
                     {
@@ -244,6 +256,7 @@ public class PhantomShield {
                     try {
                         byte[] clzBytes = classWrapper.toByteArray();
                         if (config.getBoolean("preverify")) {
+                            INFO(TRANSLATION("phantom-shield-x.instance.verifying"));
                             try {
                                 StringWriter stringWriter = new StringWriter();
                                 PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -264,6 +277,7 @@ public class PhantomShield {
                                 }
                             }
                         }
+                        processDirectories(directorySet, classWrapper.getEntryName());
                         ZipEntry entry = new ZipEntry(classWrapper.getEntryName() + (isPrintClassesAsDirectory() ? "/" : ""));
                         entry.setTime(timestamp);
                         zos.putNextEntry(entry);
@@ -277,6 +291,7 @@ public class PhantomShield {
 
                 resources.forEach((name, bytes) -> {
                     try {
+                        processDirectories(directorySet, name);
                         if (name.endsWith(".class")) {
                             if (isPrintClassesAsDirectory()) {
                                 name += "/";
@@ -298,6 +313,11 @@ public class PhantomShield {
                         ERROR("", ioe);
                     }
                 });
+
+                for (String directory : directorySet) {
+                    zos.putNextEntry(new ZipEntry(directory));
+                    zos.closeEntry();
+                }
                 zos.setComment(String.format("Phantom Shield X %s\n%s", VERSION, "https://skidonion.tech/"));
                 zos.close();
             } catch (IOException ioe) {
@@ -307,6 +327,12 @@ public class PhantomShield {
                 ERROR("", pe);
                 throw new RuntimeException(pe);
             }
+    }
+
+    private static void processDirectories(HashSet<String> directories, String entryName) {
+        StringBuilder builder = new StringBuilder(entryName);
+        for (int index = builder.length(); (index = builder.lastIndexOf("/", index - 1)) != -1; )
+            if (!directories.add(builder.substring(0, index + 1))) break;
     }
 
     private void loadClassPath(File file) {
@@ -387,9 +413,8 @@ public class PhantomShield {
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
                     InputStream in = zipFile.getInputStream(entry);
-
-                    if (!entry.isDirectory())
-                        if (entry.getName().endsWith(".class"))
+                    if (!entry.isDirectory()) {
+                        if (entry.getName().endsWith(".class")) {
                             try {
                                 byte[] bytes = IOUtils.toByteArray(in);
                                 ClassWrapper cw = new ClassWrapper(this, new ClassReader(bytes), ClassWrapper.ProcessType.LIBRARY);
@@ -413,8 +438,10 @@ public class PhantomShield {
                                 LOGGER.warn(BUNDLE.getString("phantom-shield-x.instance.input-error"), entry.getName());
                                 this.resources.put(entry.getName(), IOUtils.toByteArray(in));
                             }
-                        else
+                        } else {
                             this.resources.put(entry.getName(), IOUtils.toByteArray(in));
+                        }
+                    }
                 }
 
                 if (config.has("generate_phantom_classes") && config.getBoolean("generate_phantom_classes")) {
@@ -518,14 +545,6 @@ public class PhantomShield {
         }
     }
 
-    public Config getConfig() {
-        return config;
-    }
-
-    public CppCompiler getCompiler() {
-        return compiler;
-    }
-
     /**
      * Equivalent to the following:
      * Class clazz1 = something;
@@ -539,28 +558,7 @@ public class PhantomShield {
             return true;
 
         getClassWrapper(type2);
-
-        return buildAllSubClasses(type1).contains(type2);
-    }
-
-    private Set<String> buildAllSubClasses(String clazz) {
-
-        ClassTree tree = getTree(clazz);
-        if (tree == null)
-            throw new RuntimeException(String.format(BUNDLE.getString("phantom-shield-x.instance.hierarchy-error"), clazz));
-
-        if (tree.getAllSubClasses() == null) {
-            Set<String> visited = new HashSet<>();
-            for (String subClazz : tree.getSubClasses()) {
-                if (visited.add(subClazz)) {
-                    visited.addAll(buildAllSubClasses(subClazz));
-                }
-            }
-            tree.setAllSubClasses(visited);
-            return visited;
-        } else {
-            return tree.getAllSubClasses();
-        }
+        return getTree(type1).getAllSubClasses().contains(type2);
     }
 
     /**
@@ -585,81 +583,64 @@ public class PhantomShield {
     public ClassTree getTree(String ref) {
         if (!hierarchy.containsKey(ref)) {
             ClassWrapper wrapper = getClassWrapper(ref);
-            buildHierarchy(wrapper, null);
+            buildHierarchy(wrapper, null, new HashSet<>());
         }
 
         return hierarchy.get(ref);
     }
 
-    public void buildHierarchy(ClassWrapper wrapper, ClassWrapper sub) {
+    public void buildHierarchy(ClassWrapper wrapper, ClassWrapper curSub, HashSet<String> allSubs) {
         ClassTree tree;
         if ((tree = hierarchy.get(wrapper.getName())) == null) {
             tree = new ClassTree(wrapper);
-
+            tree.getAllSubClasses().addAll(allSubs);
+            allSubs.add(wrapper.getName());
             if (wrapper.getSuperName() != null && !"java/lang/Object".equals(wrapper.getSuperName())) {
                 tree.getParentClasses().add(wrapper.getSuperName());
-
-                buildHierarchy(getClassWrapper(wrapper.getSuperName()), wrapper);
+                buildHierarchy(getClassWrapper(wrapper.getSuperName()), wrapper, allSubs);
             }
             if (wrapper.getInterfaces() != null) {
                 for (String s : wrapper.getInterfaces()) {
                     tree.getParentClasses().add(s);
-
-                    buildHierarchy(getClassWrapper(s), wrapper);
+                    buildHierarchy(getClassWrapper(s), wrapper, allSubs);
                 }
             }
-
             hierarchy.put(wrapper.getName(), tree);
+        } else if (!allSubs.isEmpty()) {
+            processSubClass(tree, allSubs);
+        } else {
+            processSubClass(tree, curSub);
         }
-
-        processSubClass(tree, sub);
+        if (curSub != null) {
+            tree.getSubClasses().add(curSub.getName());
+        }
     }
 
     private void processSubClass(ClassTree tree, ClassWrapper sub) {
         if (sub != null) {
-            if (tree.getAllSubClasses() != null) {
-                tree.getAllSubClasses().add(sub.getName());
-                for (String parentClass : tree.getParentClasses()) {
-                    ClassTree subTree = getTree(parentClass);
-                    if (subTree.getAllSubClasses() != null) {
-                        subTree.getAllSubClasses().add(sub.getName());
-                        processSubClass(subTree, sub);
-                    }
-                }
+            tree.getAllSubClasses().add(sub.getName());
+            for (String parentClass : tree.getParentClasses()) {
+                processSubClass(getTree(parentClass), sub);
             }
-            tree.getSubClasses().add(sub.getName());
+        }
+    }
+
+    private void processSubClass(ClassTree tree, HashSet<String> sub) {
+        tree.getAllSubClasses().addAll(sub);
+        for (String parentClass : tree.getParentClasses()) {
+            processSubClass(getTree(parentClass), sub);
         }
     }
 
     public void buildInheritance() {
         classes.values().forEach(classWrapper -> {
             try {
-                buildHierarchy(classWrapper, null);
+                buildHierarchy(classWrapper, null, new HashSet<>());
             } catch (Exception e) {
                 ERROR(classWrapper.getName());
                 throw e;
             }
         });
-    }
-
-    public Dictionary getDictionary() {
-        return dictionary;
-    }
-
-    public TransformerRegister getRegister() {
-        return register;
-    }
-
-    public long getSeed() {
-        return seed;
-    }
-
-    public Map<String, ClassWrapper> getSoftExclusions() {
-        return softExclusions;
-    }
-
-    public boolean isPrintClassesAsDirectory() {
-        return printClassesAsDirectory;
     }
 
     public static void INFO(String message, Object... arguments) {

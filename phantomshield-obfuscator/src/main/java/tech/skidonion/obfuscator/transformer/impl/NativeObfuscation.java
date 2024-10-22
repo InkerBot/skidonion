@@ -609,7 +609,7 @@ public class NativeObfuscation extends Transformer {
             InternalClasses.inject(this, classes);
 
             for (ClassWrapper cw : classes) {
-                obfuscator.buildHierarchy(cw, null);
+                obfuscator.buildHierarchy(cw, null, new HashSet<>());
                 String origin = cw.getOriginalName();
                 addInternalInclusion(origin, "*");
                 for (MethodWrapper mw : cw.getMethods()) {
