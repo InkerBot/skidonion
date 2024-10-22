@@ -256,7 +256,6 @@ public class PhantomShield {
                     try {
                         byte[] clzBytes = classWrapper.toByteArray();
                         if (!config.has("preverify") || config.getBoolean("preverify")) {
-                            INFO(TRANSLATION("phantom-shield-x.instance.verifying"));
                             try {
                                 StringWriter stringWriter = new StringWriter();
                                 PrintWriter printWriter = new PrintWriter(stringWriter);
