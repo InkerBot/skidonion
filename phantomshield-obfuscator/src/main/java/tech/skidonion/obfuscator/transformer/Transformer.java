@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.transformer;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -23,8 +25,11 @@ import static org.objectweb.asm.ClassReader.SKIP_FRAMES;
 public abstract class Transformer implements Opcodes {
     public PhantomShield obfuscator;
     private final boolean forceEnabled;
+    @Getter
     private final String name;
+    @Setter
     private boolean enabled;
+    @Setter
     private Filter filter;
     private final List<Value<?>> settings = new ArrayList<>();
     private final Map<String, Set<String>> internal = new HashMap<>();
@@ -54,17 +59,28 @@ public abstract class Transformer implements Opcodes {
      * */
     public abstract String annotation();
 
+
     public final ClassWrapper injectClass(ClassNode classNode) {
+        return injectClass("", classNode);
+    }
+
+    public final ClassWrapper injectClass(String entryPrefix, ClassNode classNode) {
         ClassWrapper cw = new ClassWrapper(obfuscator, classNode, ClassWrapper.ProcessType.INPUT);
+        cw.setEntryPrefix(entryPrefix);
         obfuscator.classes.put(cw.getName(), cw);
         obfuscator.classpath.put(cw.getName(), cw);
         return cw;
     }
 
     public final List<ClassWrapper> injectClasses(Collection<ClassNode> classNodes) {
+        return injectClasses("", classNodes);
+    }
+
+    public final List<ClassWrapper> injectClasses(String entryPrefix, Collection<ClassNode> classNodes) {
         List<ClassWrapper> val = new ArrayList<>();
         for (ClassNode classNode : classNodes) {
             ClassWrapper cw = new ClassWrapper(obfuscator, classNode, ClassWrapper.ProcessType.INPUT);
+            cw.setEntryPrefix(entryPrefix);
             obfuscator.classes.put(cw.getName(), cw);
             obfuscator.classpath.put(cw.getName(), cw);
             val.add(cw);
@@ -73,21 +89,33 @@ public abstract class Transformer implements Opcodes {
     }
 
     public final void injectClassAsResource(ClassNode classNode) {
+        injectClassAsResource("", classNode);
+    }
+
+    public final void injectClassAsResource(String entryPrefix, ClassNode classNode) {
         ClassWriter cw = new ClassWriter(0);
         classNode.accept(cw);
-        obfuscator.resources.put(classNode.name + ".class", cw.toByteArray());
+        obfuscator.resources.put(entryPrefix + classNode.name + ".class", cw.toByteArray());
     }
 
     public final void injectClassesAsResource(Collection<ClassNode> classNodes) {
+        injectClassesAsResource("", classNodes);
+    }
+
+    public final void injectClassesAsResource(String entryPrefix, Collection<ClassNode> classNodes) {
         for (ClassNode classNode : classNodes) {
             ClassWriter cw = new ClassWriter(0);
             classNode.accept(cw);
-            obfuscator.resources.put(classNode.name + ".class", cw.toByteArray());
+            obfuscator.resources.put(entryPrefix + classNode.name + ".class", cw.toByteArray());
         }
     }
 
     public final void injectResources(Map<String, byte[]> resources) {
-        obfuscator.resources.putAll(resources);
+        injectResources("", resources);
+    }
+
+    public final void injectResources(String entryPrefix, Map<String, byte[]> resources) {
+        resources.forEach((entryName, data) -> obfuscator.resources.put(entryPrefix + entryName, data));
     }
 
     protected void addSetting(Value<?> setting) {
@@ -104,20 +132,8 @@ public abstract class Transformer implements Opcodes {
         return settings.toArray(new Value[0]);
     }
 
-    public String getName() {
-        return name;
-    }
-
     public boolean isEnabled() {
         return enabled || forceEnabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public void setFilter(Filter filter) {
-        this.filter = filter;
     }
 
     public boolean match(String expression) {

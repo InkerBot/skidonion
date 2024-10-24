@@ -59,7 +59,7 @@ public class TestRun {
                 .setFieldPrefixNameSetting("field_") //
                 .setDictionarySetting("abcdefghijklmnopqrstuvwxyz") //
                 .setMinimumGeneratedNameLengthSetting(1) //
-                .setPrintMappingsSetting(false) //
+                .setPrintMappingsSetting(true) //
                 .setPrintMappingsFileSetting("mappings.json") //
 //                .setInputMappingsFileSetting("mappings.json") //
                 .addAdaptResources("META-INF/MANIFEST.MF") //
@@ -76,14 +76,15 @@ public class TestRun {
 
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
-                .setPrintInstructionsSetting(true) //
+                .setPrintInstructionsSetting(false) //
+                .setEntryPrefixSetting("BOOT-INF/classes/") //
                 .addTarget("x86_64-windows-gnu") //
 //                .setLegacyCompileModeSetting(false)//
                 .setNullSafetySetting(true)//
 //                .addTarget("x86_64-linux-gnu") //
 //                .addTarget("x86_64-macos") //
 //                .addTarget("aarch64-macos") //
-                .setVerificationEnableSetting(true)//
+                .setVerificationEnableSetting(false)//
 //                .setVerificationServerSetting("http://localhost:8694/")//
                 .setVerificationTokenSetting("769e4f678db8436b0018fc6fe60a5a7a")//
                 .setVerificationUserIdSetting("1")//

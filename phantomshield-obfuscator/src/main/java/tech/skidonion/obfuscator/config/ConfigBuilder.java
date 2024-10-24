@@ -38,6 +38,7 @@ public class ConfigBuilder {
 
     // native obfuscation
     private boolean nativeObfuscationEnable = false;
+    private String entryPrefixSetting = "";
     private String loaderPackageSetting = "skidonion/??????";
     private boolean printInstructionsSetting = false;
     private boolean hiddenStackTraceSetting = true;
@@ -164,6 +165,7 @@ public class ConfigBuilder {
             Map<String, Object> native_obfuscation = new LinkedHashMap<>();
 
             // 添加 settings
+            native_obfuscation.put("entry_prefix", entryPrefixSetting);
             native_obfuscation.put("loader_package", loaderPackageSetting);
             native_obfuscation.put("print_instructions", printInstructionsSetting);
             native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
@@ -638,6 +640,11 @@ public class ConfigBuilder {
 
     public ConfigBuilder setPreverifySetting(boolean preverifySetting) {
         this.preverifySetting = preverifySetting;
+        return this;
+    }
+
+    public ConfigBuilder setEntryPrefixSetting(String entryPrefixSetting) {
+        this.entryPrefixSetting = entryPrefixSetting;
         return this;
     }
 }

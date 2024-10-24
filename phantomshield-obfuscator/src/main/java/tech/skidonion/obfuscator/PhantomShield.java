@@ -52,9 +52,9 @@ import java.util.zip.*;
 @NativeObfuscation
 @LoadAfterLogin(value = "基础用户组", priority = 0)
 public class PhantomShield {
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
     public static ResourceBundle BUNDLE;
-    public static final String VERSION = "v0.2.2.0";
+    public static final String VERSION = "v0.2.3.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(PhantomShield.class);
     public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     public final Map<String, ClassWrapper> classes = new LinkedHashMap<>();

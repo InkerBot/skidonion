@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.asm;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -38,22 +40,35 @@ public class ClassWrapper {
     }
 
     private final PhantomShield obfuscator;
+    @Setter
+    @Getter
     private ClassNode classNode;
+    @Getter
     private final String originalName;
+    @Getter
     private final String originalSuperName;
 
+    @Setter
     private String entryPrefix;
+    @Getter
     private final Access access;
     private Dictionary methodDictionary;
     private Dictionary fieldDictionary;
+    @Getter
     private final List<AnnotationNode> originalAnnotations = new ArrayList<>();
+    @Getter
     private final List<String> originalInterfaces = new ArrayList<>();
+    @Getter
     private final List<MethodWrapper> methods = new ArrayList<>();
+    @Getter
     private final List<FieldWrapper> fields = new ArrayList<>();
+    @Getter
     private final List<String> strConsts = new ArrayList<>();
 
     private Set<String> membersHierarchy;
+    @Getter
     private final Map<String, MethodWrapper> methodDescriptors = new HashMap<>();
+    @Getter
     private final Map<String, FieldWrapper> fieldDescriptors = new HashMap<>();
 
     public ClassWrapper(PhantomShield obfuscator, ClassReader cr, ProcessType type) {
@@ -209,46 +224,10 @@ public class ClassWrapper {
     }
 
     /**
-     * Attached class node.
-     */
-    public ClassNode getClassNode() {
-        return classNode;
-    }
-
-    public void setClassNode(ClassNode classNode) {
-        this.classNode = classNode;
-    }
-
-    /**
-     * @return original name of wrapped {@link ClassNode}.
-     */
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    /**
      * @return true if this wrapper represents a library class.
      */
     public boolean isLibraryNode() {
         return type == ProcessType.LIBRARY || type == ProcessType.SOFT_EXCLUSION;
-    }
-
-    /**
-     * @return {@link ArrayList} of {@link MethodWrapper}s this wrapper contains.
-     */
-    public List<MethodWrapper> getMethods() {
-        return methods;
-    }
-
-    /**
-     * @return {@link ArrayList} of {@link FieldWrapper}s this wrapper contains.
-     */
-    public List<FieldWrapper> getFields() {
-        return fields;
-    }
-
-    public List<String> getStrConsts() {
-        return strConsts;
     }
 
     /**
@@ -281,13 +260,6 @@ public class ClassWrapper {
      */
     public List<String> getInterfaces() {
         return classNode.interfaces;
-    }
-
-    /**
-     * @return {@link ClassAccess} wrapper of represented {@link ClassNode}'s access flags.
-     */
-    public Access getAccess() {
-        return access;
     }
 
     /**
@@ -340,18 +312,6 @@ public class ClassWrapper {
         return new ClassReader(toByteArray()).getItemCount();
     }
 
-    public String getOriginalSuperName() {
-        return originalSuperName;
-    }
-
-    public List<AnnotationNode> getOriginalAnnotations() {
-        return originalAnnotations;
-    }
-
-    public List<String> getOriginalInterfaces() {
-        return originalInterfaces;
-    }
-
     public byte[] toByteArray() {
         // Construct byte writer
         ClassWriter writer = new CustomClassWriter(type == ProcessType.INPUT ? (allowsJSR() ? ClassWriter.COMPUTE_MAXS : ClassWriter.COMPUTE_FRAMES) : 0, obfuscator);
@@ -377,10 +337,6 @@ public class ClassWrapper {
 
             return writer.toByteArray();
         }
-    }
-
-    public void setEntryPrefix(String entryPrefix) {
-        this.entryPrefix = entryPrefix;
     }
 
     public String getEntryName() {
@@ -457,14 +413,6 @@ public class ClassWrapper {
         } else {
             return membersHierarchy;
         }
-    }
-
-    public Map<String, MethodWrapper> getMethodDescriptors() {
-        return methodDescriptors;
-    }
-
-    public Map<String, FieldWrapper> getFieldDescriptors() {
-        return fieldDescriptors;
     }
 
 }

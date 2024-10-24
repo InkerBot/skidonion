@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.cpp;
 
+import lombok.Getter;
+import lombok.Setter;
 import tech.skidonion.obfuscator.PhantomShield;
 import tech.skidonion.obfuscator.utils.IOUtils;
 
@@ -21,15 +23,20 @@ import static tech.skidonion.obfuscator.utils.StringUtils.createStringMap;
 
 public class CppCompiler {
     private final static SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyy-MM-dd-hhmmss");
+    @Setter
+    private String entryPrefix = "";
     private PhantomShield obfuscator;
     private boolean supportCrossCompile = false;
     private String compiler;
+    @Setter
     private String extraCommandLine;
+    @Setter
     private File outputDir;
     private boolean isDebug = false;
     private int isOnlyIntelPE = -1;
     private boolean isAarch64 = false;
     private String defaultOutput = "x64-windows.dll";
+    @Getter
     private final AtomicInteger virtualizeMacroCount = new AtomicInteger();
     private final List<String> targets = new ArrayList<>();
     private final List<String> cppFiles = new ArrayList<>();
@@ -138,7 +145,7 @@ public class CppCompiler {
                     this.injectLibrary(file, properties);
                 } else {
                     try (FileInputStream fis = new FileInputStream(file)) {
-                        obfuscator.resources.put(properties.get("loader_path") + "/" + file.getName(), IOUtils.toByteArray(fis));
+                        obfuscator.resources.put(entryPrefix + properties.get("loader_path") + "/" + file.getName(), IOUtils.toByteArray(fis));
                     } catch (IOException e) {
                         ERROR(TRANSLATION("phantom-shield-x.cpp-compiler.inject"), e);
                     }
@@ -377,23 +384,11 @@ public class CppCompiler {
         this.targets.addAll(Arrays.asList(targets));
     }
 
-    public void setExtraCommandLine(String extraCommandLine) {
-        this.extraCommandLine = extraCommandLine;
-    }
-
     /*
      * used for a compiled library
      * */
     public void setDefaultOutput(String defaultOutput) {
         this.defaultOutput = defaultOutput;
-    }
-
-    public void setOutputDir(File outputDir) {
-        this.outputDir = outputDir;
-    }
-
-    public AtomicInteger getVirtualizeMacroCount() {
-        return virtualizeMacroCount;
     }
 
     public void setAarch64(boolean aarch64) {
@@ -404,6 +399,7 @@ public class CppCompiler {
 //        legacyCompileMode = value;
 //    }
 
+    @Getter
     static class CompileInfo {
         private final OS os;
         private final ARCH arch;
@@ -415,19 +411,9 @@ public class CppCompiler {
             this.output = output;
         }
 
-        public OS getOs() {
-            return os;
-        }
-
-        public ARCH getArch() {
-            return arch;
-        }
-
-        public String getOutput() {
-            return output;
-        }
     }
 
+    @Getter
     enum OS {
         WINDOWS("windows"),
         LINUX("linux"),
@@ -439,11 +425,9 @@ public class CppCompiler {
             this.name = name;
         }
 
-        public String getName() {
-            return name;
-        }
     }
 
+    @Getter
     enum ARCH {
         X86("x86"),
         X64("x64"),
@@ -456,8 +440,5 @@ public class CppCompiler {
             this.name = name;
         }
 
-        public String getName() {
-            return name;
-        }
     }
 }

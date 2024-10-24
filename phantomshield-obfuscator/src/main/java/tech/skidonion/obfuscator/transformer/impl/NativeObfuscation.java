@@ -2,6 +2,7 @@ package tech.skidonion.obfuscator.transformer.impl;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.Getter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -67,6 +68,7 @@ public class NativeObfuscation extends Transformer {
     public final Map<String, Pair<String, FieldWrapper>> inlineFields = new HashMap<>();
     public final Map<String, Pair<String, MethodWrapper>> inlineMethods = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
+    private final ClassPackageValue entry_prefix = new ClassPackageValue("entry_prefix", "");
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
     private final BooleanValue null_safety = new BooleanValue("null_safety", false);
@@ -81,33 +83,46 @@ public class NativeObfuscation extends Transformer {
 
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, loader_package, hidden_stack_trace, null_safety, verification);
+        addSettings(print_instructions, entry_prefix, loader_package, hidden_stack_trace, null_safety, verification);
     }
 
+    @Getter
     private Snippets snippets;
+    @Getter
     private StringPool stringPool;
     private MethodProcessor methodProcessor;
+    @Getter
     private NodeCache<String> cachedStrings;
+    @Getter
     private NodeCache<String> cachedClasses;
+    @Getter
     private NodeCache<String> cachedInitClasses;
+    @Getter
     private NodeCache<CachedMethodInfo> cachedMethods;
+    @Getter
     private NodeCache<CachedFieldInfo> cachedFields;
+    @Getter
     private AtomicInteger cachedCallSitesIndex;
+    @Getter
     private HiddenMethodsPool hiddenMethodsPool;
     private int currentClassId;
+    @Getter
     private String nativeDir;
 
     private ClassWrapper dummyInlineClassWrapper;
 
 
     // verification
+    @Getter
     private final Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> encryptedClasses = new HashMap<>();
+    @Getter
     private final Map<String, BufferContext> verificationBuffer = new HashMap<>();
 
     private final byte[] sessionKey = new byte[16];
     private final byte[] nonce = new byte[12];
     private final Map<String, byte[]> magicKey = new HashMap<>();
 
+    @Getter
     private Context polyChainContext;
 
     private void init() {
@@ -131,6 +146,7 @@ public class NativeObfuscation extends Transformer {
     public void postprocess() throws Exception {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
         CppCompiler compiler = obfuscator.getCompiler();
+        compiler.setEntryPrefix(entry_prefix.getValue());
         compiler.setOutputDir(cppDir.toFile());
 
         FileUtils.copyResource("sources/jni.h", cppDir);
@@ -604,9 +620,9 @@ public class NativeObfuscation extends Transformer {
             // inject verification class
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
 
-            List<ClassWrapper> classes = injectClasses(ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
+            List<ClassWrapper> classes = injectClasses(entry_prefix.getValue(), ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
 
-            InternalClasses.inject(this, classes);
+            InternalClasses.inject(entry_prefix.getValue(), this, classes);
 
             for (ClassWrapper cw : classes) {
                 obfuscator.buildHierarchy(cw, null, new HashSet<>());
@@ -617,7 +633,7 @@ public class NativeObfuscation extends Transformer {
                 }
             }
             injected.addAll(classes);
-            injectResources(IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
+            injectResources(entry_prefix.getValue(), IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
             verifySoftwareId = -1L;
             verifyPolyKey = -1L;
@@ -827,6 +843,7 @@ public class NativeObfuscation extends Transformer {
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
         ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, ClassWrapper.ProcessType.INPUT);
+        inline.setEntryPrefix(entry_prefix.getValue());
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -838,6 +855,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
         dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, ClassWrapper.ProcessType.INPUT);
+        dummyInlineClassWrapper.setEntryPrefix(entry_prefix.getValue());
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)
@@ -1233,52 +1251,12 @@ public class NativeObfuscation extends Transformer {
                 return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
             }
         }));
-        injectClassesAsResource(Collections.singletonList(resultLoaderClass));
+        injectClassAsResource(entry_prefix.getValue(), resultLoaderClass);
     }
 
     @Override
     public String annotation() {
         return Type.getDescriptor(tech.skidonion.obfuscator.annotations.NativeObfuscation.class);
-    }
-
-    public AtomicInteger getCachedCallSitesIndex() {
-        return cachedCallSitesIndex;
-    }
-
-    public NodeCache<String> getCachedInitClasses() {
-        return cachedInitClasses;
-    }
-
-    public Snippets getSnippets() {
-        return snippets;
-    }
-
-    public StringPool getStringPool() {
-        return stringPool;
-    }
-
-    public NodeCache<String> getCachedStrings() {
-        return cachedStrings;
-    }
-
-    public NodeCache<String> getCachedClasses() {
-        return cachedClasses;
-    }
-
-    public NodeCache<CachedMethodInfo> getCachedMethods() {
-        return cachedMethods;
-    }
-
-    public NodeCache<CachedFieldInfo> getCachedFields() {
-        return cachedFields;
-    }
-
-    public String getNativeDir() {
-        return nativeDir;
-    }
-
-    public HiddenMethodsPool getHiddenMethodsPool() {
-        return hiddenMethodsPool;
     }
 
     public boolean isVerificationEnable() {
@@ -1289,15 +1267,4 @@ public class NativeObfuscation extends Transformer {
         return use_internal_user_interface.isEnable();
     }
 
-    public Map<String, BufferContext> getVerificationBuffer() {
-        return verificationBuffer;
-    }
-
-    public Map<String, Pair<byte[], List<PriorityObject<ClassWrapper>>>> getEncryptedClasses() {
-        return encryptedClasses;
-    }
-
-    public Context getPolyChainContext() {
-        return polyChainContext;
-    }
 }
