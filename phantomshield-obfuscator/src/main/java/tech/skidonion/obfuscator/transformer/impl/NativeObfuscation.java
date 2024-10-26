@@ -68,7 +68,6 @@ public class NativeObfuscation extends Transformer {
     public final Map<String, Pair<String, FieldWrapper>> inlineFields = new HashMap<>();
     public final Map<String, Pair<String, MethodWrapper>> inlineMethods = new HashMap<>();
     private final BooleanValue print_instructions = new BooleanValue("print_instructions", false);
-    private final ClassPackageValue entry_prefix = new ClassPackageValue("entry_prefix", "");
     private final ClassPackageValue loader_package = new ClassPackageValue("loader_package", "skidonion/??????");
     private final BooleanValue hidden_stack_trace = new BooleanValue("hidden_stack_trace", true);
     private final BooleanValue null_safety = new BooleanValue("null_safety", false);
@@ -83,7 +82,7 @@ public class NativeObfuscation extends Transformer {
 
     public NativeObfuscation(String name) {
         super(name, false);
-        addSettings(print_instructions, entry_prefix, loader_package, hidden_stack_trace, null_safety, verification);
+        addSettings(print_instructions, loader_package, hidden_stack_trace, null_safety, verification);
     }
 
     @Getter
@@ -146,7 +145,7 @@ public class NativeObfuscation extends Transformer {
     public void postprocess() throws Exception {
         Path cppDir = print_instructions.isEnable() ? new File(obfuscator.getConfig().getString("output")).getParentFile().toPath() : Files.createTempDirectory(null);
         CppCompiler compiler = obfuscator.getCompiler();
-        compiler.setEntryPrefix(entry_prefix.getValue());
+        compiler.setEntryPrefix(obfuscator.getGeneratedClassesEntryPrefix());
         compiler.setOutputDir(cppDir.toFile());
 
         FileUtils.copyResource("sources/jni.h", cppDir);
@@ -620,9 +619,9 @@ public class NativeObfuscation extends Transformer {
             // inject verification class
             INFO(TRANSLATION("phantom-shield-x.native.software"), entity.getAsJsonPrimitive("software_name").getAsString());
 
-            List<ClassWrapper> classes = injectClasses(entry_prefix.getValue(), ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
+            List<ClassWrapper> classes = injectClasses(obfuscator.getGeneratedClassesEntryPrefix(), ASMUtils.readClassesWithInputStream("/binaries/phantomshield-verification.bin", ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES));
 
-            InternalClasses.inject(entry_prefix.getValue(), this, classes);
+            InternalClasses.inject(obfuscator.getGeneratedClassesEntryPrefix(), this, classes);
 
             for (ClassWrapper cw : classes) {
                 obfuscator.buildHierarchy(cw, null, new HashSet<>());
@@ -633,7 +632,7 @@ public class NativeObfuscation extends Transformer {
                 }
             }
             injected.addAll(classes);
-            injectResources(entry_prefix.getValue(), IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
+            injectResources(obfuscator.getGeneratedClassesEntryPrefix(), IOUtils.readJarResources("/binaries/phantomshield-verification.bin"));
         } else {
             verifySoftwareId = -1L;
             verifyPolyKey = -1L;
@@ -843,7 +842,7 @@ public class NativeObfuscation extends Transformer {
         wrapper.name = "tech/skidonion/verification/InlineWrapper";
 //        ClassWrapper inline = injectClass(wrapper);
         ClassWrapper inline = new ClassWrapper(obfuscator, wrapper, ClassWrapper.ProcessType.INPUT);
-        inline.setEntryPrefix(entry_prefix.getValue());
+        inline.setEntryPrefix(obfuscator.getGeneratedClassesEntryPrefix());
         AtomicInteger inlineIndex = new AtomicInteger();
         addInternalInclusion(wrapper.name, "*");
 
@@ -855,7 +854,7 @@ public class NativeObfuscation extends Transformer {
         dummyClass.superName = "java/lang/Object";
         dummyClass.access = ACC_PUBLIC | ACC_SUPER;
         dummyInlineClassWrapper = new ClassWrapper(obfuscator, dummyClass, ClassWrapper.ProcessType.INPUT);
-        dummyInlineClassWrapper.setEntryPrefix(entry_prefix.getValue());
+        dummyInlineClassWrapper.setEntryPrefix(obfuscator.getGeneratedClassesEntryPrefix());
 
         inlineMethods.values().stream()
                 .map(Pair::getSecond)
@@ -1251,7 +1250,7 @@ public class NativeObfuscation extends Transformer {
                 return internalName.equals(originalLoaderClassName) ? loaderClassName : internalName;
             }
         }));
-        injectClassAsResource(entry_prefix.getValue(), resultLoaderClass);
+        injectClassAsResource(obfuscator.getGeneratedClassesEntryPrefix(), resultLoaderClass);
     }
 
     @Override

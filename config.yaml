@@ -2,17 +2,19 @@ input: C:\Users\ImFl0wow\workspace\phantom-shield-x\test\input\obf-test-1.0-SNAP
 output: C:\Users\ImFl0wow\workspace\phantom-shield-x\test\output\obf-test-1.0-SNAPSHOT.jar
 dictionary: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 minimum_generated_name_length: 1
+preverify: true
+generated_classes_entry_prefix: ''
 creation_date: 2024.2.5 12:00:00
 input_mappings_file: mappings.txt
 targets:
-- x86_64-windows
-- x86_64-linux-gnu
-- aarch64-macos
+  - x86_64-windows
+  - x86_64-linux-gnu
+  - aarch64-macos
 libraries:
-- C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\rt.jar
-- C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\jce.jar
+  - C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\rt.jar
+  - C:\Program Files\Eclipse Adoptium\jdk-8.0.412.8-hotspot\jre\lib\jce.jar
 filters:
-- -org.example.**
+  - -org.example.**
 native_obfuscation:
   loader_package: skidonion/?????
   print_instructions: false
@@ -27,24 +29,26 @@ native_obfuscation:
     verification_token: ''
     verification_keep_alive: true
   filters:
-  - +org.example.**
-  - -org.example.** void main(java.lang.String[])
+    - +org.example.**
+    - -org.example.** void main(java.lang.String[])
 string_encryption: {
-  }
+}
 renamer:
   print_mappings: true
   print_mappings_file: mappings.txt
-  prefix_name: ''
+  class_prefix_name: ''
+  method_prefix_name: ''
+  field_prefix_name: ''
   repackage: false
   repackage_name: skidonion/???
   adapt_resources:
-  - META-INF/MANIFEST.MF
+    - META-INF/MANIFEST.MF
   mixin:
     mixin_support: false
     mixins_json: mixins.json
     mixins_ref_json: mixins.ref.json
 member_shuffler: {
-  }
+}
 debug_information_remover:
   remove_signatures: true
   remove_source_file: true
@@ -53,7 +57,8 @@ debug_information_remover:
   remove_local_variable: true
   remove_kotlin_reference: true
 control_flow_obfuscation: {
-  }
-invoke_wrapper_obfuscation:
-  package_mode: ''
-  inject_to_other_class: true
+}
+trash_classes_injector:
+  total_generated_classes: 100
+  methods_amount: [ 3, 5 ]
+  fields_amount: [ 3, 5 ]

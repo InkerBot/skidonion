@@ -29,9 +29,9 @@ public class TestConfigBuilder {
                 .addSubFilter("native_obfuscation", "+org.example.**")
                 .addSubFilter("native_obfuscation", "-org.example.** void main(java.lang.String[])")
                 .setControlFlowObfuscationEnable(true)
-                .setInvokeWrapperEnable(true)
                 .setDebugInformationRemoverEnable(true)
                 .setMemberShufflerEnable(true)
+                .setTrashClassesInjectorEnable(true)
                 .build()
                 .save(new File("config.yaml"));
     }

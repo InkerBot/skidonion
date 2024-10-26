@@ -34,6 +34,7 @@ import tech.skidonion.obfuscator.utils.IOUtils;
 import tech.skidonion.obfuscator.utils.JPhantomUtils;
 import tech.skidonion.obfuscator.utils.StringUtils;
 import tech.skidonion.obfuscator.utils.commons.UTF8Control;
+import tech.skidonion.obfuscator.value.impls.ClassPackageValue;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -69,6 +70,8 @@ public class PhantomShield {
     private final TransformerRegister register = new TransformerRegister();
     @Getter
     private final Config config;
+    @Getter
+    private String generatedClassesEntryPrefix = "";
     @Getter
     private long seed;
     @Getter
@@ -118,6 +121,10 @@ public class PhantomShield {
 
         if (config.has("print_classes_as_directory")) {
             printClassesAsDirectory = config.getBoolean("print_classes_as_directory");
+        }
+
+        if (config.has("generated_classes_entry_prefix")) {
+            generatedClassesEntryPrefix = new ClassPackageValue("__", config.getString("generated_classes_entry_prefix")).getValue();
         }
 
         DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");

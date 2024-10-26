@@ -223,17 +223,6 @@ public abstract class Transformer implements Opcodes {
         return this.obfuscator.resources;
     }
 
-    protected String randomClassName() {
-        Collection<String> classNames = getClasses().keySet();
-        ArrayList<String> list = new ArrayList<>(classNames);
-
-        String first = list.get(RandomUtils.getRandomInt(classNames.size()));
-        String second = list.get(RandomUtils.getRandomInt(classNames.size()));
-
-        return first + '$' + second.substring(second.lastIndexOf("/") + 1);
-    }
-
-
     public final boolean hasAnnotation(ClassWrapper classWrapper) {
         if (annotation() == null)
             return false;

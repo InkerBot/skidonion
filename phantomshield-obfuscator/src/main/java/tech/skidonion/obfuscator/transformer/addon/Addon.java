@@ -33,13 +33,4 @@ public abstract class Addon {
         return this.obfuscator.resources;
     }
 
-    protected String randomClassName() {
-        Collection<String> classNames = getClasses().keySet();
-        ArrayList<String> list = new ArrayList<>(classNames);
-
-        String first = list.get(RandomUtils.getRandomInt(classNames.size()));
-        String second = list.get(RandomUtils.getRandomInt(classNames.size()));
-
-        return first + '$' + second.substring(second.lastIndexOf("/") + 1);
-    }
 }

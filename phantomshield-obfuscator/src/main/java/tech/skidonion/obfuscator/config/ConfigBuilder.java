@@ -1,5 +1,7 @@
 package tech.skidonion.obfuscator.config;
 
+import tech.skidonion.obfuscator.utils.commons.Pair;
+
 import java.io.File;
 import java.util.*;
 
@@ -10,6 +12,7 @@ public class ConfigBuilder {
     private boolean preverifySetting = true;
     private File inputJarSetting;
     private File outputJarSetting;
+    private String generatedClassesEntryPrefixSetting = "";
     private boolean generatePhantomClassesSetting = false;
     private String creationDateSetting;
     private String cppCompilerSetting;
@@ -38,7 +41,6 @@ public class ConfigBuilder {
 
     // native obfuscation
     private boolean nativeObfuscationEnable = false;
-    private String entryPrefixSetting = "";
     private String loaderPackageSetting = "skidonion/??????";
     private boolean printInstructionsSetting = false;
     private boolean hiddenStackTraceSetting = true;
@@ -82,10 +84,11 @@ public class ConfigBuilder {
     // control flow obfuscation
     private boolean controlFlowObfuscationEnable = false;
 
-    // invoke wrapper
-    private boolean invokeWrapperEnable = false;
-    private boolean injectToOtherClassSetting = true;
-    private String packageModeSetting = "";
+    // trash classes injector
+    private boolean trashClassesInjectorEnable = false;
+    private int totalGeneratedClassesSetting = 100;
+    private Pair<Integer, Integer> fieldsAmountSetting = new Pair<>(3, 5);
+    private Pair<Integer, Integer> methodsAmountSetting = new Pair<>(3, 5);
 
     public final Config build() {
         Config config = new Config();
@@ -94,6 +97,7 @@ public class ConfigBuilder {
         config.add("dictionary", dictionarySetting);
         config.add("minimum_generated_name_length", minimumGeneratedNameLengthSetting);
         config.add("preverify", preverifySetting);
+        config.add("generated_classes_entry_prefix", generatedClassesEntryPrefixSetting);
 
         if (debugSetting) {
             config.add("__debug", true);
@@ -165,7 +169,6 @@ public class ConfigBuilder {
             Map<String, Object> native_obfuscation = new LinkedHashMap<>();
 
             // 添加 settings
-            native_obfuscation.put("entry_prefix", entryPrefixSetting);
             native_obfuscation.put("loader_package", loaderPackageSetting);
             native_obfuscation.put("print_instructions", printInstructionsSetting);
             native_obfuscation.put("hidden_stack_trace", hiddenStackTraceSetting);
@@ -288,21 +291,22 @@ public class ConfigBuilder {
             config.add("control_flow_obfuscation", control_flow_obfuscation);
         }
 
-
-        invoke_wrapper_obfuscation:
+        trash_classes_injector:
         {
-            if (!invokeWrapperEnable) break invoke_wrapper_obfuscation;
-            Map<String, Object> invoke_wrapper_obfuscation = new LinkedHashMap<>();
+            if (!trashClassesInjectorEnable) break trash_classes_injector;
+            Map<String, Object> trash_classes_injector = new LinkedHashMap<>();
 
-            invoke_wrapper_obfuscation.put("package_mode", packageModeSetting);
-            invoke_wrapper_obfuscation.put("inject_to_other_class", injectToOtherClassSetting);
+            trash_classes_injector.put("total_generated_classes", totalGeneratedClassesSetting);
+            trash_classes_injector.put("methods_amount", new int[]{methodsAmountSetting.getFirst(), methodsAmountSetting.getSecond()});
+            trash_classes_injector.put("fields_amount", new int[]{fieldsAmountSetting.getFirst(), fieldsAmountSetting.getSecond()});
 
-            subFiltersSettings.computeIfPresent("invoke_wrapper_obfuscation", (k, v) -> {
-                invoke_wrapper_obfuscation.put("filters", v);
+            subFiltersSettings.computeIfPresent("trash_classes_injector", (k, v) -> {
+                trash_classes_injector.put("filters", v);
                 return v;
             });
-            config.add("invoke_wrapper_obfuscation", invoke_wrapper_obfuscation);
+            config.add("trash_classes_injector", trash_classes_injector);
         }
+
 
         return config;
     }
@@ -512,21 +516,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setInvokeWrapperEnable(boolean invokeWrapperEnable) {
-        this.invokeWrapperEnable = invokeWrapperEnable;
-        return this;
-    }
-
-    public ConfigBuilder setInjectToOtherClassSetting(boolean injectToOtherClassSetting) {
-        this.injectToOtherClassSetting = injectToOtherClassSetting;
-        return this;
-    }
-
-    public ConfigBuilder setPackageModeSetting(String packageModeSetting) {
-        this.packageModeSetting = packageModeSetting;
-        return this;
-    }
-
     public ConfigBuilder setCppCompilerIsAarch64(boolean cppCompilerIsAarch64) {
         this.cppCompilerIsAarch64 = cppCompilerIsAarch64;
         return this;
@@ -643,8 +632,28 @@ public class ConfigBuilder {
         return this;
     }
 
-    public ConfigBuilder setEntryPrefixSetting(String entryPrefixSetting) {
-        this.entryPrefixSetting = entryPrefixSetting;
+    public ConfigBuilder setGeneratedClassesEntryPrefixSetting(String generatedClassesEntryPrefixSetting) {
+        this.generatedClassesEntryPrefixSetting = generatedClassesEntryPrefixSetting;
+        return this;
+    }
+
+    public ConfigBuilder setTrashClassesInjectorEnable(boolean trashClassesInjectorEnable) {
+        this.trashClassesInjectorEnable = trashClassesInjectorEnable;
+        return this;
+    }
+
+    public ConfigBuilder setTotalGeneratedClassesSetting(int totalGeneratedClassesSetting) {
+        this.totalGeneratedClassesSetting = totalGeneratedClassesSetting;
+        return this;
+    }
+
+    public ConfigBuilder setMethodsAmountSetting(int min, int max) {
+        this.methodsAmountSetting = new Pair<>(min, max);
+        return this;
+    }
+
+    public ConfigBuilder setFieldsAmountSetting(int min, int max) {
+        this.fieldsAmountSetting = new Pair<>(min, max);
         return this;
     }
 }

@@ -23,8 +23,8 @@ public class TestRun {
 //        shuffler(builder);
 //        renamer(builder);
 //        string_encryption(builder);
-//        invoke_wrapper(builder);
-        control_flow(builder);
+        trash_classes_injector(builder);
+//        control_flow(builder);
 //        native_obfuscation(builder);
 //         =================
         new PhantomShield(builder.build()).process();
@@ -74,10 +74,17 @@ public class TestRun {
         builder.setStringEncryptionEnable(true);
     }
 
+    private static void trash_classes_injector(ConfigBuilder builder) {
+        builder.setTrashClassesInjectorEnable(true) //
+                .setTotalGeneratedClassesSetting(100)//
+                .setMethodsAmountSetting(3, 5)//
+                .setFieldsAmountSetting(3, 5)//
+        ;
+    }
+
     private static void native_obfuscation(ConfigBuilder builder) {
         builder.setNativeObfuscationEnable(true) //
                 .setPrintInstructionsSetting(false) //
-                .setEntryPrefixSetting("BOOT-INF/classes/") //
                 .addTarget("x86_64-windows-gnu") //
 //                .setLegacyCompileModeSetting(false)//
                 .setNullSafetySetting(true)//
@@ -91,8 +98,8 @@ public class TestRun {
                 .setVerificationSoftwareIdSetting("1") //
                 .setUseInternalUserInterfaceSetting(true)//
                 .addSubFilters("native_obfuscation",
-                        "+pack.**",
-                        "+pack.** * *(*)")
+                        "+tech.**",
+                        "+tech.** * *(*)")
 //                .addSubFilters("native_obfuscation", //
 //                        "+pack.Clazz",//
 //                        "+pack.Clazz * *(*)",//
@@ -104,21 +111,19 @@ public class TestRun {
         ;
     }
 
-    private static void invoke_wrapper(ConfigBuilder builder) {
-        builder.setInvokeWrapperEnable(true) //
-                .setInjectToOtherClassSetting(false) //
-                .setPackageModeSetting("random_existed");
-    }
-
     private static ConfigBuilder basic() {
         return new ConfigBuilder() //
-                .setGeneratePhantomClassesSetting(true) //
+                .setRandomSeedSetting(-4496018501843090857L) //
+                .setGeneratePhantomClassesSetting(false) //
                 .setPrintClassesAsDirectorySetting(false)//
-                .setInputJar(new File("test/input/obf-test-1.0-SNAPSHOT.jar")) //
-                .setOutputJar(new File("test/output/bench.jar")) //
                 .setPreverifySetting(true)//
+                .setInputJar(new File("test/input/bench.jar")) //
+                .setOutputJar(new File("test/output/bench.jar")) //
+//                .setGeneratedClassesEntryPrefixSetting("BOOT-INF/classes/") //
+//                .setInputJar(new File("test/input/output.jar")) //
+//                .setOutputJar(new File("test/output/output.jar")) //
 //                 .setLegacyCompileModeSetting(true)
-                .addLibrary(Paths.get("test", "libs").toString())
+//                .addLibrary(Paths.get("test", "libs").toString())
                 .addLibrary(System.getProperty("java.home") + File.separator + "jmods") // java 9+
                 .addLibrary(System.getProperty("java.home") + File.separator + "lib") // java 8
 //                .addSoftExclusions("-net.ccbluex.liquidbounce.**")

@@ -27,9 +27,9 @@ public class TransformerRegister {
         this.register(new MemberShuffler("member_shuffler"));
         this.register(new Renamer("renamer"));
         this.register(new StringEncryption("string_encryption"));
-        this.register(new InvokeWrapperObfuscation("invoke_wrapper_obfuscation"));
         this.register(new ControlFlowObfuscation("control_flow_obfuscation"));
         this.register(new NativeObfuscation("native_obfuscation"));
+        this.register(new TrashClassesInjector("trash_classes_injector"));
     }
 
     public void register(Transformer instance) {
