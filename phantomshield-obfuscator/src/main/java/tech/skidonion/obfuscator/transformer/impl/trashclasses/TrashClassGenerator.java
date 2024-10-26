@@ -1,6 +1,8 @@
 package tech.skidonion.obfuscator.transformer.impl.trashclasses;
 
 import lombok.val;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -126,8 +128,8 @@ public class TrashClassGenerator implements Opcodes {
         this.classes.add(trash);
     }
 
-    public List<ClassNode> build() {
-        List<ClassNode> classes = new ArrayList<>();
+    public Map<String, byte[]> build() {
+        Map<String, byte[]> classes = new HashMap<>();
 
         for (TrashClass clz : interfaces) {
             val node = new ClassNode();
@@ -152,7 +154,9 @@ public class TrashClassGenerator implements Opcodes {
                 node.methods.add(generateMethod(declare, true));
             }
 
-            classes.add(node);
+            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            node.accept(writer);
+            classes.put(node.name, writer.toByteArray());
         }
 
         for (TrashClass clz : abstractions) {
@@ -190,7 +194,9 @@ public class TrashClassGenerator implements Opcodes {
                 node.methods.add(generateMethod(declare, true));
             }
 
-            classes.add(node);
+            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            node.accept(writer);
+            classes.put(node.name, writer.toByteArray());
         }
 
         for (TrashClass clz : plain) {
@@ -229,7 +235,9 @@ public class TrashClassGenerator implements Opcodes {
                 node.methods.add(generateMethod(declare, false));
             }
 
-            classes.add(node);
+            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            node.accept(writer);
+            classes.put(node.name, writer.toByteArray());
         }
 
         return classes;
@@ -251,9 +259,10 @@ public class TrashClassGenerator implements Opcodes {
 
         int opAmount = ThreadLocalRandom.current().nextInt(5);
         for (int i = 0; i < opAmount; i++) {
+            node.instructions.add(new LabelNode());
             node.instructions.add(generateTrashCodeOperation());
         }
-
+        node.instructions.add(new LabelNode());
         if (declare.getReturnType().getSort() != Type.VOID) {
             node.instructions.add(generatePushOperation(declare.getReturnType()));
         }

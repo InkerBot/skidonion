@@ -44,7 +44,7 @@ public class TrashClassesInjector extends Transformer {
             String name = first + '$' + second.substring(second.lastIndexOf("/") + 1);
             int index;
             if ((index = conflictMap.compute(name, (key, value) -> value == null ? -1 : value + 1)) != -1) {
-                name += '$' + index;
+                name += "$" + index;
             }
             return name;
         }
@@ -84,7 +84,7 @@ public class TrashClassesInjector extends Transformer {
             ctx.getGenerator().generate(ctx.randomClassName(), methods_amount.getRandomValue(), fields_amount.getRandomValue());
         }
 
-        injectClassesAsResource(obfuscator.getGeneratedClassesEntryPrefix(), ctx.getGenerator().build());
+        injectResources(obfuscator.getGeneratedClassesEntryPrefix(), ctx.getGenerator().build());
     }
 
     @Override

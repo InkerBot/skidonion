@@ -27,7 +27,6 @@ public class TrashClass {
     private List<MemberDeclare> staticMethodsC;
     private List<MemberDeclare> virtualFieldsC;
     private List<MemberDeclare> staticFieldsC;
-    private List<MemberDeclare> abstractionsC;
 
     private TrashClass(TrashClassType type, String name, TrashClass superClass) {
         this.type = type;
