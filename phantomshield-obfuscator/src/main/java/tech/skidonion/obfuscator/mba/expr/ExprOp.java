@@ -1,9 +1,8 @@
 package tech.skidonion.obfuscator.mba.expr;
 
 import tech.skidonion.obfuscator.utils.commons.Triple;
-import tech.skidonion.obfuscator.utils.commons.function.FourParamsReturnFunc;
-import tech.skidonion.obfuscator.utils.commons.function.ThreeParamsReturnFunc;
-import tech.skidonion.obfuscator.mba.expr.operations.*;
+import tech.skidonion.obfuscator.utils.commons.function.Function4;
+import tech.skidonion.obfuscator.utils.commons.function.Function3;
 import tech.skidonion.obfuscator.mba.expr.operations.*;
 import tech.skidonion.obfuscator.mba.expr.operations.model.DoubleExprOp;
 import tech.skidonion.obfuscator.mba.expr.operations.model.SingleExprOp;
@@ -214,7 +213,7 @@ public abstract class ExprOp {
      * Yes, this PERFORMANCE CRITICAL code could be more efficient...
      */
     private String printSimpleImpl(ArrayList<Triple<ExprOp, Character, String>> vars) {
-        FourParamsReturnFunc<String, Expr, Expr, ArrayList<Triple<ExprOp, Character, String>>, String> bin_op = (String op, Expr l, Expr r, ArrayList<Triple<ExprOp, Character, String>> _vars) -> {
+        Function4<String, Expr, Expr, ArrayList<Triple<ExprOp, Character, String>>, String> bin_op = (String op, Expr l, Expr r, ArrayList<Triple<ExprOp, Character, String>> _vars) -> {
             int pred = this.precedence();
 
             String left;
@@ -234,7 +233,7 @@ public abstract class ExprOp {
             return String.format("%s %s %s", left, op, right);
         };
 
-        ThreeParamsReturnFunc<String, Expr, ArrayList<Triple<ExprOp, Character, String>>, String> un_op = (String op, Expr i, ArrayList<Triple<ExprOp, Character, String>> _vars) -> {
+        Function3<String, Expr, ArrayList<Triple<ExprOp, Character, String>>, String> un_op = (String op, Expr i, ArrayList<Triple<ExprOp, Character, String>> _vars) -> {
             if (this.precedence() > i.getOp().precedence() && i.getOp().referencedSize() == 1) {
                 return String.format("%s(%s)", op, ExprOp.printSimpleRc(i, _vars));
             } else {
