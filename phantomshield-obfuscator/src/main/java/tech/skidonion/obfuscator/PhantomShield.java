@@ -1,6 +1,7 @@
 package tech.skidonion.obfuscator;
 
 import lombok.Getter;
+import org.apache.logging.log4j.util.BiConsumer;
 import org.clyze.jphantom.ClassMembers;
 import org.clyze.jphantom.JPhantom;
 import org.clyze.jphantom.Phantoms;
@@ -47,6 +48,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.jar.JarFile;
 import java.util.zip.*;
 
@@ -254,15 +256,10 @@ public class PhantomShield {
 
                 HashSet<String> directorySet = new HashSet<>();
 
-                new ArrayList<ClassWrapper>() {
-                    {
-                        addAll(classes.values());
-                        addAll(softExclusions.values());
-                    }
-                }.forEach(classWrapper -> {
+                BiConsumer<ClassWrapper, Boolean> export = (classWrapper, verify) -> {
                     try {
                         byte[] clzBytes = classWrapper.toByteArray();
-                        if (!config.has("preverify") || config.getBoolean("preverify")) {
+                        if (verify) {
                             try {
                                 StringWriter stringWriter = new StringWriter();
                                 PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -293,7 +290,16 @@ public class PhantomShield {
                         ERROR(BUNDLE.getString("phantom-shield-x.instance.skipping"), classWrapper.getName() + ".class");
                         ERROR("", ioe);
                     }
-                });
+                };
+
+                boolean verify = !config.has("preverify") || config.getBoolean("preverify");
+                for (ClassWrapper value : classes.values()) {
+                    export.accept(value, verify);
+                }
+
+                for (ClassWrapper value : softExclusions.values()) {
+                    export.accept(value, false);
+                }
 
                 resources.forEach((name, bytes) -> {
                     try {
